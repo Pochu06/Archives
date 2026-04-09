@@ -6,7 +6,10 @@ use App\Models\Research;
 use App\Models\College;
 use App\Models\Category;
 use App\Models\User;
+use App\Models\ResearchDraft;
 use Illuminate\Http\Request;
+use App\Models\DownloadRequest;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
 
 class ResearchController extends Controller
@@ -23,21 +26,13 @@ class ResearchController extends Controller
     {
         if ($r = $this->authCheck()) return $r;
 
+        $query = Research::with(['user', 'college', 'category']);
+
         $role = session('user_role');
         $collegeId = session('user_college_id');
 
-        $query = Research::with(['user', 'college', 'category']);
-
-        if ($role === 'admin') {
+        if ($role === 'admin' && $collegeId) {
             $query->where('college_id', $collegeId);
-        } elseif ($role === 'student') {
-            $query->where('status', 'approved');
-        } elseif ($role === 'adviser') {
-            $user = User::find(session('user_id'));
-            $studentIds = $user->students()->pluck('users.id');
-            $query->where(function($q) use ($studentIds) {
-                $q->whereIn('user_id', $studentIds)->orWhere('status', 'approved');
-            });
         }
 
         if ($request->filled('search')) {
@@ -45,7 +40,8 @@ class ResearchController extends Controller
             $query->where(function($q) use ($search) {
                 $q->where('title', 'like', "%$search%")
                   ->orWhere('abstract', 'like', "%$search%")
-                  ->orWhere('keywords', 'like', "%$search%");
+                  ->orWhere('keywords', 'like', "%$search%")
+                  ->orWhere('authors', 'like', "%$search%");
             });
         }
 
@@ -55,10 +51,6 @@ class ResearchController extends Controller
 
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
-        }
-
-        if ($request->filled('status') && in_array($role, ['super_admin', 'admin', 'adviser'])) {
-            $query->where('status', $request->status);
         }
 
         if ($request->filled('year')) {
@@ -72,17 +64,100 @@ class ResearchController extends Controller
         return view('research.index', compact('research', 'colleges', 'categories'));
     }
 
+    public function publicIndex(Request $request)
+    {
+        $query = Research::with(['user', 'college', 'category']);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%$search%")
+                    ->orWhere('abstract', 'like', "%$search%")
+                    ->orWhere('keywords', 'like', "%$search%")
+                    ->orWhere('authors', 'like', "%$search%");
+            });
+        }
+
+        if ($request->filled('college_id')) {
+            $query->where('college_id', $request->college_id);
+        }
+
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        if ($request->filled('year')) {
+            $query->where('publication_year', $request->year);
+        }
+
+        $research = $query->orderBy('created_at', 'desc')->paginate(12)->withQueryString();
+        $colleges = College::where('active', true)->get();
+        $categories = Category::all();
+
+        return view('research.public', compact('research', 'colleges', 'categories'));
+    }
+
     public function create()
     {
         if ($r = $this->authCheck()) return $r;
-        $role = session('user_role');
-        if (!in_array($role, ['student', 'adviser', 'admin', 'super_admin'])) {
-            return redirect()->route('dashboard');
-        }
         $colleges = College::where('active', true)->get();
         $categories = Category::all();
-        $advisers = User::where('role', 'adviser')->get();
-        return view('research.create', compact('colleges', 'categories', 'advisers'));
+        $draft = ResearchDraft::where('user_id', session('user_id'))->first();
+        return view('research.create', compact('colleges', 'categories', 'draft'));
+    }
+
+    public function saveDraft(Request $request)
+    {
+        if (!session('user_id')) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        $userId = session('user_id');
+        $data = $request->only([
+            'title', 'abstract', 'introduction', 'methodology',
+            'results', 'discussion', 'references', 'conclusion',
+            'recommendations', 'keywords', 'authors',
+            'college_id', 'category_id', 'publication_year',
+        ]);
+        $data['user_id'] = $userId;
+        $data['last_saved_at'] = now();
+
+        ResearchDraft::updateOrCreate(['user_id' => $userId], $data);
+
+        return response()->json(['success' => true, 'message' => 'Draft saved successfully']);
+    }
+
+    public function loadDraft()
+    {
+        if (!session('user_id')) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        $draft = ResearchDraft::where('user_id', session('user_id'))->first();
+        if (!$draft) {
+            return response()->json(['success' => false, 'message' => 'No draft found'], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'draft' => $draft->toArray(),
+        ]);
+    }
+
+    public function deleteDraft()
+    {
+        if (!session('user_id')) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        ResearchDraft::where('user_id', session('user_id'))->delete();
+        return response()->json(['success' => true, 'message' => 'Draft deleted']);
+    }
+
+    public function tutorial()
+    {
+        if ($r = $this->authCheck()) return $r;
+        return view('research.tutorial');
     }
 
     public function store(Request $request)
@@ -92,46 +167,45 @@ class ResearchController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:500',
             'abstract' => 'required|string',
+            'introduction' => 'required|string',
+            'methodology' => 'required|string',
+            'results' => 'required|string',
+            'discussion' => 'required|string',
+            'references' => 'required|string',
+            'conclusion' => 'required|string',
+            'recommendations' => 'required|string',
             'keywords' => 'required|string|max:500',
             'authors' => 'required|string|max:500',
             'college_id' => 'required|exists:colleges,id',
             'category_id' => 'required|exists:categories,id',
             'publication_year' => 'required|integer|min:2000|max:' . (date('Y') + 1),
-            'adviser_id' => 'nullable|exists:users,id',
-            'document' => 'nullable|file|mimes:pdf,doc,docx|max:20480',
         ]);
 
-        $filePath = null;
-        $fileName = null;
-        if ($request->hasFile('document')) {
-            $file = $request->file('document');
-            $fileName = time() . '_' . $file->getClientOriginalName();
-            $filePath = $file->storeAs('research_documents', $fileName, 'public');
-        }
+        $validated['user_id'] = session('user_id');
 
-        Research::create([
-            'title' => $validated['title'],
-            'abstract' => $validated['abstract'],
-            'keywords' => $validated['keywords'],
-            'authors' => $validated['authors'],
-            'college_id' => $validated['college_id'],
-            'category_id' => $validated['category_id'],
-            'publication_year' => $validated['publication_year'],
-            'adviser_id' => $validated['adviser_id'] ?? null,
-            'user_id' => session('user_id'),
-            'status' => 'pending',
-            'file_path' => $filePath,
-            'file_name' => $fileName,
-        ]);
+        Research::create($validated);
 
-        return redirect()->route('research.index')->with('success', 'Research submitted successfully! Awaiting approval.');
+        return redirect()->route('research.index')->with('success', 'Research paper archived successfully!');
     }
 
     public function show($id)
     {
         if ($r = $this->authCheck()) return $r;
-        $research = Research::with(['user', 'college', 'category', 'adviser'])->findOrFail($id);
-        return view('research.show', compact('research'));
+        $research = Research::with(['user', 'college', 'category'])->findOrFail($id);
+
+        $userId = session('user_id');
+        $role = session('user_role');
+        $collegeId = session('user_college_id');
+
+        $downloadRequest = DownloadRequest::where('user_id', $userId)
+            ->where('research_id', $id)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        $canDownload = ($role === 'super_admin' || ($role === 'admin' && !$collegeId))
+            || ($downloadRequest && $downloadRequest->status === 'approved');
+
+        return view('research.show', compact('research', 'downloadRequest', 'canDownload'));
     }
 
     public function edit($id)
@@ -141,17 +215,13 @@ class ResearchController extends Controller
         $role = session('user_role');
         $userId = session('user_id');
 
-        if ($role === 'student' && $research->user_id != $userId) {
+        if (!in_array($role, ['super_admin', 'admin']) && $research->user_id != $userId) {
             return redirect()->route('research.index')->with('error', 'Unauthorized action.');
-        }
-        if ($role === 'student' && $research->status === 'approved') {
-            return redirect()->route('research.index')->with('error', 'Approved research cannot be edited.');
         }
 
         $colleges = College::where('active', true)->get();
         $categories = Category::all();
-        $advisers = User::where('role', 'adviser')->get();
-        return view('research.edit', compact('research', 'colleges', 'categories', 'advisers'));
+        return view('research.edit', compact('research', 'colleges', 'categories'));
     }
 
     public function update(Request $request, $id)
@@ -162,41 +232,23 @@ class ResearchController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:500',
             'abstract' => 'required|string',
+            'introduction' => 'required|string',
+            'methodology' => 'required|string',
+            'results' => 'required|string',
+            'discussion' => 'required|string',
+            'references' => 'required|string',
+            'conclusion' => 'required|string',
+            'recommendations' => 'required|string',
             'keywords' => 'required|string|max:500',
             'authors' => 'required|string|max:500',
             'college_id' => 'required|exists:colleges,id',
             'category_id' => 'required|exists:categories,id',
             'publication_year' => 'required|integer|min:2000|max:' . (date('Y') + 1),
-            'adviser_id' => 'nullable|exists:users,id',
-            'document' => 'nullable|file|mimes:pdf,doc,docx|max:20480',
         ]);
 
-        $filePath = $research->file_path;
-        $fileName = $research->file_name;
-        if ($request->hasFile('document')) {
-            if ($filePath) {
-                Storage::disk('public')->delete($filePath);
-            }
-            $file = $request->file('document');
-            $fileName = time() . '_' . $file->getClientOriginalName();
-            $filePath = $file->storeAs('research_documents', $fileName, 'public');
-        }
+        $research->update($validated);
 
-        $research->update([
-            'title' => $validated['title'],
-            'abstract' => $validated['abstract'],
-            'keywords' => $validated['keywords'],
-            'authors' => $validated['authors'],
-            'college_id' => $validated['college_id'],
-            'category_id' => $validated['category_id'],
-            'publication_year' => $validated['publication_year'],
-            'adviser_id' => $validated['adviser_id'] ?? null,
-            'status' => 'pending',
-            'file_path' => $filePath,
-            'file_name' => $fileName,
-        ]);
-
-        return redirect()->route('research.show', $id)->with('success', 'Research updated successfully!');
+        return redirect()->route('research.show', $id)->with('success', 'Research paper updated successfully!');
     }
 
     public function destroy($id)
@@ -211,47 +263,76 @@ class ResearchController extends Controller
             }
         }
 
-        if ($research->file_path) {
-            Storage::disk('public')->delete($research->file_path);
-        }
-
         $research->delete();
-        return redirect()->route('research.index')->with('success', 'Research deleted successfully.');
-    }
-
-    public function approve($id)
-    {
-        if ($r = $this->authCheck()) return $r;
-        $role = session('user_role');
-        if (!in_array($role, ['super_admin', 'admin', 'adviser'])) {
-            return redirect()->route('dashboard')->with('error', 'Unauthorized.');
-        }
-
-        $research = Research::findOrFail($id);
-        $research->update(['status' => 'approved', 'approved_by' => session('user_id'), 'approved_at' => now()]);
-        return redirect()->back()->with('success', 'Research approved successfully!');
-    }
-
-    public function reject(Request $request, $id)
-    {
-        if ($r = $this->authCheck()) return $r;
-        $role = session('user_role');
-        if (!in_array($role, ['super_admin', 'admin', 'adviser'])) {
-            return redirect()->route('dashboard')->with('error', 'Unauthorized.');
-        }
-
-        $research = Research::findOrFail($id);
-        $research->update(['status' => 'rejected', 'rejection_reason' => $request->reason]);
-        return redirect()->back()->with('success', 'Research rejected.');
+        return redirect()->route('research.index')->with('success', 'Research paper deleted successfully.');
     }
 
     public function download($id)
     {
         if ($r = $this->authCheck()) return $r;
-        $research = Research::findOrFail($id);
-        if (!$research->file_path) {
-            return redirect()->back()->with('error', 'No document attached.');
+        $research = Research::with(['user', 'college', 'category'])->findOrFail($id);
+
+        $role = session('user_role');
+        $collegeId = session('user_college_id');
+
+        // RDE and super_admin can always download
+        if (!($role === 'super_admin' || ($role === 'admin' && !$collegeId))) {
+            $approved = DownloadRequest::where('user_id', session('user_id'))
+                ->where('research_id', $id)
+                ->where('status', 'approved')
+                ->exists();
+
+            if (!$approved) {
+                return redirect()->back()->with('error', 'You need an approved download request to download this paper.');
+            }
         }
-        return Storage::disk('public')->download($research->file_path, $research->file_name);
+
+        $pdf = Pdf::loadView('research.pdf', compact('research'));
+        $pdf->setPaper('letter', 'portrait');
+
+        $filename = $research->title . '.pdf';
+        return $pdf->download($filename);
+    }
+
+    public function uploadImage(Request $request)
+    {
+        if (!session('user_id')) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,jpg,png,gif,webp|max:5120',
+        ]);
+
+        $file = $request->file('image');
+        $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '', $file->getClientOriginalName());
+        $path = $file->storeAs('research_images', $filename, 'public');
+
+        return response()->json([
+            'filename' => $filename,
+            'path' => $path,
+            'url' => Storage::url($path),
+            'syntax' => '[figure: ' . $filename . ' | Figure X. Description here]',
+        ]);
+    }
+
+    public function deleteImage(Request $request)
+    {
+        if (!session('user_id')) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $request->validate([
+            'filename' => 'required|string|max:255',
+        ]);
+
+        $filename = basename($request->filename);
+
+        if (Storage::disk('public')->exists('research_images/' . $filename)) {
+            Storage::disk('public')->delete('research_images/' . $filename);
+            return response()->json(['success' => true]);
+        }
+
+        return response()->json(['error' => 'File not found'], 404);
     }
 }

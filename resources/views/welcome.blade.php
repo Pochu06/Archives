@@ -3,11 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Research Archive & Repository System</title>
+    <title>CSU Research Archive | Public Research Repository</title>
+    <meta name="description" content="CSU Research Archive is a public research repository where you can browse academic papers by college, category, and year. Login is required only to request PDF downloads.">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        orange: {
+                            50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe',
+                            300: '#93c5fd', 400: '#60a5fa', 500: '#3b82f6',
+                            600: '#2563eb', 700: '#2563eb', 800: '#2563eb', 900: '#2563eb'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        .hero-bg { background: linear-gradient(135deg, #7c2d12 0%, #c2410c 40%, #ea580c 70%, #fb923c 100%); }
+        .hero-bg { background: #3b82f6; }
         .card-hover { transition: all 0.3s ease; }
         .card-hover:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
     </style>
@@ -15,48 +31,84 @@
 <body class="bg-gray-50">
     <!-- Navbar -->
     <nav class="bg-white shadow-md sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+        <div class="max-w-7xl mx-auto px-4 py-3 sm:py-4 flex flex-wrap justify-between items-center gap-3">
             <div class="flex items-center space-x-3">
-                <div class="bg-gradient-to-br from-orange-500 to-orange-700 p-2.5 rounded-lg">
+                <div class="bg-orange-600 p-2.5 rounded-lg">
                     <i class="fas fa-book-open text-white text-xl"></i>
                 </div>
                 <div>
-                    <h1 class="font-bold text-gray-800 text-lg leading-tight">Research Archive</h1>
-                    <p class="text-orange-600 text-xs font-medium">& Repository System</p>
+                    <h1 class="font-bold text-gray-800 text-lg leading-tight">ARCHIVES</h1>
                 </div>
             </div>
-            <div class="flex items-center space-x-3">
+            @if(session('user_id'))
+                <div class="flex items-center space-x-2 sm:space-x-3 ml-auto">
+                    <a href="{{ route('dashboard') }}" class="text-gray-700 hover:text-orange-600 font-medium px-3 sm:px-4 py-2 rounded-lg hover:bg-orange-50 transition text-sm sm:text-base">
+                        Dashboard
+                    </a>
+                </div>
+            @else
+                <div class="flex items-center space-x-2 sm:space-x-3 ml-auto">
+                    <a href="{{ route('login') }}" class="text-gray-700 hover:text-orange-600 font-medium px-3 sm:px-4 py-2 rounded-lg hover:bg-orange-50 transition text-sm sm:text-base">
+                        <i class="fas fa-sign-in-alt mr-1"></i> Login
+                    </a>
+                    <a href="{{ route('register') }}" class="bg-orange-600 text-white px-4 sm:px-5 py-2 rounded-lg font-medium hover:bg-orange-700 transition shadow text-sm sm:text-base">
+                        <i class="fas fa-user-plus mr-1"></i> Register
+                    </a>
+                </div>
+            @endif
+            {{-- <div class="flex items-center space-x-3">
                 <a href="{{ route('login') }}" class="text-gray-700 hover:text-orange-600 font-medium px-4 py-2 rounded-lg hover:bg-orange-50 transition">
                     <i class="fas fa-sign-in-alt mr-1"></i> Login
                 </a>
-                <a href="{{ route('register') }}" class="bg-gradient-to-r from-orange-600 to-orange-700 text-white px-5 py-2 rounded-lg font-medium hover:from-orange-700 hover:to-orange-800 transition shadow">
+                <a href="{{ route('register') }}" class="bg-orange-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-orange-700 transition shadow">
                     <i class="fas fa-user-plus mr-1"></i> Register
                 </a>
-            </div>
+            </div> --}}
         </div>
     </nav>
 
     <!-- Hero -->
-    <section class="hero-bg text-white py-24 px-4">
+    <section class="hero-bg text-white py-16 sm:py-20 lg:py-24 px-4 min-h-[72vh]">
         <div class="max-w-5xl mx-auto text-center">
-            <div class="inline-flex items-center bg-white/10 rounded-full px-4 py-2 mb-6 backdrop-blur-sm">
-                <i class="fas fa-star text-orange-300 mr-2"></i>
-                <span class="text-sm font-medium">Multi-College Research Management Platform</span>
-            </div>
-            <h1 class="text-5xl md:text-6xl font-extrabold mb-6 leading-tight">
-                Research Archive &
-                <span class="text-orange-200">Repository System</span>
+            <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-tight">
+                ARCHIVES
             </h1>
-            <p class="text-xl text-orange-100 mb-10 max-w-3xl mx-auto leading-relaxed">
-                A centralized platform for submitting, managing, and archiving academic research across all colleges. Connecting students, advisers, and administrators through a unified research ecosystem.
+            <p class="text-base sm:text-lg md:text-xl text-orange-100 mb-8 sm:mb-10 max-w-3xl mx-auto leading-relaxed">
+                Explore a comprehensive repository of academic research papers from Cagayan State University. Browse publicly available research.
             </p>
+
+            <form action="{{ route('research.public') }}" method="GET" class="max-w-3xl mx-auto mb-8">
+                <div class="bg-white rounded-2xl p-2 shadow-lg flex flex-col sm:flex-row gap-2">
+                    <div class="relative flex-1">
+                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input
+                            type="text"
+                            name="search"
+                            value="{{ request('search') }}"
+                            placeholder="Search research title, abstract, keywords, or authors"
+                            class="w-full h-12 pl-11 pr-4 rounded-xl border border-gray-200 text-gray-800 focus:outline-none focus:border-orange-500"
+                        >
+                    </div>
+                    <button type="submit" class="h-12 px-6 rounded-xl bg-orange-600 text-white font-semibold hover:bg-orange-700 transition whitespace-nowrap">
+                        Search Research
+                    </button>
+                </div>
+            </form>
+
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="{{ route('login') }}" class="bg-white text-orange-700 font-bold px-8 py-4 rounded-xl hover:bg-orange-50 transition shadow-lg text-lg">
-                    <i class="fas fa-sign-in-alt mr-2"></i> Access Repository
+                <a href="{{ route('research.public') }}" class="bg-white text-orange-700 font-bold px-8 py-4 rounded-xl hover:bg-orange-50 transition shadow-lg text-lg">
+                    <i class="fas fa-book-open mr-2"></i> Browse Public Research
                 </a>
-                <a href="{{ route('register') }}" class="border-2 border-white text-white font-bold px-8 py-4 rounded-xl hover:bg-white/10 transition text-lg">
-                    <i class="fas fa-user-graduate mr-2"></i> Join as Student
-                </a>
+                @if(session('user_id'))
+                    <a href="{{ route('dashboard') }}" class="border-2 border-white text-white font-bold px-8 py-4 rounded-xl hover:bg-white/10 transition text-lg">
+                        Go to Dashboard
+                    </a>
+                @else
+                    <a href="{{ route('register') }}" class="border-2 border-white text-white font-bold px-8 py-4 rounded-xl hover:bg-white/10 transition text-lg">
+                        <i class="fas fa-user-graduate mr-2"></i> Join as Student
+                    </a>
+                @endif
+                
             </div>
         </div>
     </section>
@@ -65,7 +117,7 @@
     <section class="bg-orange-800 text-white py-6">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex flex-wrap justify-center gap-4">
-                @foreach(['CICS', 'CTED', 'CBEA', 'CFAS', 'CIT', 'CCJE', 'CHM'] as $college)
+                @foreach(['CICS', 'CTED', 'CBEA', 'CFAS', 'CIT', 'CCJE', 'CHM', 'GS'] as $college)
                 <span class="bg-white/10 backdrop-blur px-4 py-2 rounded-full text-sm font-semibold">
                     <i class="fas fa-university mr-2 text-orange-300"></i>{{ $college }}
                 </span>
@@ -75,7 +127,7 @@
     </section>
 
     <!-- Features -->
-    <section class="py-20 px-4 bg-white">
+    {{-- <section class="py-20 px-4 bg-white">
         <div class="max-w-7xl mx-auto">
             <div class="text-center mb-14">
                 <h2 class="text-4xl font-bold text-gray-800 mb-4">Platform Features</h2>
@@ -94,7 +146,7 @@
                         <i class="fas fa-shield-alt text-white text-2xl"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-800 mb-3">Role-Based Access</h3>
-                    <p class="text-gray-600">Comprehensive access control with Super Admin, Admin, Adviser, and Student roles — each with tailored permissions and views.</p>
+                    <p class="text-gray-600">Comprehensive access control with Super Admin, Admin, and Student roles — each with tailored permissions and views.</p>
                 </div>
                 <div class="card-hover bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-8 border border-green-200">
                     <div class="bg-gradient-to-br from-green-500 to-green-700 w-14 h-14 rounded-xl flex items-center justify-center mb-6">
@@ -108,7 +160,7 @@
                         <i class="fas fa-check-circle text-white text-2xl"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-800 mb-3">Approval Workflow</h3>
-                    <p class="text-gray-600">Structured approval process where advisers and admins can review, approve, or reject research submissions with feedback.</p>
+                    <p class="text-gray-600">Structured process where admins can manage and organize research submissions in the archive.</p>
                 </div>
                 <div class="card-hover bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-2xl p-8 border border-yellow-200">
                     <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 w-14 h-14 rounded-xl flex items-center justify-center mb-6">
@@ -126,10 +178,10 @@
                 </div>
             </div>
         </div>
-    </section>
+    </section> --}}
 
     <!-- Colleges -->
-    <section class="py-20 px-4 bg-orange-50">
+    {{-- <section class="py-20 px-4 bg-orange-50">
         <div class="max-w-7xl mx-auto">
             <div class="text-center mb-14">
                 <h2 class="text-4xl font-bold text-gray-800 mb-4">Participating Colleges</h2>
@@ -138,25 +190,25 @@
             <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
                 @php
                     $colleges = [
-                        ['code' => 'CICS', 'name' => 'Information & Computing Sciences', 'icon' => 'fa-laptop-code', 'color' => 'from-blue-500 to-blue-700'],
-                        ['code' => 'CTED', 'name' => 'Teacher Education', 'icon' => 'fa-chalkboard-teacher', 'color' => 'from-green-500 to-green-700'],
-                        ['code' => 'CBEA', 'name' => 'Business, Entrepreneurship & Accountancy', 'icon' => 'fa-briefcase', 'color' => 'from-yellow-500 to-yellow-700'],
-                        ['code' => 'CFAS', 'name' => 'Fisheries & Aquatic Sciences', 'icon' => 'fa-fish', 'color' => 'from-cyan-500 to-cyan-700'],
-                        ['code' => 'CIT', 'name' => 'Industrial Technology', 'icon' => 'fa-cogs', 'color' => 'from-orange-500 to-orange-700'],
-                        ['code' => 'CCJE', 'name' => 'Criminal Justice Education', 'icon' => 'fa-balance-scale', 'color' => 'from-red-500 to-red-700'],
-                        ['code' => 'CHM', 'name' => 'Hospitality Management', 'icon' => 'fa-h-square', 'color' => 'from-pink-500 to-pink-700'],
+                        ['code' => 'CICS', 'name' => 'Information & Computing Sciences', 'icon' => 'fa-laptop-code', 'color' => 'bg-blue-600'],
+                        ['code' => 'CTED', 'name' => 'Teacher Education', 'icon' => 'fa-chalkboard-teacher', 'color' => 'bg-green-600'],
+                        ['code' => 'CBEA', 'name' => 'Business, Entrepreneurship & Accountancy', 'icon' => 'fa-briefcase', 'color' => 'bg-yellow-600'],
+                        ['code' => 'CFAS', 'name' => 'Fisheries & Aquatic Sciences', 'icon' => 'fa-fish', 'color' => 'bg-cyan-600'],
+                        ['code' => 'CIT', 'name' => 'Industrial Technology', 'icon' => 'fa-cogs', 'color' => 'bg-orange-600'],
+                        ['code' => 'CCJE', 'name' => 'Criminal Justice Education', 'icon' => 'fa-balance-scale', 'color' => 'bg-red-600'],
+                        ['code' => 'CHM', 'name' => 'Hospitality Management', 'icon' => 'fa-h-square', 'color' => 'bg-pink-600'],
                     ];
                 @endphp
                 @foreach($colleges as $college)
                 <div class="card-hover bg-white rounded-2xl p-6 shadow-sm border border-orange-100 text-center">
-                    <div class="bg-gradient-to-br {{ $college['color'] }} w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <div class="{{ $college['color'] }} w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4">
                         <i class="fas {{ $college['icon'] }} text-white text-xl"></i>
                     </div>
                     <h3 class="font-bold text-orange-800 text-xl mb-1">{{ $college['code'] }}</h3>
                     <p class="text-gray-600 text-xs">{{ $college['name'] }}</p>
                 </div>
                 @endforeach
-                <div class="card-hover bg-gradient-to-br from-orange-600 to-orange-800 rounded-2xl p-6 shadow-sm text-center text-white">
+                <div class="card-hover bg-orange-700 rounded-2xl p-6 shadow-sm text-center text-white">
                     <div class="bg-white/20 w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-plus text-white text-xl"></i>
                     </div>
@@ -165,10 +217,10 @@
                 </div>
             </div>
         </div>
-    </section>
+    </section> --}}
 
     <!-- CTA -->
-    <section class="hero-bg py-20 px-4 text-white">
+    {{-- <section class="hero-bg py-20 px-4 text-white">
         <div class="max-w-3xl mx-auto text-center">
             <h2 class="text-4xl font-bold mb-6">Ready to Archive Your Research?</h2>
             <p class="text-orange-100 text-lg mb-8">Join thousands of students and researchers contributing to our growing academic repository.</p>
@@ -176,7 +228,7 @@
                 <i class="fas fa-rocket mr-2"></i> Get Started Today
             </a>
         </div>
-    </section>
+    </section> --}}
 
     <!-- Footer -->
     <footer class="bg-orange-900 text-white">
@@ -184,7 +236,7 @@
             <div>
                 <div class="flex items-center space-x-3 mb-4">
                     <div class="bg-orange-600 p-2 rounded-lg"><i class="fas fa-book-open"></i></div>
-                    <h3 class="font-bold">Research Archive</h3>
+                    <h3 class="font-bold">ARCHIVES</h3>
                 </div>
                 <p class="text-orange-200 text-sm">A centralized research management platform serving multiple colleges.</p>
             </div>
@@ -195,7 +247,7 @@
                     <li><a href="{{ route('register') }}" class="hover:text-white transition">Register</a></li>
                 </ul>
             </div>
-            <div>
+            {{-- <div>
                 <h4 class="font-bold mb-3">Colleges</h4>
                 <ul class="space-y-2 text-orange-200 text-sm">
                     @foreach(['CICS', 'CTED', 'CBEA', 'CFAS'] as $c)
@@ -210,10 +262,10 @@
                     <li>{{ $c }}</li>
                     @endforeach
                 </ul>
-            </div>
+            </div> --}}
         </div>
         <div class="border-t border-orange-800 py-6 text-center text-sm text-orange-300">
-            <p>© {{ date('Y') }} Research Archive & Repository System. All rights reserved.</p>
+            <p>© {{ date('Y') }} ARCHIVES. All rights reserved.</p>
         </div>
     </footer>
 </body>

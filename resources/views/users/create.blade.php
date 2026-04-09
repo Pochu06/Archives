@@ -28,7 +28,6 @@
                         <option value="super_admin" {{ old('role') === 'super_admin' ? 'selected' : '' }}>Super Admin</option>
                         <option value="admin" {{ old('role') === 'admin' ? 'selected' : '' }}>Admin</option>
                         @endif
-                        <option value="adviser" {{ old('role') === 'adviser' ? 'selected' : '' }}>Adviser</option>
                         <option value="student" {{ old('role') === 'student' ? 'selected' : '' }}>Student</option>
                     </select>
                 </div>

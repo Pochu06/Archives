@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Research Archive & Repository System')</title>
+    <title>@yield('title', 'ARCHIVES')</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -11,9 +11,9 @@
                 extend: {
                     colors: {
                         orange: {
-                            50: '#fff7ed', 100: '#ffedd5', 200: '#fed7aa',
-                            300: '#fdba74', 400: '#fb923c', 500: '#f97316',
-                            600: '#ea580c', 700: '#c2410c', 800: '#9a3412', 900: '#7c2d12'
+                            50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe',
+                            300: '#93c5fd', 400: '#60a5fa', 500: '#3b82f6',
+                            600: '#2563eb', 700: '#2563eb', 800: '#2563eb', 900: '#2563eb'
                         }
                     }
                 }
@@ -23,8 +23,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         .sidebar-link { transition: all 0.2s ease; }
-        .sidebar-link:hover { background: rgba(234,88,12,0.15); padding-left: 1.25rem; }
-        .sidebar-link.active { background: rgba(234,88,12,0.2); border-right: 3px solid #ea580c; }
+        .sidebar-link:hover { background: rgba(59,130,246,0.18); padding-left: 1.25rem; }
+        .sidebar-link.active { background: rgba(59,130,246,0.25); border-right: 3px solid #3b82f6; }
     </style>
     @yield('styles')
 </head>
@@ -32,17 +32,23 @@
 
 @if(session('user_id'))
 <div class="flex min-h-screen">
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black/40 z-20 hidden lg:hidden"></div>
+
     <!-- Sidebar -->
-    <aside class="w-64 bg-gradient-to-b from-orange-800 to-orange-900 text-white flex flex-col fixed h-full z-30 shadow-xl">
+    <aside id="appSidebar" class="w-64 bg-orange-700 text-white flex flex-col fixed h-full z-30 shadow-xl transform -translate-x-full transition-transform duration-200 lg:translate-x-0">
         <div class="p-5 border-b border-orange-700">
-            <div class="flex items-center space-x-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
                 <div class="bg-white p-2 rounded-lg">
                     <i class="fas fa-book-open text-orange-600 text-xl"></i>
                 </div>
                 <div>
-                    <h1 class="font-bold text-sm leading-tight">Research Archive</h1>
-                    <p class="text-orange-200 text-xs">& Repository System</p>
+                    <h1 class="font-bold text-sm leading-tight">ARCHIVES</h1>
                 </div>
+                </div>
+                <button id="closeSidebarBtn" type="button" class="lg:hidden text-orange-100 hover:text-white" aria-label="Close menu">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
             </div>
         </div>
 
@@ -66,23 +72,15 @@
             <a href="{{ route('dashboard') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                 <i class="fas fa-tachometer-alt w-5"></i><span>Dashboard</span>
             </a>
-            <a href="{{ route('research.index') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('research.*') ? 'active' : '' }}">
-                <i class="fas fa-file-alt w-5"></i><span>Research Archive</span>
+            <a href="{{ route('research.index') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('research.index') || request()->routeIs('research.show') ? 'active' : '' }}">
+                <i class="fas fa-archive w-5"></i><span>Research Archive</span>
             </a>
-            @if(in_array(session('user_role'), ['student']))
-            <a href="{{ route('research.create') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm">
-                <i class="fas fa-plus-circle w-5"></i><span>Submit Research</span>
+            <a href="{{ route('research.create') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('research.create') ? 'active' : '' }}">
+                <i class="fas fa-plus-circle w-5"></i><span>Archive Paper</span>
             </a>
-            <a href="{{ route('submissions.index') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('submissions.*') ? 'active' : '' }}">
-                <i class="fas fa-inbox w-5"></i><span>My Submissions</span>
-            </a>
-            @endif
-            @if(session('user_role') === 'adviser')
-            <a href="{{ route('adviser.submissions') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('adviser.submissions') ? 'active' : '' }}">
-                <i class="fas fa-tasks w-5"></i><span>Student Submissions</span>
-            </a>
-            <a href="{{ route('adviser.students') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('adviser.students') ? 'active' : '' }}">
-                <i class="fas fa-user-graduate w-5"></i><span>My Students</span>
+            @if(!in_array(session('user_role'), ['super_admin', 'admin']))
+            <a href="{{ route('download-request.my') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('download-request.my') ? 'active' : '' }}">
+                <i class="fas fa-clipboard-list w-5"></i><span>My Requests</span>
             </a>
             @endif
             @if(in_array(session('user_role'), ['super_admin', 'admin']))
@@ -95,6 +93,11 @@
             <a href="{{ route('categories.index') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('categories.*') ? 'active' : '' }}">
                 <i class="fas fa-tags w-5"></i><span>Categories</span>
             </a>
+            @if(session('user_role') === 'super_admin' || (session('user_role') === 'admin' && !session('user_college_id')))
+            <a href="{{ route('download-request.index') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('download-request.index') ? 'active' : '' }}">
+                <i class="fas fa-file-download w-5"></i><span>Download Requests</span>
+            </a>
+            @endif
             @if(session('user_role') === 'super_admin')
             <a href="{{ route('colleges.index') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('colleges.*') ? 'active' : '' }}">
                 <i class="fas fa-university w-5"></i><span>Colleges</span>
@@ -115,21 +118,25 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 ml-64">
-        <!-- Top Bar -->
-        <header class="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
+    <main class="flex-1 ml-0 lg:ml-64 min-w-0">
+        <header class="bg-white shadow-sm border-b border-gray-200 px-4 sm:px-6 py-4">
             <div class="flex items-center justify-between">
-                <div>
+                <div class="flex items-center gap-3 min-w-0">
+                    <button id="openSidebarBtn" type="button" class="lg:hidden w-9 h-9 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50" aria-label="Open menu">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="min-w-0">
                     <h2 class="text-lg font-semibold text-gray-800">@yield('page-title', 'Dashboard')</h2>
-                    <p class="text-sm text-gray-500">@yield('page-subtitle', '')</p>
+                    <p class="text-xs sm:text-sm text-gray-500 truncate">@yield('page-subtitle', '')</p>
+                    </div>
                 </div>
-                <div class="flex items-center space-x-3">
-                    <span class="text-sm text-gray-600">{{ date('l, F j, Y') }}</span>
+                <div class="hidden sm:flex items-center space-x-3">
+                    <span class="text-sm text-gray-600 text-right">{{ date('l, F j, Y') }}</span>
                 </div>
             </div>
         </header>
 
-        <div class="p-6">
+        <div class="p-4 sm:p-6">
             @if(session('success'))
             <div class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center">
                 <i class="fas fa-check-circle mr-2"></i> {{ session('success') }}
@@ -147,6 +154,40 @@
 @else
     @yield('auth-content')
 @endif
+
+<script>
+(() => {
+    const sidebar = document.getElementById('appSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const openBtn = document.getElementById('openSidebarBtn');
+    const closeBtn = document.getElementById('closeSidebarBtn');
+
+    if (!sidebar || !overlay || !openBtn || !closeBtn) return;
+
+    const openSidebar = () => {
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+    };
+
+    const closeSidebar = () => {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+    };
+
+    openBtn.addEventListener('click', openSidebar);
+    closeBtn.addEventListener('click', closeSidebar);
+    overlay.addEventListener('click', closeSidebar);
+
+    window.addEventListener('resize', () => {
+        if (window.innerWidth >= 1024) {
+            overlay.classList.add('hidden');
+            sidebar.classList.remove('-translate-x-full');
+        } else {
+            sidebar.classList.add('-translate-x-full');
+        }
+    });
+})();
+</script>
 
 @yield('scripts')
 </body>

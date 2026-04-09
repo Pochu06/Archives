@@ -7,8 +7,7 @@ use App\Http\Controllers\ResearchController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CollegeController;
 use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\SubmissionController;
-use App\Http\Controllers\AdviserController;
+use App\Http\Controllers\DownloadRequestController;
 
 // Welcome / Landing
 Route::get('/', function () { return view('welcome'); });
@@ -23,20 +22,29 @@ Route::post('/register', [AuthController::class, 'register'])->name('register.po
 // Dashboard
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-// Research Management
+// Research Archive
+Route::get('/research/public', [ResearchController::class, 'publicIndex'])->name('research.public');
 Route::get('/research', [ResearchController::class, 'index'])->name('research.index');
 Route::get('/research/create', [ResearchController::class, 'create'])->name('research.create');
+Route::get('/research/tutorial', [ResearchController::class, 'tutorial'])->name('research.tutorial');
 Route::post('/research', [ResearchController::class, 'store'])->name('research.store');
+Route::post('/research/save-draft', [ResearchController::class, 'saveDraft'])->name('research.save-draft');
+Route::get('/research/load-draft', [ResearchController::class, 'loadDraft'])->name('research.load-draft');
+Route::delete('/research/delete-draft', [ResearchController::class, 'deleteDraft'])->name('research.delete-draft');
 Route::get('/research/{id}', [ResearchController::class, 'show'])->name('research.show');
 Route::get('/research/{id}/edit', [ResearchController::class, 'edit'])->name('research.edit');
 Route::put('/research/{id}', [ResearchController::class, 'update'])->name('research.update');
 Route::delete('/research/{id}', [ResearchController::class, 'destroy'])->name('research.destroy');
-Route::post('/research/{id}/approve', [ResearchController::class, 'approve'])->name('research.approve');
-Route::post('/research/{id}/reject', [ResearchController::class, 'reject'])->name('research.reject');
 Route::get('/research/{id}/download', [ResearchController::class, 'download'])->name('research.download');
+Route::post('/research/upload-image', [ResearchController::class, 'uploadImage'])->name('research.upload-image');
+Route::post('/research/delete-image', [ResearchController::class, 'deleteImage'])->name('research.delete-image');
 
-// My Submissions (Student)
-Route::get('/my-submissions', [SubmissionController::class, 'index'])->name('submissions.index');
+// Download Requests
+Route::post('/research/{id}/request-download', [DownloadRequestController::class, 'store'])->name('download-request.store');
+Route::get('/my-requests', [DownloadRequestController::class, 'myRequests'])->name('download-request.my');
+Route::get('/download-requests', [DownloadRequestController::class, 'index'])->name('download-request.index');
+Route::post('/download-requests/{id}/approve', [DownloadRequestController::class, 'approve'])->name('download-request.approve');
+Route::post('/download-requests/{id}/reject', [DownloadRequestController::class, 'reject'])->name('download-request.reject');
 
 // User Management
 Route::get('/users', [UserController::class, 'index'])->name('users.index');
@@ -61,7 +69,3 @@ Route::post('/categories', [CategoryController::class, 'store'])->name('categori
 Route::get('/categories/{id}/edit', [CategoryController::class, 'edit'])->name('categories.edit');
 Route::put('/categories/{id}', [CategoryController::class, 'update'])->name('categories.update');
 Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->name('categories.destroy');
-
-// Adviser Panel
-Route::get('/adviser/submissions', [AdviserController::class, 'submissions'])->name('adviser.submissions');
-Route::get('/adviser/students', [AdviserController::class, 'students'])->name('adviser.students');

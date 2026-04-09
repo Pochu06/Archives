@@ -26,7 +26,7 @@ class UserController extends Controller
         $query = User::with('college');
 
         if ($role === 'admin') {
-            $query->where('college_id', $collegeId)->whereIn('role', ['student', 'adviser']);
+            $query->where('college_id', $collegeId)->where('role', 'student');
         }
 
         if ($request->filled('search')) {
@@ -65,13 +65,13 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:8|confirmed',
-            'role' => 'required|in:super_admin,admin,adviser,student',
+            'role' => 'required|in:super_admin,admin,student',
             'college_id' => 'required|exists:colleges,id',
             'student_id' => 'nullable|string|max:50',
         ];
 
         if (session('user_role') === 'admin') {
-            $rules['role'] = 'required|in:adviser,student';
+            $rules['role'] = 'required|in:student';
         }
 
         $validated = $request->validate($rules);
@@ -105,7 +105,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $id,
-            'role' => 'required|in:super_admin,admin,adviser,student',
+            'role' => 'required|in:super_admin,admin,student',
             'college_id' => 'required|exists:colleges,id',
             'student_id' => 'nullable|string|max:50',
             'status' => 'required|in:active,inactive',
