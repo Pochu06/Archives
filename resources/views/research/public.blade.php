@@ -95,11 +95,7 @@
                 </div>
 
                 <div class="mt-auto flex gap-2">
-                    @if(session('user_id'))
-                    <a href="{{ route('research.show', $item->id) }}" class="w-full text-center bg-orange-600 text-white text-sm font-semibold py-2.5 rounded-lg hover:bg-orange-700">Open & Request Download</a>
-                    @else
-                    <a href="{{ route('login') }}" class="w-full text-center bg-orange-600 text-white text-sm font-semibold py-2.5 rounded-lg hover:bg-orange-700">Login to Request Download</a>
-                    @endif
+                    <a href="{{ route('research.show', $item->id) }}" class="w-full text-center bg-orange-600 text-white text-sm font-semibold py-2.5 rounded-lg hover:bg-orange-700">View Research</a>
                 </div>
             </article>
             @endforeach

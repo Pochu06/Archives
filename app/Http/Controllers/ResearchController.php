@@ -190,20 +190,22 @@ class ResearchController extends Controller
 
     public function show($id)
     {
-        if ($r = $this->authCheck()) return $r;
         $research = Research::with(['user', 'college', 'category'])->findOrFail($id);
 
         $userId = session('user_id');
         $role = session('user_role');
         $collegeId = session('user_college_id');
 
-        $downloadRequest = DownloadRequest::where('user_id', $userId)
-            ->where('research_id', $id)
-            ->orderBy('created_at', 'desc')
-            ->first();
-
-        $canDownload = ($role === 'super_admin' || ($role === 'admin' && !$collegeId))
-            || ($downloadRequest && $downloadRequest->status === 'approved');
+        $downloadRequest = null;
+        $canDownload = false;
+        if ($userId) {
+            $downloadRequest = DownloadRequest::where('user_id', $userId)
+                ->where('research_id', $id)
+                ->orderBy('created_at', 'desc')
+                ->first();
+            $canDownload = ($role === 'super_admin' || ($role === 'admin' && !$collegeId))
+                || ($downloadRequest && $downloadRequest->status === 'approved');
+        }
 
         return view('research.show', compact('research', 'downloadRequest', 'canDownload'));
     }

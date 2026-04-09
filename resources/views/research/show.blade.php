@@ -27,7 +27,7 @@
 
     {{-- Back + Actions --}}
     <div class="flex items-center justify-between">
-        <a href="{{ route('research.index') }}" class="text-orange-600 hover:underline text-sm font-semibold">
+        <a href="{{ session('user_id') ? route('research.index') : route('research.public') }}" class="text-orange-600 hover:underline text-sm font-semibold">
             <i class="fas fa-arrow-left mr-1"></i> Back to Archive
         </a>
         <div class="flex gap-2">
@@ -176,7 +176,14 @@
         <div class="w-full lg:w-72 shrink-0 space-y-4">
             {{-- Download / Request Card --}}
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                @if($canDownload)
+                @if(!session('user_id'))
+                    <div class="text-center">
+                        <p class="text-sm text-gray-700 mb-2">Login to request or download the full-text PDF.</p>
+                        <a href="{{ route('login') }}" class="block w-full bg-orange-600 text-white py-3 rounded-xl font-bold hover:bg-orange-700 transition text-sm text-center">
+                            <i class="fas fa-sign-in-alt mr-1"></i> Login to Download
+                        </a>
+                    </div>
+                @elseif($canDownload)
                     <a href="{{ route('research.download', $research->id) }}" class="block w-full bg-orange-600 text-white py-3 rounded-xl font-bold hover:bg-orange-700 transition text-sm text-center">
                         <i class="fas fa-download mr-1"></i> Download Full-Text PDF
                     </a>
