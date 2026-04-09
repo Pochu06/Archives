@@ -16,15 +16,17 @@ class ResearchFactory extends Factory
     {
         return [
             'title' => $this->faker->sentence(rand(8, 15)),
-            'abstract' => $this->faker->paragraphs(3, true),
+            'abstract' => $this->faker->paragraphs(2, true),
+            'introduction' => $this->faker->paragraphs(2, true),
+            'methodology' => $this->faker->paragraphs(2, true),
+            'results' => $this->faker->paragraphs(2, true),
+            'discussion' => $this->faker->paragraphs(2, true),
             'keywords' => implode(', ', $this->faker->words(6)),
             'authors' => $this->faker->name() . ', ' . $this->faker->name(),
             'college_id' => College::inRandomOrder()->first()->id,
             'category_id' => Category::inRandomOrder()->first()->id,
             'user_id' => User::where('role', 'student')->inRandomOrder()->first()->id,
-            'adviser_id' => User::where('role', 'adviser')->inRandomOrder()->first()->id,
-            'status' => $this->faker->randomElement(['pending', 'approved', 'rejected']),
-            'publication_year' => $this->faker->numberBetween(2018, 2024),
+            'publication_year' => $this->faker->numberBetween(2018, 2025),
         ];
     }
 }

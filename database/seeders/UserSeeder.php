@@ -24,7 +24,7 @@ class UserSeeder extends Seeder
         ]);
 
         // College Admins (one per college)
-        $adminNames = ['CICS Admin', 'CTED Admin', 'CBEA Admin', 'CFAS Admin', 'CIT Admin', 'CCJE Admin', 'CHM Admin'];
+        $adminNames = ['CICS Admin', 'CTED Admin', 'CBEA Admin', 'CFAS Admin', 'CIT Admin', 'CCJE Admin', 'CHM Admin', 'GS Admin'];
         foreach ($colleges as $index => $college) {
             User::create([
                 'name' => $adminNames[$index] ?? $college->code . ' Admin',
@@ -36,30 +36,15 @@ class UserSeeder extends Seeder
             ]);
         }
 
-        // Advisers
-        $adviserNames = [
-            ['name' => 'Dr. Lorna Reyes', 'college' => 'CICS'],
-            ['name' => 'Prof. Marco Santos', 'college' => 'CICS'],
-            ['name' => 'Dr. Clara Dizon', 'college' => 'CTED'],
-            ['name' => 'Prof. Henry Flores', 'college' => 'CBEA'],
-            ['name' => 'Dr. Nora Garcia', 'college' => 'CFAS'],
-            ['name' => 'Prof. Alan Torres', 'college' => 'CIT'],
-        ];
-
-        $advisers = [];
-        foreach ($adviserNames as $adviser) {
-            $college = $colleges->where('code', $adviser['college'])->first();
-            $slug = strtolower(str_replace(['.', ' '], ['', '.'], $adviser['name']));
-            $a = User::create([
-                'name' => $adviser['name'],
-                'email' => $slug . '@university.edu.ph',
-                'password' => Hash::make('password123'),
-                'role' => 'adviser',
-                'college_id' => $college ? $college->id : $colleges->first()->id,
-                'status' => 'active',
-            ]);
-            $advisers[] = $a;
-        }
+        // RDE Office (admin with access to all papers)
+        User::create([
+            'name' => 'RDE Office',
+            'email' => 'rde@university.edu.ph',
+            'password' => Hash::make('password123'),
+            'role' => 'admin',
+            'college_id' => null,
+            'status' => 'active',
+        ]);
 
         // Students
         $studentData = [
@@ -75,9 +60,8 @@ class UserSeeder extends Seeder
             ['name' => 'Nina Villanueva', 'college' => 'CTED', 'student_id' => '2021-00010'],
         ];
 
-        foreach ($studentData as $i => $student) {
+        foreach ($studentData as $student) {
             $college = $colleges->where('code', $student['college'])->first();
-            $adviserForStudent = $advisers[$i % count($advisers)];
             $slug = strtolower(str_replace(' ', '.', $student['name']));
             User::create([
                 'name' => $student['name'],
@@ -86,7 +70,6 @@ class UserSeeder extends Seeder
                 'role' => 'student',
                 'college_id' => $college ? $college->id : $colleges->first()->id,
                 'student_id' => $student['student_id'],
-                'adviser_id' => $adviserForStudent->id,
                 'status' => 'active',
             ]);
         }

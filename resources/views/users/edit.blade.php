@@ -27,7 +27,6 @@
                         <option value="super_admin" {{ old('role', $user->role) === 'super_admin' ? 'selected' : '' }}>Super Admin</option>
                         <option value="admin" {{ old('role', $user->role) === 'admin' ? 'selected' : '' }}>Admin</option>
                         @endif
-                        <option value="adviser" {{ old('role', $user->role) === 'adviser' ? 'selected' : '' }}>Adviser</option>
                         <option value="student" {{ old('role', $user->role) === 'student' ? 'selected' : '' }}>Student</option>
                     </select>
                 </div>

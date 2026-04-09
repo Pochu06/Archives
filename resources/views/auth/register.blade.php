@@ -1,10 +1,10 @@
 @extends('layouts.app')
 @section('title', 'Register - Research Archive')
 @section('auth-content')
-<div class="min-h-screen flex items-center justify-center py-12 px-4" style="background: linear-gradient(135deg, #7c2d12 0%, #ea580c 100%);">
+<div class="min-h-screen flex items-center justify-center py-12 px-4 bg-orange-100">
     <div class="bg-white rounded-3xl shadow-2xl p-10 w-full max-w-lg">
         <div class="text-center mb-8">
-            <div class="bg-gradient-to-br from-orange-500 to-orange-700 p-4 rounded-2xl inline-block mb-4">
+            <div class="bg-orange-600 p-4 rounded-2xl inline-block mb-4">
                 <i class="fas fa-user-plus text-white text-3xl"></i>
             </div>
             <h2 class="text-3xl font-bold text-gray-800">Create Account</h2>
@@ -54,7 +54,7 @@
                         class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-500">
                 </div>
             </div>
-            <button type="submit" class="w-full bg-gradient-to-r from-orange-600 to-orange-700 text-white py-3.5 rounded-xl font-bold text-lg hover:from-orange-700 hover:to-orange-800 transition shadow-lg">
+            <button type="submit" class="w-full bg-orange-600 text-white py-3.5 rounded-xl font-bold text-lg hover:bg-orange-700 transition shadow-lg">
                 <i class="fas fa-user-plus mr-2"></i> Create Account
             </button>
         </form>

@@ -1,40 +1,25 @@
 @extends('layouts.app')
 @section('title', 'Admin Dashboard')
 @section('page-title', 'College Admin Dashboard')
-@section('page-subtitle', 'College-level research and user management')
+@section('page-subtitle', 'College-level archive management')
 @section('content')
 <div class="space-y-6">
-    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+    <div class="grid grid-cols-2 gap-4">
         <div class="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl p-5 text-white shadow-lg">
-            <i class="fas fa-file-alt text-2xl mb-3 opacity-80"></i>
+            <i class="fas fa-archive text-2xl mb-3 opacity-80"></i>
             <p class="text-3xl font-extrabold">{{ $totalResearch }}</p>
-            <p class="text-orange-100 text-sm">College Research</p>
-        </div>
-        <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-2xl p-5 text-white shadow-lg">
-            <i class="fas fa-clock text-2xl mb-3 opacity-80"></i>
-            <p class="text-3xl font-extrabold">{{ $pendingResearch }}</p>
-            <p class="text-yellow-100 text-sm">Pending Review</p>
-        </div>
-        <div class="bg-gradient-to-br from-green-500 to-green-700 rounded-2xl p-5 text-white shadow-lg">
-            <i class="fas fa-check-circle text-2xl mb-3 opacity-80"></i>
-            <p class="text-3xl font-extrabold">{{ $approvedResearch }}</p>
-            <p class="text-green-100 text-sm">Approved</p>
+            <p class="text-orange-100 text-sm">Archived Papers</p>
         </div>
         <div class="bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl p-5 text-white shadow-lg">
             <i class="fas fa-user-graduate text-2xl mb-3 opacity-80"></i>
             <p class="text-3xl font-extrabold">{{ $totalStudents }}</p>
             <p class="text-blue-100 text-sm">Students</p>
         </div>
-        <div class="bg-gradient-to-br from-purple-500 to-purple-700 rounded-2xl p-5 text-white shadow-lg">
-            <i class="fas fa-chalkboard-teacher text-2xl mb-3 opacity-80"></i>
-            <p class="text-3xl font-extrabold">{{ $totalAdvisers }}</p>
-            <p class="text-purple-100 text-sm">Advisers</p>
-        </div>
     </div>
 
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
         <div class="p-6 border-b border-gray-100 flex justify-between">
-            <h3 class="font-bold text-gray-800 text-lg">Recent Research Submissions</h3>
+            <h3 class="font-bold text-gray-800 text-lg">Recently Archived Papers</h3>
             <a href="{{ route('research.index') }}" class="text-orange-600 text-sm font-semibold hover:underline">View All</a>
         </div>
         <div class="divide-y">
@@ -45,24 +30,17 @@
                     <a href="{{ route('research.show', $r->id) }}" class="font-semibold text-gray-800 text-sm hover:text-orange-600 block truncate">{{ $r->title }}</a>
                     <p class="text-xs text-gray-500">{{ $r->user->name ?? 'Unknown' }} &bull; {{ $r->created_at->diffForHumans() }}</p>
                 </div>
-                <span class="text-xs px-2 py-1 rounded-full {{ $r->status_badge }} font-medium">{{ ucfirst($r->status) }}</span>
-                @if($r->status === 'pending')
-                <form action="{{ route('research.approve', $r->id) }}" method="POST" class="inline">
-                    @csrf
-                    <button class="text-xs bg-green-500 text-white px-3 py-1 rounded-full hover:bg-green-600">Approve</button>
-                </form>
-                @endif
             </div>
             @empty
-            <p class="p-6 text-center text-gray-500">No submissions yet.</p>
+            <p class="p-6 text-center text-gray-500">No archived papers yet.</p>
             @endforelse
         </div>
     </div>
 
     <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
         <a href="{{ route('research.index') }}" class="flex items-center bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md hover:border-orange-200 transition">
-            <div class="bg-orange-100 p-3 rounded-xl mr-4"><i class="fas fa-file-alt text-orange-600 text-xl"></i></div>
-            <div><p class="font-bold text-gray-800">Research</p><p class="text-xs text-gray-500">Manage submissions</p></div>
+            <div class="bg-orange-100 p-3 rounded-xl mr-4"><i class="fas fa-archive text-orange-600 text-xl"></i></div>
+            <div><p class="font-bold text-gray-800">Archive</p><p class="text-xs text-gray-500">Browse papers</p></div>
         </a>
         <a href="{{ route('users.index') }}" class="flex items-center bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md hover:border-orange-200 transition">
             <div class="bg-blue-100 p-3 rounded-xl mr-4"><i class="fas fa-users text-blue-600 text-xl"></i></div>
