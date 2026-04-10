@@ -89,23 +89,27 @@
     <div>{{ $research->links() }}</div>
 </div>
 
-<div id="revisionModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
-        <h3 class="font-bold text-gray-800 mb-4">Request Revision</h3>
-        <p class="text-sm text-gray-500 mb-4">Choose the parts that need to be revised to be more concise and accurate.</p>
-        <form id="revisionForm" method="POST">
+<div id="revisionModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl max-w-xl w-full max-h-[90vh] overflow-hidden shadow-xl">
+        <form id="revisionForm" method="POST" class="flex max-h-[90vh] flex-col">
             @csrf
-            <p id="revisionFormError" class="hidden rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 mb-4"></p>
-            <div class="grid grid-cols-2 gap-2 mb-4">
-                @foreach($revisionFieldOptions as $fieldValue => $fieldLabel)
-                <label class="flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:border-amber-300 hover:bg-amber-50">
-                    <input type="checkbox" name="revision_fields[]" value="{{ $fieldValue }}" data-label="{{ $fieldLabel }}" class="revision-field-checkbox rounded border-gray-300 text-amber-500 focus:ring-amber-500">
-                    <span>{{ $fieldLabel }}</span>
-                </label>
-                @endforeach
+            <div class="border-b border-gray-100 px-6 py-5 shrink-0">
+                <h3 class="font-bold text-gray-800 mb-2">Request Revision</h3>
+                <p class="text-sm text-gray-500">Choose the parts that need to be revised to be more concise and accurate.</p>
             </div>
-            <div id="revisionFieldNotes" class="space-y-3 mb-4"></div>
-            <div class="flex gap-3">
+            <div class="flex-1 overflow-y-auto px-6 py-5">
+                <p id="revisionFormError" class="hidden rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 mb-4"></p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                    @foreach($revisionFieldOptions as $fieldValue => $fieldLabel)
+                    <label class="flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:border-amber-300 hover:bg-amber-50">
+                        <input type="checkbox" name="revision_fields[]" value="{{ $fieldValue }}" data-label="{{ $fieldLabel }}" class="revision-field-checkbox rounded border-gray-300 text-amber-500 focus:ring-amber-500">
+                        <span>{{ $fieldLabel }}</span>
+                    </label>
+                    @endforeach
+                </div>
+                <div id="revisionFieldNotes" class="space-y-3"></div>
+            </div>
+            <div class="flex gap-3 border-t border-gray-100 px-6 py-5 shrink-0 bg-white">
                 <button type="submit" class="flex-1 bg-amber-500 text-white py-2.5 rounded-xl font-semibold">Send Revision</button>
                 <button type="button" onclick="document.getElementById('revisionModal').classList.add('hidden')" class="flex-1 bg-gray-200 text-gray-700 py-2.5 rounded-xl font-semibold">Cancel</button>
             </div>
