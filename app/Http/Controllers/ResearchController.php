@@ -11,11 +11,17 @@ use App\Services\TopicSuggestionService;
 use App\Models\ResearchDraft;
 use Illuminate\Http\Request;
 use App\Models\DownloadRequest;
+use Illuminate\Validation\Rule;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
 
 class ResearchController extends Controller
 {
+    private function normalizedTitle(?string $title): string
+    {
+        return trim((string) $title);
+    }
+
     private function combinedResultsAndDiscussion(?string $results, ?string $discussion): string
     {
         $parts = array_filter([
@@ -226,8 +232,12 @@ class ResearchController extends Controller
     {
         if ($r = $this->authCheck()) return $r;
 
+        $request->merge([
+            'title' => $this->normalizedTitle($request->input('title')),
+        ]);
+
         $validated = $request->validate([
-            'title' => 'required|string|max:500',
+            'title' => ['required', 'string', 'max:500', Rule::unique('research', 'title')],
             'abstract' => 'required|string',
             'introduction' => 'required|string',
             'methodology' => 'required|string',
@@ -240,6 +250,8 @@ class ResearchController extends Controller
             'college_id' => 'required|exists:colleges,id',
             'category_id' => 'required|exists:categories,id',
             'publication_year' => 'required|integer|min:2000|max:' . (date('Y') + 1),
+        ], [
+            'title.unique' => 'A research paper with this title has already been submitted.',
         ]);
 
         $validated['discussion'] = null;
@@ -326,8 +338,12 @@ class ResearchController extends Controller
         if ($r = $this->authCheck()) return $r;
         $research = Research::findOrFail($id);
 
+        $request->merge([
+            'title' => $this->normalizedTitle($request->input('title')),
+        ]);
+
         $validated = $request->validate([
-            'title' => 'required|string|max:500',
+            'title' => ['required', 'string', 'max:500', Rule::unique('research', 'title')->ignore($research->id)],
             'abstract' => 'required|string',
             'introduction' => 'required|string',
             'methodology' => 'required|string',
@@ -340,6 +356,8 @@ class ResearchController extends Controller
             'college_id' => 'required|exists:colleges,id',
             'category_id' => 'required|exists:categories,id',
             'publication_year' => 'required|integer|min:2000|max:' . (date('Y') + 1),
+        ], [
+            'title.unique' => 'A research paper with this title already exists.',
         ]);
 
         $validated['discussion'] = null;
