@@ -20,6 +20,37 @@
 @section('page-subtitle', 'Update the archived research paper')
 @section('content')
 <div class="max-w-4xl mx-auto">
+    @if(in_array($research->status, [\App\Models\Research::STATUS_REVISION_COLLEGE, \App\Models\Research::STATUS_REVISION_RDE]) && (!empty($research->revision_field_note_entries) || $research->revision_notes))
+    <div class="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+        <div class="flex items-start gap-3">
+            <div class="mt-0.5 text-amber-600"><i class="fas fa-rotate-left"></i></div>
+            <div>
+                <p class="text-sm font-bold text-amber-900">Revision requested</p>
+                @if(!empty($research->revision_field_labels))
+                <div class="flex flex-wrap gap-2 mt-2">
+                    @foreach($research->revision_field_labels as $revisionFieldLabel)
+                    <span class="inline-flex rounded-full bg-white px-3 py-1 text-xs font-semibold text-amber-800 border border-amber-200">{{ $revisionFieldLabel }}</span>
+                    @endforeach
+                </div>
+                @endif
+                @if(!empty($research->revision_field_note_entries))
+                <div class="mt-3 space-y-2">
+                    @foreach($research->revision_field_note_entries as $revisionEntry)
+                    <div class="rounded-xl border border-amber-200 bg-white px-4 py-3">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-amber-700">{{ $revisionEntry['label'] }}</p>
+                        <p class="text-sm text-gray-700 mt-1">{{ $revisionEntry['note'] }}</p>
+                    </div>
+                    @endforeach
+                </div>
+                @endif
+                @if($research->revision_notes)
+                <p class="text-sm text-amber-800 mt-1">{{ $research->revision_notes }}</p>
+                @endif
+                <p class="text-xs text-amber-700 mt-2">Saving this form will resubmit the paper for {{ $research->status === \App\Models\Research::STATUS_REVISION_COLLEGE ? 'college' : 'RDE' }} approval.</p>
+            </div>
+        </div>
+    </div>
+    @endif
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="bg-gradient-to-r from-blue-600 to-blue-800 p-6 text-white">
             <h2 class="text-xl font-bold"><i class="fas fa-edit mr-2"></i>Edit Research Paper</h2>

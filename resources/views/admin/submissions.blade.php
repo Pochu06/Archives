@@ -10,6 +10,8 @@
                 <option value="">All Status</option>
                 <option value="pending_college" {{ request('status') === 'pending_college' ? 'selected' : '' }}>Pending College Approval</option>
                 <option value="pending_rde" {{ request('status') === 'pending_rde' ? 'selected' : '' }}>Pending RDE Approval</option>
+                <option value="revision_college" {{ request('status') === 'revision_college' ? 'selected' : '' }}>For College Revision</option>
+                <option value="revision_rde" {{ request('status') === 'revision_rde' ? 'selected' : '' }}>For RDE Revision</option>
                 <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>Approved</option>
                 <option value="rejected_college" {{ request('status') === 'rejected_college' ? 'selected' : '' }}>Rejected by College</option>
                 <option value="rejected_rde" {{ request('status') === 'rejected_rde' ? 'selected' : '' }}>Rejected by RDE</option>
@@ -44,6 +46,14 @@
                     <td class="px-5 py-4 text-sm text-gray-600">{{ $r->publication_year }}</td>
                     <td class="px-5 py-4">
                         <span class="text-xs px-2.5 py-1 rounded-full {{ $r->status_badge }} font-medium">{{ $r->status_label }}</span>
+                        @if(!empty($r->revision_field_labels))
+                        <p class="text-xs text-gray-600 mt-1">Sections: {{ implode(', ', $r->revision_field_labels) }}</p>
+                        @endif
+                        @if($r->revision_notes)
+                        <p class="text-xs text-orange-600 mt-1">{{ Str::limit($r->revision_notes, 70) }}</p>
+                        @elseif($r->rejection_reason)
+                        <p class="text-xs text-red-600 mt-1">{{ Str::limit($r->rejection_reason, 70) }}</p>
+                        @endif
                     </td>
                     <td class="px-5 py-4 text-right">
                         <div class="flex justify-end gap-2">
@@ -55,6 +65,9 @@
                                     <i class="fas fa-check mr-1"></i>{{ $showRdeLabels ? 'Final Approve' : 'Forward to RDE' }}
                                 </button>
                             </form>
+                            <button onclick="openRevisionModal({{ $r->id }})" class="text-xs bg-amber-500 text-white px-3 py-1.5 rounded-lg hover:bg-amber-600 font-medium">
+                                <i class="fas fa-rotate-left mr-1"></i>Revision
+                            </button>
                             <button onclick="openRejectModal({{ $r->id }})" class="text-xs bg-red-500 text-white px-3 py-1.5 rounded-lg hover:bg-red-600 font-medium">
                                 <i class="fas fa-times"></i>
                             </button>
@@ -76,6 +89,30 @@
     <div>{{ $research->links() }}</div>
 </div>
 
+<div id="revisionModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
+        <h3 class="font-bold text-gray-800 mb-4">Request Revision</h3>
+        <p class="text-sm text-gray-500 mb-4">Choose the parts that need to be revised to be more concise and accurate.</p>
+        <form id="revisionForm" method="POST">
+            @csrf
+            <p id="revisionFormError" class="hidden rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 mb-4"></p>
+            <div class="grid grid-cols-2 gap-2 mb-4">
+                @foreach($revisionFieldOptions as $fieldValue => $fieldLabel)
+                <label class="flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:border-amber-300 hover:bg-amber-50">
+                    <input type="checkbox" name="revision_fields[]" value="{{ $fieldValue }}" data-label="{{ $fieldLabel }}" class="revision-field-checkbox rounded border-gray-300 text-amber-500 focus:ring-amber-500">
+                    <span>{{ $fieldLabel }}</span>
+                </label>
+                @endforeach
+            </div>
+            <div id="revisionFieldNotes" class="space-y-3 mb-4"></div>
+            <div class="flex gap-3">
+                <button type="submit" class="flex-1 bg-amber-500 text-white py-2.5 rounded-xl font-semibold">Send Revision</button>
+                <button type="button" onclick="document.getElementById('revisionModal').classList.add('hidden')" class="flex-1 bg-gray-200 text-gray-700 py-2.5 rounded-xl font-semibold">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div id="rejectModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
     <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
         <h3 class="font-bold text-gray-800 mb-4">Reject Research</h3>
@@ -92,6 +129,77 @@
 @endsection
 @section('scripts')
 <script>
+const revisionFieldNotesContainer = document.getElementById('revisionFieldNotes');
+const revisionFieldCheckboxes = Array.from(document.querySelectorAll('.revision-field-checkbox'));
+const revisionFormError = document.getElementById('revisionFormError');
+
+function escapeHtml(value) {
+    return value.replace(/[&<>"']/g, function(character) {
+        return {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        }[character];
+    });
+}
+
+function renderRevisionFieldNotes() {
+    const selectedFields = revisionFieldCheckboxes.filter((checkbox) => checkbox.checked);
+
+    revisionFieldNotesContainer.innerHTML = selectedFields.map((checkbox) => {
+        const field = checkbox.value;
+        const label = checkbox.dataset.label;
+
+        return `
+            <div class="rounded-xl border border-amber-100 bg-amber-50 p-4">
+                <label class="block text-sm font-semibold text-amber-900 mb-2">${escapeHtml(label)} feedback</label>
+                <textarea name="revision_field_notes[${escapeHtml(field)}]" rows="3" required placeholder="Explain what must be revised in ${escapeHtml(label.toLowerCase())}..." class="w-full rounded-xl border border-amber-200 bg-white px-4 py-3 text-sm text-gray-700 focus:border-amber-500 focus:outline-none"></textarea>
+            </div>
+        `;
+    }).join('');
+}
+
+revisionFieldCheckboxes.forEach((checkbox) => {
+    checkbox.addEventListener('change', renderRevisionFieldNotes);
+});
+
+function openRevisionModal(id) {
+    const template = @json(route($revisionRouteName, ['id' => '__ID__']));
+    const revisionForm = document.getElementById('revisionForm');
+    revisionForm.action = template.replace('__ID__', id);
+    revisionForm.reset();
+    revisionFormError.classList.add('hidden');
+    revisionFormError.textContent = '';
+    renderRevisionFieldNotes();
+    document.getElementById('revisionModal').classList.remove('hidden');
+}
+
+document.getElementById('revisionForm').addEventListener('submit', function(event) {
+    const selectedFields = revisionFieldCheckboxes.filter((checkbox) => checkbox.checked);
+
+    if (selectedFields.length === 0) {
+        event.preventDefault();
+        revisionFormError.textContent = 'Select at least one section to revise.';
+        revisionFormError.classList.remove('hidden');
+        return;
+    }
+
+    const noteInputs = revisionFieldNotesContainer.querySelectorAll('textarea');
+    const hasMissingNote = Array.from(noteInputs).some((input) => input.value.trim() === '');
+
+    if (hasMissingNote) {
+        event.preventDefault();
+        revisionFormError.textContent = 'Add a revision note for every selected section.';
+        revisionFormError.classList.remove('hidden');
+        return;
+    }
+
+    revisionFormError.classList.add('hidden');
+    revisionFormError.textContent = '';
+});
+
 function openRejectModal(id) {
     const template = @json(route($rejectRouteName, ['id' => '__ID__']));
     document.getElementById('rejectForm').action = template.replace('__ID__', id);
