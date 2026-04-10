@@ -26,6 +26,8 @@ class ResearchFactory extends Factory
             'college_id' => College::inRandomOrder()->first()->id,
             'category_id' => Category::inRandomOrder()->first()->id,
             'user_id' => User::where('role', 'student')->inRandomOrder()->first()->id,
+            'status' => Research::STATUS_APPROVED,
+            'approved_at' => now(),
             'publication_year' => $this->faker->numberBetween(2018, 2025),
         ];
     }

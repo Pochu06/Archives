@@ -99,6 +99,9 @@
                 <a href="{{ route('research.public') }}" class="bg-white text-orange-700 font-bold px-8 py-4 rounded-xl hover:bg-orange-50 transition shadow-lg text-lg">
                     <i class="fas fa-book-open mr-2"></i> Browse Public Research
                 </a>
+                <a href="{{ route('research.topic-suggestions') }}" class="bg-orange-900/30 border-2 border-white text-white font-bold px-8 py-4 rounded-xl hover:bg-white/10 transition text-lg">
+                    <i class="fas fa-lightbulb mr-2"></i> AI Topic Suggestions
+                </a>
                 @if(session('user_id'))
                     <a href="{{ route('dashboard') }}" class="border-2 border-white text-white font-bold px-8 py-4 rounded-xl hover:bg-white/10 transition text-lg">
                         Go to Dashboard
@@ -108,7 +111,6 @@
                         <i class="fas fa-user-graduate mr-2"></i> Join as Student
                     </a>
                 @endif
-                
             </div>
         </div>
     </section>

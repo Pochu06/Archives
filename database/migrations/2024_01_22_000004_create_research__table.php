@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignId('category_id')->constrained('categories')->onDelete('cascade');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('adviser_id')->nullable()->constrained('users')->onDelete('set null');
-            $table->string('status')->default('pending');
+            $table->string('status')->default('pending_college');
             $table->integer('publication_year');
             $table->string('file_path')->nullable();
             $table->string('file_name')->nullable();

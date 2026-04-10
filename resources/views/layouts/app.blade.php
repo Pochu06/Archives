@@ -78,6 +78,11 @@
             <a href="{{ route('research.create') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('research.create') ? 'active' : '' }}">
                 <i class="fas fa-plus-circle w-5"></i><span>Archive Paper</span>
             </a>
+            @if(session('user_role') === 'student')
+            <a href="{{ route('submissions.index') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('submissions.index') ? 'active' : '' }}">
+                <i class="fas fa-paper-plane w-5"></i><span>My Submissions</span>
+            </a>
+            @endif
             @if(!in_array(session('user_role'), ['super_admin', 'admin']))
             <a href="{{ route('download-request.my') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('download-request.my') ? 'active' : '' }}">
                 <i class="fas fa-clipboard-list w-5"></i><span>My Requests</span>
@@ -93,6 +98,30 @@
             <a href="{{ route('categories.index') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('categories.*') ? 'active' : '' }}">
                 <i class="fas fa-tags w-5"></i><span>Categories</span>
             </a>
+            @if(session('user_role') === 'admin' && session('user_college_id'))
+            <a href="{{ route('submissions.college') }}" class="sidebar-link flex items-center justify-between px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('submissions.college') ? 'active' : '' }}">
+                <span class="flex items-center space-x-3">
+                    <i class="fas fa-building-columns w-5"></i><span>College Approvals</span>
+                </span>
+                @if(($collegeApprovalCount ?? 0) > 0)
+                <span class="ml-3 min-w-[1.5rem] h-6 px-2 inline-flex items-center justify-center rounded-full bg-red-500 text-white text-xs font-bold">
+                    {{ $collegeApprovalCount }}
+                </span>
+                @endif
+            </a>
+            @endif
+            @if(session('user_role') === 'super_admin' || (session('user_role') === 'admin' && !session('user_college_id')))
+            <a href="{{ route('submissions.rde') }}" class="sidebar-link flex items-center justify-between px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('submissions.rde') ? 'active' : '' }}">
+                <span class="flex items-center space-x-3">
+                    <i class="fas fa-stamp w-5"></i><span>RDE Approvals</span>
+                </span>
+                @if(($rdeApprovalCount ?? 0) > 0)
+                <span class="ml-3 min-w-[1.5rem] h-6 px-2 inline-flex items-center justify-center rounded-full bg-red-500 text-white text-xs font-bold">
+                    {{ $rdeApprovalCount }}
+                </span>
+                @endif
+            </a>
+            @endif
             @if(session('user_role') === 'super_admin' || (session('user_role') === 'admin' && !session('user_college_id')))
             <a href="{{ route('download-request.index') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('download-request.index') ? 'active' : '' }}">
                 <i class="fas fa-file-download w-5"></i><span>Download Requests</span>
