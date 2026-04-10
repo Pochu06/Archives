@@ -255,7 +255,6 @@ class ResearchController extends Controller
 
     public function show($id, ResearchSummaryService $researchSummaryService, RelatedResearchService $relatedResearchService)
     {
-        if ($r = $this->authCheck()) return $r;
         $research = Research::with(['user', 'college', 'category'])->findOrFail($id);
 
         if (!in_array(session('user_role'), ['super_admin', 'admin'])
@@ -272,15 +271,16 @@ class ResearchController extends Controller
         $aiSummary = $researchSummaryService->generateForResearch($research);
         $relatedResearch = $relatedResearchService->generateForResearch($research);
 
-        return view('research.show', compact('research', 'downloadRequest', 'canDownload', 'aiSummary', 'relatedResearch'));
-    }
-
-    public function publicShow($id, ResearchSummaryService $researchSummaryService, RelatedResearchService $relatedResearchService)
-    {
-        $research = Research::with(['user', 'college', 'category'])->approved()->findOrFail($id);
-        extract($this->buildShowViewData($research));
-        $aiSummary = $researchSummaryService->generateForResearch($research);
-        $relatedResearch = $relatedResearchService->generateForResearch($research);
+        $downloadRequest = null;
+        $canDownload = false;
+        if ($userId) {
+            $downloadRequest = DownloadRequest::where('user_id', $userId)
+                ->where('research_id', $id)
+                ->orderBy('created_at', 'desc')
+                ->first();
+            $canDownload = ($role === 'super_admin' || ($role === 'admin' && !$collegeId))
+                || ($downloadRequest && $downloadRequest->status === 'approved');
+        }
 
         return view('research.show', compact('research', 'downloadRequest', 'canDownload', 'aiSummary', 'relatedResearch'));
     }

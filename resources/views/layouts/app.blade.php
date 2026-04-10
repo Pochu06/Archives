@@ -184,35 +184,38 @@
 @if(View::hasSection('auth-content'))
     @yield('auth-content')
 @else
+    {{-- Guest / Public layout --}}
     <div class="min-h-screen bg-gray-50">
         <nav class="bg-white border-b border-gray-200 sticky top-0 z-40">
-            <div class="max-w-7xl mx-auto px-4 py-3 sm:py-4 flex flex-wrap items-center justify-between gap-3">
+            <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
                 <a href="{{ url('/') }}" class="flex items-center space-x-3">
                     <div class="bg-orange-600 p-2 rounded-lg">
                         <i class="fas fa-book-open text-white"></i>
                     </div>
                     <span class="font-bold text-gray-900">ARCHIVES</span>
                 </a>
-                <div class="flex items-center gap-2 ml-auto">
-                    <a href="{{ route('research.public') }}" class="px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">Browse Research</a>
-                    <a href="{{ route('research.topic-suggestions') }}" class="px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">AI Finder</a>
-                    <a href="{{ route('login') }}" class="px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">Login</a>
-                    <a href="{{ route('register') }}" class="px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold text-white bg-orange-600 hover:bg-orange-700">Register</a>
+                <div class="flex items-center gap-2">
+                    <a href="{{ route('research.public') }}" class="px-3 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">Browse Research</a>
+                    <a href="{{ route('login') }}" class="px-3 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">Login</a>
+                    <a href="{{ route('register') }}" class="px-3 py-2 rounded-lg text-sm font-semibold text-white bg-orange-600 hover:bg-orange-700">Register</a>
                 </div>
             </div>
         </nav>
-
-        <div class="max-w-7xl mx-auto px-4 py-4 sm:py-6">
-            @if(session('success'))
-            <div class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center">
+        @if(session('success'))
+        <div class="max-w-7xl mx-auto px-4 mt-4">
+            <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center">
                 <i class="fas fa-check-circle mr-2"></i> {{ session('success') }}
             </div>
-            @endif
-            @if(session('error'))
-            <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center">
+        </div>
+        @endif
+        @if(session('error'))
+        <div class="max-w-7xl mx-auto px-4 mt-4">
+            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center">
                 <i class="fas fa-exclamation-circle mr-2"></i> {{ session('error') }}
             </div>
-            @endif
+        </div>
+        @endif
+        <div class="p-4 sm:p-6">
             @yield('content')
         </div>
     </div>

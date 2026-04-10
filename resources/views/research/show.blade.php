@@ -196,10 +196,12 @@
             {{-- Download / Request Card --}}
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
                 @if(!session('user_id'))
-                    <a href="{{ route('login') }}" class="block w-full bg-orange-600 text-white py-3 rounded-xl font-bold hover:bg-orange-700 transition text-sm text-center">
-                        <i class="fas fa-sign-in-alt mr-1"></i> Login to Request Download
-                    </a>
-                    <p class="text-xs text-gray-500 text-center mt-2">Guests can view the paper, but login is required for download requests.</p>
+                    <div class="text-center">
+                        <p class="text-sm text-gray-700 mb-2">Login to request or download the full-text PDF.</p>
+                        <a href="{{ route('login') }}" class="block w-full bg-orange-600 text-white py-3 rounded-xl font-bold hover:bg-orange-700 transition text-sm text-center">
+                            <i class="fas fa-sign-in-alt mr-1"></i> Login to Download
+                        </a>
+                    </div>
                 @elseif($canDownload)
                     <a href="{{ route('research.download', $research->id) }}" class="block w-full bg-orange-600 text-white py-3 rounded-xl font-bold hover:bg-orange-700 transition text-sm text-center">
                         <i class="fas fa-download mr-1"></i> Download Full-Text PDF
