@@ -20,7 +20,7 @@
     <div class="bg-blue-50 border border-blue-200 rounded-2xl p-5 md:p-6">
         <h2 class="text-lg font-bold text-blue-900 mb-3"><i class="fas fa-lightbulb mr-2"></i>Before You Start</h2>
         <ul class="list-disc pl-5 text-sm text-blue-900 space-y-2">
-            <li>Write one section at a time: Abstract, Introduction, Methodology, Results, Discussion, Conclusion, Recommendations, and References.</li>
+            <li>Write one section at a time: Abstract, Introduction, Methodology, Results and Discussion, Conclusion, Recommendations, and References.</li>
             <li>Use simple, complete sentences and avoid very long paragraphs.</li>
             <li>Use the toolbar buttons for bold, italic, underline, tables, and preview.</li>
             <li>For references, put one source per line in APA 7th style.</li>

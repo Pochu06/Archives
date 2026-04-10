@@ -16,6 +16,16 @@ use Illuminate\Support\Facades\Storage;
 
 class ResearchController extends Controller
 {
+    private function combinedResultsAndDiscussion(?string $results, ?string $discussion): string
+    {
+        $parts = array_filter([
+            trim((string) $results),
+            trim((string) $discussion),
+        ], fn (?string $value) => $value !== null && $value !== '');
+
+        return implode("\n\n", array_unique($parts));
+    }
+
     private function buildShowViewData(Research $research): array
     {
         $userId = session('user_id');
@@ -166,10 +176,11 @@ class ResearchController extends Controller
         $userId = session('user_id');
         $data = $request->only([
             'title', 'abstract', 'introduction', 'methodology',
-            'results', 'discussion', 'references', 'conclusion',
+            'results', 'references', 'conclusion',
             'recommendations', 'keywords', 'authors',
             'college_id', 'category_id', 'publication_year',
         ]);
+        $data['discussion'] = null;
         $data['user_id'] = $userId;
         $data['last_saved_at'] = now();
 
@@ -221,7 +232,6 @@ class ResearchController extends Controller
             'introduction' => 'required|string',
             'methodology' => 'required|string',
             'results' => 'required|string',
-            'discussion' => 'required|string',
             'references' => 'required|string',
             'conclusion' => 'required|string',
             'recommendations' => 'required|string',
@@ -231,6 +241,8 @@ class ResearchController extends Controller
             'category_id' => 'required|exists:categories,id',
             'publication_year' => 'required|integer|min:2000|max:' . (date('Y') + 1),
         ]);
+
+        $validated['discussion'] = null;
 
         $validated['user_id'] = session('user_id');
 
@@ -257,6 +269,14 @@ class ResearchController extends Controller
     {
         $research = Research::with(['user', 'college', 'category'])->findOrFail($id);
 
+        if (!session('user_id')) {
+            if ($research->status !== Research::STATUS_APPROVED) {
+                return redirect()->route('login');
+            }
+
+            return redirect()->route('research.public-show', $research->id);
+        }
+
         if (!in_array(session('user_role'), ['super_admin', 'admin'])
             && $research->status !== Research::STATUS_APPROVED
             && $research->user_id !== session('user_id')) {
@@ -271,16 +291,16 @@ class ResearchController extends Controller
         $aiSummary = $researchSummaryService->generateForResearch($research);
         $relatedResearch = $relatedResearchService->generateForResearch($research);
 
-        $downloadRequest = null;
-        $canDownload = false;
-        if ($userId) {
-            $downloadRequest = DownloadRequest::where('user_id', $userId)
-                ->where('research_id', $id)
-                ->orderBy('created_at', 'desc')
-                ->first();
-            $canDownload = ($role === 'super_admin' || ($role === 'admin' && !$collegeId))
-                || ($downloadRequest && $downloadRequest->status === 'approved');
-        }
+        return view('research.show', compact('research', 'downloadRequest', 'canDownload', 'aiSummary', 'relatedResearch'));
+    }
+
+    public function publicShow($id, ResearchSummaryService $researchSummaryService, RelatedResearchService $relatedResearchService)
+    {
+        $research = Research::with(['user', 'college', 'category'])->approved()->findOrFail($id);
+
+        extract($this->buildShowViewData($research));
+        $aiSummary = $researchSummaryService->generateForResearch($research);
+        $relatedResearch = $relatedResearchService->generateForResearch($research);
 
         return view('research.show', compact('research', 'downloadRequest', 'canDownload', 'aiSummary', 'relatedResearch'));
     }
@@ -312,7 +332,6 @@ class ResearchController extends Controller
             'introduction' => 'required|string',
             'methodology' => 'required|string',
             'results' => 'required|string',
-            'discussion' => 'required|string',
             'references' => 'required|string',
             'conclusion' => 'required|string',
             'recommendations' => 'required|string',
@@ -322,6 +341,8 @@ class ResearchController extends Controller
             'category_id' => 'required|exists:categories,id',
             'publication_year' => 'required|integer|min:2000|max:' . (date('Y') + 1),
         ]);
+
+        $validated['discussion'] = null;
 
         $research->update($validated);
 

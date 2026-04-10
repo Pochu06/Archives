@@ -153,21 +153,13 @@
             </div>
 
             <div>
-                <label class="block text-gray-700 font-semibold mb-2">Results <span class="text-red-500">*</span></label>
+                <label class="block text-gray-700 font-semibold mb-2">Results and Discussion <span class="text-red-500">*</span></label>
                 @include('research.partials.formatter-toolbar', ['target' => 'results'])
-                <textarea name="results" id="results" rows="5" placeholder="Key findings, data analysis results..."
+                <textarea name="results" id="results" rows="7" placeholder="Present your findings, then explain what they mean and relate them to previous studies..."
                     class="fmt-textarea w-full px-4 py-3 border-2 border-gray-200 rounded-b-xl rounded-t-none focus:outline-none focus:border-orange-500 @error('results') border-red-400 @enderror">{{ old('results') }}</textarea>
                 <div id="preview-results" class="fmt-preview hidden"></div>
+                <p class="text-xs text-gray-400 mt-1"><i class="fas fa-info-circle mr-1"></i>Write the findings and their interpretation in one combined section.</p>
                 @error('results')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
-            </div>
-
-            <div>
-                <label class="block text-gray-700 font-semibold mb-2">Discussion <span class="text-red-500">*</span></label>
-                @include('research.partials.formatter-toolbar', ['target' => 'discussion'])
-                <textarea name="discussion" id="discussion" rows="5" placeholder="Interpretation of results, comparison with related literature..."
-                    class="fmt-textarea w-full px-4 py-3 border-2 border-gray-200 rounded-b-xl rounded-t-none focus:outline-none focus:border-orange-500 @error('discussion') border-red-400 @enderror">{{ old('discussion') }}</textarea>
-                <div id="preview-discussion" class="fmt-preview hidden"></div>
-                @error('discussion')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
             </div>
 
             {{-- Conclusion & Recommendations --}}
