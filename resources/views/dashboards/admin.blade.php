@@ -15,6 +15,11 @@
             <p class="text-3xl font-extrabold">{{ $totalStudents }}</p>
             <p class="text-blue-100 text-sm">Students</p>
         </div>
+        <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-2xl p-5 text-white shadow-lg col-span-2">
+            <i class="fas fa-hourglass-half text-2xl mb-3 opacity-80"></i>
+            <p class="text-3xl font-extrabold">{{ $pendingResearch }}</p>
+            <p class="text-yellow-100 text-sm">{{ session('user_college_id') ? 'Pending College Review' : 'Pending RDE Review' }}</p>
+        </div>
     </div>
 
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
@@ -49,6 +54,18 @@
         <a href="{{ route('categories.index') }}" class="flex items-center bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md hover:border-orange-200 transition">
             <div class="bg-green-100 p-3 rounded-xl mr-4"><i class="fas fa-tags text-green-600 text-xl"></i></div>
             <div><p class="font-bold text-gray-800">Categories</p><p class="text-xs text-gray-500">Manage categories</p></div>
+        </a>
+        <a href="{{ session('user_college_id') ? route('submissions.college') : route('submissions.rde') }}" class="flex items-center justify-between bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md hover:border-orange-200 transition">
+            <div class="flex items-center min-w-0">
+                <div class="bg-yellow-100 p-3 rounded-xl mr-4"><i class="fas fa-clipboard-check text-yellow-700 text-xl"></i></div>
+                <div><p class="font-bold text-gray-800">Approvals</p><p class="text-xs text-gray-500">Review paper submissions</p></div>
+            </div>
+            @php($approvalBubbleCount = session('user_college_id') ? ($collegeApprovalCount ?? 0) : ($rdeApprovalCount ?? 0))
+            @if($approvalBubbleCount > 0)
+            <span class="ml-3 min-w-[1.75rem] h-7 px-2 inline-flex items-center justify-center rounded-full bg-red-500 text-white text-xs font-bold shrink-0">
+                {{ $approvalBubbleCount }}
+            </span>
+            @endif
         </a>
     </div>
 </div>

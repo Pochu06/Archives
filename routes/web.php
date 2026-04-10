@@ -8,6 +8,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\CollegeController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DownloadRequestController;
+use App\Http\Controllers\SubmissionController;
 
 // Welcome / Landing
 Route::get('/', function () { return view('welcome'); });
@@ -24,6 +25,8 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
 
 // Research Archive
 Route::get('/research/public', [ResearchController::class, 'publicIndex'])->name('research.public');
+Route::get('/research/public/{id}', [ResearchController::class, 'publicShow'])->name('research.public-show');
+Route::get('/research/topic-suggestions', [ResearchController::class, 'topicSuggestions'])->name('research.topic-suggestions');
 Route::get('/research', [ResearchController::class, 'index'])->name('research.index');
 Route::get('/research/create', [ResearchController::class, 'create'])->name('research.create');
 Route::get('/research/tutorial', [ResearchController::class, 'tutorial'])->name('research.tutorial');
@@ -38,6 +41,15 @@ Route::delete('/research/{id}', [ResearchController::class, 'destroy'])->name('r
 Route::get('/research/{id}/download', [ResearchController::class, 'download'])->name('research.download');
 Route::post('/research/upload-image', [ResearchController::class, 'uploadImage'])->name('research.upload-image');
 Route::post('/research/delete-image', [ResearchController::class, 'deleteImage'])->name('research.delete-image');
+
+// Submission Workflow
+Route::get('/my-submissions', [SubmissionController::class, 'index'])->name('submissions.index');
+Route::get('/college-submissions', [SubmissionController::class, 'collegeIndex'])->name('submissions.college');
+Route::get('/rde-submissions', [SubmissionController::class, 'rdeIndex'])->name('submissions.rde');
+Route::post('/submissions/{id}/college-approve', [SubmissionController::class, 'approveByCollege'])->name('submissions.college-approve');
+Route::post('/submissions/{id}/college-reject', [SubmissionController::class, 'rejectByCollege'])->name('submissions.college-reject');
+Route::post('/submissions/{id}/rde-approve', [SubmissionController::class, 'approveByRde'])->name('submissions.rde-approve');
+Route::post('/submissions/{id}/rde-reject', [SubmissionController::class, 'rejectByRde'])->name('submissions.rde-reject');
 
 // Download Requests
 Route::post('/research/{id}/request-download', [DownloadRequestController::class, 'store'])->name('download-request.store');

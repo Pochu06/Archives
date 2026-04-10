@@ -16,7 +16,7 @@
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
             <div class="p-6 border-b flex justify-between">
                 <h3 class="font-bold text-gray-800">My Papers</h3>
-                <a href="{{ route('research.index') }}" class="text-orange-600 text-sm font-semibold hover:underline">View All</a>
+                <a href="{{ route('submissions.index') }}" class="text-orange-600 text-sm font-semibold hover:underline">View All</a>
             </div>
             <div class="divide-y">
                 @forelse($recentResearch as $r)
@@ -50,11 +50,11 @@
 
     <div class="bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-2xl p-6 flex items-center justify-between">
         <div>
-            <h3 class="font-bold text-orange-800 text-lg">Ready to archive your research?</h3>
-            <p class="text-orange-700 text-sm">Upload your final IMRAD research paper to the archive.</p>
+            <h3 class="font-bold text-orange-800 text-lg">Ready to submit your research?</h3>
+            <p class="text-orange-700 text-sm">Submit your final IMRAD paper for college approval and RDE review.</p>
         </div>
         <a href="{{ route('research.create') }}" class="bg-gradient-to-r from-orange-600 to-orange-700 text-white px-6 py-3 rounded-xl font-bold hover:from-orange-700 hover:to-orange-800 transition shadow flex-shrink-0">
-            <i class="fas fa-plus mr-2"></i> Archive Paper
+            <i class="fas fa-plus mr-2"></i> Submit Paper
         </a>
     </div>
 </div>

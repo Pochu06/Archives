@@ -33,6 +33,7 @@
                 <span class="font-bold text-gray-900">ARCHIVES</span>
             </a>
             <div class="flex items-center gap-2 ml-auto">
+                <a href="{{ route('research.topic-suggestions') }}" class="px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">AI Topic Suggestions</a>
                 @if(session('user_id'))
                 <a href="{{ route('dashboard') }}" class="px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">Dashboard</a>
                 @else
@@ -51,6 +52,17 @@
     </header>
 
     <main class="max-w-7xl mx-auto px-4 py-8">
+        <div class="bg-gradient-to-r from-blue-50 to-orange-50 border border-blue-100 rounded-2xl p-5 md:p-6 mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-wider text-blue-700 mb-1">New AI Feature</p>
+                <h2 class="text-xl font-bold text-gray-900">Need a thesis or capstone idea?</h2>
+                <p class="text-gray-600 mt-1 max-w-3xl">Use archived research plus AI to generate possible study topics based on your interest, category, and college.</p>
+            </div>
+            <a href="{{ route('research.topic-suggestions') }}" class="inline-flex items-center justify-center bg-orange-600 text-white px-5 py-3 rounded-xl font-semibold hover:bg-orange-700 transition">
+                <i class="fas fa-lightbulb mr-2"></i> Open Topic Suggestions
+            </a>
+        </div>
+
         <form method="GET" action="{{ route('research.public') }}" class="bg-white border border-gray-200 rounded-2xl p-4 md:p-5 mb-6">
             <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Search title, abstract, keywords, authors"
@@ -98,7 +110,7 @@
                     @if(session('user_id'))
                     <a href="{{ route('research.show', $item->id) }}" class="w-full text-center bg-orange-600 text-white text-sm font-semibold py-2.5 rounded-lg hover:bg-orange-700">Open & Request Download</a>
                     @else
-                    <a href="{{ route('login') }}" class="w-full text-center bg-orange-600 text-white text-sm font-semibold py-2.5 rounded-lg hover:bg-orange-700">Login to Request Download</a>
+                    <a href="{{ route('research.public-show', $item->id) }}" class="w-full text-center bg-orange-600 text-white text-sm font-semibold py-2.5 rounded-lg hover:bg-orange-700">View Research</a>
                     @endif
                 </div>
             </article>

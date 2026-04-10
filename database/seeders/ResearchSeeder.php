@@ -13,6 +13,7 @@ class ResearchSeeder extends Seeder
     public function run()
     {
         $students = User::where('role', 'student')->get();
+        $approver = User::whereIn('role', ['super_admin', 'admin'])->orderBy('id')->first();
         $colleges = College::all();
         $categories = Category::all();
 
@@ -135,6 +136,9 @@ class ResearchSeeder extends Seeder
                 'college_id' => $college ? $college->id : $colleges->first()->id,
                 'category_id' => $category->id,
                 'user_id' => $student ? $student->id : User::where('role', 'student')->first()->id,
+                'status' => Research::STATUS_APPROVED,
+                'approved_by' => $approver?->id,
+                'approved_at' => now(),
                 'publication_year' => rand(2020, 2025),
             ]);
         }

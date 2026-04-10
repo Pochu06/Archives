@@ -1,7 +1,7 @@
 ﻿@extends('layouts.app')
-@section('title', 'Archive Research Paper')
-@section('page-title', 'Archive Research Paper')
-@section('page-subtitle', 'Add a final IMRAD research paper to the archive')
+@section('title', session('user_role') === 'student' ? 'Submit Research Paper' : 'Archive Research Paper')
+@section('page-title', session('user_role') === 'student' ? 'Submit Research Paper' : 'Archive Research Paper')
+@section('page-subtitle', session('user_role') === 'student' ? 'Submit your final IMRAD paper for college and RDE approval' : 'Add a final IMRAD research paper to the archive')
 
 @section('styles')
 <style>
@@ -67,8 +67,8 @@
         <div class="bg-gradient-to-r from-orange-600 to-orange-800 p-6 text-white">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
-                    <h2 class="text-xl font-bold"><i class="fas fa-file-upload mr-2"></i>Archive Final Research Paper</h2>
-                    <p class="text-orange-100 text-sm mt-1">Fill in the IMRAD sections. A PDF will be generated automatically.</p>
+                    <h2 class="text-xl font-bold"><i class="fas fa-file-upload mr-2"></i>{{ session('user_role') === 'student' ? 'Submit Final Research Paper' : 'Archive Final Research Paper' }}</h2>
+                    <p class="text-orange-100 text-sm mt-1">{{ session('user_role') === 'student' ? 'Fill in the IMRAD sections and submit it for college approval, then RDE approval.' : 'Fill in the IMRAD sections. A PDF will be generated automatically.' }}</p>
                 </div>
                 <a href="{{ route('research.tutorial') }}" class="inline-flex items-center justify-center sm:justify-start bg-white text-orange-700 text-sm font-bold px-4 py-2 rounded-lg hover:bg-orange-50 transition">
                     <i class="fas fa-book-open mr-2"></i> Formatting Tutorial
@@ -256,7 +256,7 @@
                     <i class="fas fa-save"></i> <span>Save Draft</span>
                 </button>
                 <button type="submit" class="bg-gradient-to-r from-orange-600 to-orange-700 text-white px-8 py-3 rounded-xl font-bold hover:from-orange-700 hover:to-orange-800 transition shadow">
-                    <i class="fas fa-archive mr-1"></i> Archive Paper
+                    <i class="fas fa-paper-plane mr-1"></i> {{ session('user_role') === 'student' ? 'Submit for Approval' : 'Archive Paper' }}
                 </button>
             </div>
         </form>

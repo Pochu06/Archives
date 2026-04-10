@@ -78,6 +78,11 @@
             <a href="{{ route('research.create') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('research.create') ? 'active' : '' }}">
                 <i class="fas fa-plus-circle w-5"></i><span>Archive Paper</span>
             </a>
+            @if(session('user_role') === 'student')
+            <a href="{{ route('submissions.index') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('submissions.index') ? 'active' : '' }}">
+                <i class="fas fa-paper-plane w-5"></i><span>My Submissions</span>
+            </a>
+            @endif
             @if(!in_array(session('user_role'), ['super_admin', 'admin']))
             <a href="{{ route('download-request.my') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('download-request.my') ? 'active' : '' }}">
                 <i class="fas fa-clipboard-list w-5"></i><span>My Requests</span>
@@ -93,6 +98,30 @@
             <a href="{{ route('categories.index') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('categories.*') ? 'active' : '' }}">
                 <i class="fas fa-tags w-5"></i><span>Categories</span>
             </a>
+            @if(session('user_role') === 'admin' && session('user_college_id'))
+            <a href="{{ route('submissions.college') }}" class="sidebar-link flex items-center justify-between px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('submissions.college') ? 'active' : '' }}">
+                <span class="flex items-center space-x-3">
+                    <i class="fas fa-building-columns w-5"></i><span>College Approvals</span>
+                </span>
+                @if(($collegeApprovalCount ?? 0) > 0)
+                <span class="ml-3 min-w-[1.5rem] h-6 px-2 inline-flex items-center justify-center rounded-full bg-red-500 text-white text-xs font-bold">
+                    {{ $collegeApprovalCount }}
+                </span>
+                @endif
+            </a>
+            @endif
+            @if(session('user_role') === 'super_admin' || (session('user_role') === 'admin' && !session('user_college_id')))
+            <a href="{{ route('submissions.rde') }}" class="sidebar-link flex items-center justify-between px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('submissions.rde') ? 'active' : '' }}">
+                <span class="flex items-center space-x-3">
+                    <i class="fas fa-stamp w-5"></i><span>RDE Approvals</span>
+                </span>
+                @if(($rdeApprovalCount ?? 0) > 0)
+                <span class="ml-3 min-w-[1.5rem] h-6 px-2 inline-flex items-center justify-center rounded-full bg-red-500 text-white text-xs font-bold">
+                    {{ $rdeApprovalCount }}
+                </span>
+                @endif
+            </a>
+            @endif
             @if(session('user_role') === 'super_admin' || (session('user_role') === 'admin' && !session('user_college_id')))
             <a href="{{ route('download-request.index') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('download-request.index') ? 'active' : '' }}">
                 <i class="fas fa-file-download w-5"></i><span>Download Requests</span>
@@ -152,7 +181,42 @@
     </main>
 </div>
 @else
+@if(View::hasSection('auth-content'))
     @yield('auth-content')
+@else
+    <div class="min-h-screen bg-gray-50">
+        <nav class="bg-white border-b border-gray-200 sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto px-4 py-3 sm:py-4 flex flex-wrap items-center justify-between gap-3">
+                <a href="{{ url('/') }}" class="flex items-center space-x-3">
+                    <div class="bg-orange-600 p-2 rounded-lg">
+                        <i class="fas fa-book-open text-white"></i>
+                    </div>
+                    <span class="font-bold text-gray-900">ARCHIVES</span>
+                </a>
+                <div class="flex items-center gap-2 ml-auto">
+                    <a href="{{ route('research.public') }}" class="px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">Browse Research</a>
+                    <a href="{{ route('research.topic-suggestions') }}" class="px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">AI Finder</a>
+                    <a href="{{ route('login') }}" class="px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">Login</a>
+                    <a href="{{ route('register') }}" class="px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold text-white bg-orange-600 hover:bg-orange-700">Register</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="max-w-7xl mx-auto px-4 py-4 sm:py-6">
+            @if(session('success'))
+            <div class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center">
+                <i class="fas fa-check-circle mr-2"></i> {{ session('success') }}
+            </div>
+            @endif
+            @if(session('error'))
+            <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center">
+                <i class="fas fa-exclamation-circle mr-2"></i> {{ session('error') }}
+            </div>
+            @endif
+            @yield('content')
+        </div>
+    </div>
+@endif
 @endif
 
 <script>

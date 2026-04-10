@@ -27,7 +27,7 @@
 
     {{-- Back + Actions --}}
     <div class="flex items-center justify-between">
-        <a href="{{ route('research.index') }}" class="text-orange-600 hover:underline text-sm font-semibold">
+        <a href="{{ session('user_id') ? route('research.index') : route('research.public') }}" class="text-orange-600 hover:underline text-sm font-semibold">
             <i class="fas fa-arrow-left mr-1"></i> Back to Archive
         </a>
         <div class="flex gap-2">
@@ -78,6 +78,25 @@
 
                 {{-- Tab: Overview --}}
                 <div id="tab-overview" class="tab-content active p-8 space-y-8">
+                    @if(!empty($aiSummary['summary']))
+                    <div class="rounded-2xl border border-blue-100 bg-blue-50 p-5">
+                        <div class="flex items-start gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0">
+                                <i class="fas fa-wand-magic-sparkles"></i>
+                            </div>
+                            <div>
+                                <div class="flex flex-wrap items-center gap-2 mb-2">
+                                    <h3 class="text-lg font-bold text-gray-900">AI Summary</h3>
+                                    {{-- <span class="text-xs font-semibold px-2.5 py-1 rounded-full {{ ($aiSummary['source'] ?? null) === 'ollama' ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-700' }}">
+                                        {{ ($aiSummary['source'] ?? null) === 'ollama' ? 'Qwen Model' : 'Quick Fallback' }}
+                                    </span> --}}
+                                </div>
+                                <p class="text-gray-700 leading-relaxed text-[15px]">{{ $aiSummary['summary'] }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
                     <div>
                         <h3 class="text-lg font-bold text-gray-900 mb-4">Abstract</h3>
                         <p class="text-gray-700 leading-relaxed text-[15px]">{{ $research->abstract }}</p>
@@ -176,7 +195,12 @@
         <div class="w-full lg:w-72 shrink-0 space-y-4">
             {{-- Download / Request Card --}}
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                @if($canDownload)
+                @if(!session('user_id'))
+                    <a href="{{ route('login') }}" class="block w-full bg-orange-600 text-white py-3 rounded-xl font-bold hover:bg-orange-700 transition text-sm text-center">
+                        <i class="fas fa-sign-in-alt mr-1"></i> Login to Request Download
+                    </a>
+                    <p class="text-xs text-gray-500 text-center mt-2">Guests can view the paper, but login is required for download requests.</p>
+                @elseif($canDownload)
                     <a href="{{ route('research.download', $research->id) }}" class="block w-full bg-orange-600 text-white py-3 rounded-xl font-bold hover:bg-orange-700 transition text-sm text-center">
                         <i class="fas fa-download mr-1"></i> Download Full-Text PDF
                     </a>
@@ -246,6 +270,39 @@
                 </div>
             </div>
             @endif
+
+            @if(!empty($relatedResearch['items']))
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-4">
+                <div class="flex items-center justify-between gap-3">
+                    <div>
+                        <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">Related Research</p>
+                        <p class="text-sm text-gray-600">Suggested from matching keywords and similar abstract content</p>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    @foreach($relatedResearch['items'] as $item)
+                    <a href="{{ session('user_id') ? route('research.show', $item['research']->id) : route('research.public-show', $item['research']->id) }}" class="block rounded-xl border border-gray-200 p-4 hover:border-orange-300 hover:bg-orange-50 transition">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <p class="text-sm font-bold text-gray-900 leading-snug">{{ $item['research']->title }}</p>
+                                <p class="text-xs text-gray-500 mt-1">{{ $item['research']->publication_year }} &middot; {{ $item['research']->category->name ?? 'Uncategorized' }}</p>
+                            </div>
+                            <i class="fas fa-arrow-right text-gray-400 mt-1"></i>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-3">{{ $item['reason'] }}</p>
+                        @if(!empty($item['shared_keywords']))
+                        <div class="flex flex-wrap gap-1.5 mt-3">
+                            @foreach($item['shared_keywords'] as $sharedKeyword)
+                            <span class="bg-blue-50 text-blue-700 px-2 py-1 rounded text-[11px] font-medium">{{ $sharedKeyword }}</span>
+                            @endforeach
+                        </div>
+                        @endif
+                    </a>
+                    @endforeach
+                </div>
+            </div>
+            @endif
         </div>
     </div>
 </div>
@@ -262,7 +319,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 </script>
 
 {{-- Request Download Modal --}}
-@if(!$canDownload)
+@if(session('user_id') && !$canDownload)
 <div id="requestModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50">
     <div class="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 overflow-hidden">
         <div class="bg-orange-600 p-5 text-white">

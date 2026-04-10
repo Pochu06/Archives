@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Research;
 use App\Models\College;
 use App\Models\Category;
-use App\Models\User;
+use App\Services\RelatedResearchService;
+use App\Services\ResearchSummaryService;
+use App\Services\TopicSuggestionService;
 use App\Models\ResearchDraft;
 use Illuminate\Http\Request;
 use App\Models\DownloadRequest;
@@ -14,6 +16,28 @@ use Illuminate\Support\Facades\Storage;
 
 class ResearchController extends Controller
 {
+    private function buildShowViewData(Research $research): array
+    {
+        $userId = session('user_id');
+        $role = session('user_role');
+        $collegeId = session('user_college_id');
+
+        $downloadRequest = null;
+        $canDownload = false;
+
+        if ($userId) {
+            $downloadRequest = DownloadRequest::where('user_id', $userId)
+                ->where('research_id', $research->id)
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            $canDownload = ($role === 'super_admin' || ($role === 'admin' && !$collegeId))
+                || ($downloadRequest && $downloadRequest->status === 'approved');
+        }
+
+        return compact('research', 'downloadRequest', 'canDownload');
+    }
+
     private function authCheck()
     {
         if (!session('user_id')) {
@@ -31,7 +55,9 @@ class ResearchController extends Controller
         $role = session('user_role');
         $collegeId = session('user_college_id');
 
-        if ($role === 'admin' && $collegeId) {
+        if ($role === 'student') {
+            $query->approved();
+        } elseif ($role === 'admin' && $collegeId) {
             $query->where('college_id', $collegeId);
         }
 
@@ -66,7 +92,7 @@ class ResearchController extends Controller
 
     public function publicIndex(Request $request)
     {
-        $query = Research::with(['user', 'college', 'category']);
+        $query = Research::with(['user', 'college', 'category'])->approved();
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -95,6 +121,31 @@ class ResearchController extends Controller
         $categories = Category::all();
 
         return view('research.public', compact('research', 'colleges', 'categories'));
+    }
+
+    public function topicSuggestions(Request $request, TopicSuggestionService $topicSuggestionService)
+    {
+        $colleges = College::where('active', true)->get();
+        $categories = Category::all();
+        $mode = $request->get('mode', 'fast');
+        $suggestions = [
+            'items' => [],
+            'source' => 'none',
+            'references' => collect(),
+        ];
+
+        if ($request->filled('interest') || $request->filled('category_id') || $request->filled('college_id')) {
+            $validated = $request->validate([
+                'interest' => 'nullable|string|max:500',
+                'category_id' => 'nullable|exists:categories,id',
+                'college_id' => 'nullable|exists:colleges,id',
+                'mode' => 'nullable|in:fast,ai',
+            ]);
+
+            $suggestions = $topicSuggestionService->generate($validated, ($mode === 'ai'));
+        }
+
+        return view('research.topic-suggestions', compact('colleges', 'categories', 'suggestions', 'mode'));
     }
 
     public function create()
@@ -183,29 +234,55 @@ class ResearchController extends Controller
 
         $validated['user_id'] = session('user_id');
 
+        if (in_array(session('user_role'), ['super_admin', 'admin'])) {
+            $validated['status'] = Research::STATUS_APPROVED;
+            $validated['approved_by'] = session('user_id');
+            $validated['approved_at'] = now();
+        } else {
+            $validated['status'] = Research::STATUS_PENDING_COLLEGE;
+        }
+
         Research::create($validated);
 
-        return redirect()->route('research.index')->with('success', 'Research paper archived successfully!');
+        $message = $validated['status'] === Research::STATUS_APPROVED
+            ? 'Research paper archived successfully!'
+            : 'Research paper submitted for college approval.';
+
+        $redirectRoute = session('user_role') === 'student' ? 'submissions.index' : 'research.index';
+
+        return redirect()->route($redirectRoute)->with('success', $message);
     }
 
-    public function show($id)
+    public function show($id, ResearchSummaryService $researchSummaryService, RelatedResearchService $relatedResearchService)
     {
         if ($r = $this->authCheck()) return $r;
         $research = Research::with(['user', 'college', 'category'])->findOrFail($id);
 
-        $userId = session('user_id');
-        $role = session('user_role');
-        $collegeId = session('user_college_id');
+        if (!in_array(session('user_role'), ['super_admin', 'admin'])
+            && $research->status !== Research::STATUS_APPROVED
+            && $research->user_id !== session('user_id')) {
+            return redirect()->route('research.index')->with('error', 'You are not allowed to view this submission yet.');
+        }
 
-        $downloadRequest = DownloadRequest::where('user_id', $userId)
-            ->where('research_id', $id)
-            ->orderBy('created_at', 'desc')
-            ->first();
+        if (session('user_role') === 'admin' && session('user_college_id') && $research->college_id !== session('user_college_id') && $research->status !== Research::STATUS_APPROVED) {
+            return redirect()->route('dashboard')->with('error', 'Unauthorized action.');
+        }
 
-        $canDownload = ($role === 'super_admin' || ($role === 'admin' && !$collegeId))
-            || ($downloadRequest && $downloadRequest->status === 'approved');
+        extract($this->buildShowViewData($research));
+        $aiSummary = $researchSummaryService->generateForResearch($research);
+        $relatedResearch = $relatedResearchService->generateForResearch($research);
 
-        return view('research.show', compact('research', 'downloadRequest', 'canDownload'));
+        return view('research.show', compact('research', 'downloadRequest', 'canDownload', 'aiSummary', 'relatedResearch'));
+    }
+
+    public function publicShow($id, ResearchSummaryService $researchSummaryService, RelatedResearchService $relatedResearchService)
+    {
+        $research = Research::with(['user', 'college', 'category'])->approved()->findOrFail($id);
+        extract($this->buildShowViewData($research));
+        $aiSummary = $researchSummaryService->generateForResearch($research);
+        $relatedResearch = $relatedResearchService->generateForResearch($research);
+
+        return view('research.show', compact('research', 'downloadRequest', 'canDownload', 'aiSummary', 'relatedResearch'));
     }
 
     public function edit($id)
