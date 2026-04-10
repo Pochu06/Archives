@@ -47,8 +47,10 @@ Route::get('/my-submissions', [SubmissionController::class, 'index'])->name('sub
 Route::get('/college-submissions', [SubmissionController::class, 'collegeIndex'])->name('submissions.college');
 Route::get('/rde-submissions', [SubmissionController::class, 'rdeIndex'])->name('submissions.rde');
 Route::post('/submissions/{id}/college-approve', [SubmissionController::class, 'approveByCollege'])->name('submissions.college-approve');
+Route::post('/submissions/{id}/college-revision', [SubmissionController::class, 'requestRevisionByCollege'])->name('submissions.college-revision');
 Route::post('/submissions/{id}/college-reject', [SubmissionController::class, 'rejectByCollege'])->name('submissions.college-reject');
 Route::post('/submissions/{id}/rde-approve', [SubmissionController::class, 'approveByRde'])->name('submissions.rde-approve');
+Route::post('/submissions/{id}/rde-revision', [SubmissionController::class, 'requestRevisionByRde'])->name('submissions.rde-revision');
 Route::post('/submissions/{id}/rde-reject', [SubmissionController::class, 'rejectByRde'])->name('submissions.rde-reject');
 
 // Download Requests

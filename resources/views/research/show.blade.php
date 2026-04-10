@@ -25,6 +25,47 @@
 @section('content')
 <div class="max-w-6xl mx-auto space-y-5">
 
+    @if(!empty($research->revision_field_note_entries) || $research->revision_notes)
+    <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+        <div class="flex items-start gap-3">
+            <div class="mt-0.5 text-amber-600"><i class="fas fa-rotate-left"></i></div>
+            <div>
+                <p class="text-sm font-bold text-amber-900">Revision notes</p>
+                @if(!empty($research->revision_field_labels))
+                <div class="flex flex-wrap gap-2 mt-2">
+                    @foreach($research->revision_field_labels as $revisionFieldLabel)
+                    <span class="inline-flex rounded-full bg-white px-3 py-1 text-xs font-semibold text-amber-800 border border-amber-200">{{ $revisionFieldLabel }}</span>
+                    @endforeach
+                </div>
+                @endif
+                @if(!empty($research->revision_field_note_entries))
+                <div class="mt-3 space-y-2">
+                    @foreach($research->revision_field_note_entries as $revisionEntry)
+                    <div class="rounded-xl border border-amber-200 bg-white px-4 py-3">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-amber-700">{{ $revisionEntry['label'] }}</p>
+                        <p class="text-sm text-gray-700 mt-1">{{ $revisionEntry['note'] }}</p>
+                    </div>
+                    @endforeach
+                </div>
+                @endif
+                @if($research->revision_notes)
+                <p class="text-sm text-amber-800 mt-1">{{ $research->revision_notes }}</p>
+                @endif
+            </div>
+        </div>
+    </div>
+    @elseif($research->rejection_reason)
+    <div class="rounded-2xl border border-red-200 bg-red-50 p-5">
+        <div class="flex items-start gap-3">
+            <div class="mt-0.5 text-red-600"><i class="fas fa-circle-xmark"></i></div>
+            <div>
+                <p class="text-sm font-bold text-red-900">Rejection reason</p>
+                <p class="text-sm text-red-800 mt-1">{{ $research->rejection_reason }}</p>
+            </div>
+        </div>
+    </div>
+    @endif
+
     {{-- Back + Actions --}}
     <div class="flex items-center justify-between">
         <a href="{{ session('user_id') ? route('research.index') : route('research.public') }}" class="text-orange-600 hover:underline text-sm font-semibold">
@@ -246,6 +287,10 @@
                 <div class="border-t border-gray-100 pt-3">
                     <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">Category</p>
                     <p class="text-sm font-semibold text-gray-800">{{ $research->category->name ?? 'N/A' }}</p>
+                </div>
+                <div class="border-t border-gray-100 pt-3">
+                    <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">Status</p>
+                    <span class="inline-flex text-xs px-2.5 py-1 rounded-full font-semibold {{ $research->status_badge }}">{{ $research->status_label }}</span>
                 </div>
                 <div class="border-t border-gray-100 pt-3">
                     <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">Year</p>

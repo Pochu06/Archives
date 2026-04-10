@@ -337,6 +337,12 @@ class ResearchController extends Controller
     {
         if ($r = $this->authCheck()) return $r;
         $research = Research::findOrFail($id);
+        $role = session('user_role');
+        $userId = session('user_id');
+
+        if (!in_array($role, ['super_admin', 'admin']) && $research->user_id != $userId) {
+            return redirect()->route('research.index')->with('error', 'Unauthorized action.');
+        }
 
         $request->merge([
             'title' => $this->normalizedTitle($request->input('title')),
@@ -362,9 +368,37 @@ class ResearchController extends Controller
 
         $validated['discussion'] = null;
 
+        if ($role === 'student') {
+            if ($research->status === Research::STATUS_REVISION_COLLEGE) {
+                $validated['status'] = Research::STATUS_PENDING_COLLEGE;
+                $validated['revision_notes'] = null;
+                $validated['revision_fields'] = null;
+                $validated['revision_field_notes'] = null;
+                $validated['rejection_reason'] = null;
+                $validated['approved_by'] = null;
+                $validated['approved_at'] = null;
+            } elseif ($research->status === Research::STATUS_REVISION_RDE) {
+                $validated['status'] = Research::STATUS_PENDING_RDE;
+                $validated['revision_notes'] = null;
+                $validated['revision_fields'] = null;
+                $validated['revision_field_notes'] = null;
+                $validated['rejection_reason'] = null;
+                $validated['approved_by'] = null;
+                $validated['approved_at'] = null;
+            }
+        }
+
         $research->update($validated);
 
-        return redirect()->route('research.show', $id)->with('success', 'Research paper updated successfully!');
+        $message = 'Research paper updated successfully!';
+
+        if (($validated['status'] ?? null) === Research::STATUS_PENDING_COLLEGE) {
+            $message = 'Research paper updated and resubmitted for college approval.';
+        } elseif (($validated['status'] ?? null) === Research::STATUS_PENDING_RDE) {
+            $message = 'Research paper updated and resubmitted for RDE approval.';
+        }
+
+        return redirect()->route('research.show', $id)->with('success', $message);
     }
 
     public function destroy($id)

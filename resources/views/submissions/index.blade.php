@@ -10,6 +10,8 @@
                 <option value="">All Status</option>
                 <option value="pending_college" {{ request('status') === 'pending_college' ? 'selected' : '' }}>Pending College Approval</option>
                 <option value="pending_rde" {{ request('status') === 'pending_rde' ? 'selected' : '' }}>Pending RDE Approval</option>
+                <option value="revision_college" {{ request('status') === 'revision_college' ? 'selected' : '' }}>For College Revision</option>
+                <option value="revision_rde" {{ request('status') === 'revision_rde' ? 'selected' : '' }}>For RDE Revision</option>
                 <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>Approved</option>
                 <option value="rejected_college" {{ request('status') === 'rejected_college' ? 'selected' : '' }}>Rejected by College</option>
                 <option value="rejected_rde" {{ request('status') === 'rejected_rde' ? 'selected' : '' }}>Rejected by RDE</option>
@@ -42,7 +44,14 @@
                     <td class="px-5 py-4 text-sm text-gray-600">{{ $r->publication_year }}</td>
                     <td class="px-5 py-4">
                         <span class="text-xs px-2.5 py-1 rounded-full font-semibold {{ $r->status_badge }}">{{ $r->status_label }}</span>
-                        @if($r->rejection_reason)
+                        @if(!empty($r->revision_field_labels))
+                        <p class="text-xs text-gray-500 mt-1">Sections: {{ implode(', ', $r->revision_field_labels) }}</p>
+                        @endif
+                        @if(!empty($r->revision_field_note_entries))
+                        <p class="text-xs text-orange-500 mt-1">{{ Str::limit($r->revision_field_note_entries[0]['note'], 50) }}</p>
+                        @elseif($r->revision_notes)
+                        <p class="text-xs text-orange-500 mt-1">{{ Str::limit($r->revision_notes, 50) }}</p>
+                        @elseif($r->rejection_reason)
                         <p class="text-xs text-red-500 mt-1">{{ Str::limit($r->rejection_reason, 50) }}</p>
                         @endif
                     </td>
@@ -55,6 +64,9 @@
                             @if($r->status !== \App\Models\Research::STATUS_APPROVED)
                             <a href="{{ route('research.edit', $r->id) }}" class="text-xs bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-100">
                                 <i class="fas fa-edit"></i>
+                                @if(in_array($r->status, [\App\Models\Research::STATUS_REVISION_COLLEGE, \App\Models\Research::STATUS_REVISION_RDE]))
+                                Revise
+                                @endif
                             </a>
                             @endif
                         </div>
