@@ -10,16 +10,55 @@ use Illuminate\Support\Facades\Cache;
 
 class TopicSuggestionService
 {
+    private const SEARCHABLE_FIELDS = [
+        'title',
+        'keywords',
+        'abstract',
+        'introduction',
+        'methodology',
+        'results',
+        'discussion',
+        'conclusion',
+        'recommendations',
+    ];
+
     private OllamaService $ollama;
 
     private int $cacheMinutes;
 
     private array $stopWords = [
         'about', 'analysis', 'and', 'approach', 'assessment', 'based', 'between', 'capstone', 'data', 'design',
-        'development', 'effect', 'effects', 'exact', 'field', 'find', 'for', 'from', 'implementation', 'important',
-        'into', 'keyword', 'keywords', 'method', 'methods', 'model', 'models', 'need', 'paper', 'papers', 'project',
-        'research', 'results', 'role', 'student', 'students', 'study', 'system', 'that', 'the', 'their', 'these',
+        'effect', 'effects', 'exact', 'field', 'find', 'focus', 'for', 'from', 'important',
+        'into', 'keyword', 'keywords', 'looking', 'method', 'methods', 'need', 'paper', 'papers', 'project',
+        'research', 'results', 'role', 'student', 'students', 'study', 'that', 'the', 'their', 'these',
         'this', 'thesis', 'topic', 'topics', 'using', 'with', 'within', 'your',
+    ];
+
+    private array $phraseSynonyms = [
+        'system development' => [
+            'design development implementation',
+            'development and implementation',
+            'information system',
+            'management system',
+            'monitoring system',
+            'web based system',
+            'mobile application',
+        ],
+        'system design' => [
+            'design development implementation',
+            'prototype development',
+            'application design',
+        ],
+    ];
+
+    private array $termSynonyms = [
+        'system' => ['application', 'platform', 'tool'],
+        'development' => ['implementation', 'design', 'prototype'],
+        'implementation' => ['development', 'design'],
+        'app' => ['application', 'mobile app', 'web app'],
+        'application' => ['system', 'platform'],
+        'monitoring' => ['tracking'],
+        'management' => ['monitoring'],
     ];
 
     public function __construct(?OllamaService $ollama = null)
@@ -42,7 +81,7 @@ class TopicSuggestionService
             ];
         }
 
-        $cacheKey = 'topic_suggestions:v3:'.md5(json_encode([
+        $cacheKey = 'topic_suggestions:v5:'.md5(json_encode([
             'interest' => $interest,
             'category_id' => $categoryId,
             'college_id' => $collegeId,
@@ -50,11 +89,12 @@ class TopicSuggestionService
         ]));
 
         return Cache::remember($cacheKey, now()->addMinutes($this->cacheMinutes), function () use ($interest, $categoryId, $collegeId, $useAi) {
-            $searchTerms = $this->expandSearchTerms($this->tokenize($interest));
+            $normalizedInterest = $this->normalizePhrase($interest) ?? '';
+            $searchTerms = $this->buildSearchTerms($interest, $normalizedInterest);
 
             if ($useAi && config('services.ollama.enabled', false) && $this->ollama->isAvailable()) {
                 $aiTerms = $this->expandSearchTermsWithOllama($interest, $categoryId, $collegeId);
-                $searchTerms = $this->expandSearchTerms(array_merge($searchTerms, $aiTerms));
+                $searchTerms = $this->expandSearchTerms(array_merge($searchTerms, $aiTerms), $normalizedInterest);
             }
 
             $matches = $this->findRelevantResearch($searchTerms, $categoryId, $collegeId);
@@ -114,7 +154,18 @@ class TopicSuggestionService
 
         return $this->expandSearchTerms(array_filter(array_map(function ($term) {
             return $this->normalizePhrase((string) $term);
-        }, $terms)));
+        }, $terms)), $this->normalizePhrase($interest));
+    }
+
+    private function buildSearchTerms(string $interest, string $normalizedInterest = ''): array
+    {
+        $terms = $this->tokenize($interest);
+
+        if ($normalizedInterest !== '') {
+            $terms = array_merge($terms, $this->extractPhraseTerms($normalizedInterest));
+        }
+
+        return $this->expandSearchTerms($terms, $normalizedInterest);
     }
 
     private function findRelevantResearch(array $searchTerms, $categoryId, $collegeId): Collection
@@ -128,17 +179,24 @@ class TopicSuggestionService
                 foreach (array_slice($searchTerms, 0, 8) as $term) {
                     $builder->orWhere('title', 'like', '%'.$term.'%')
                         ->orWhere('abstract', 'like', '%'.$term.'%')
-                        ->orWhere('keywords', 'like', '%'.$term.'%');
+                        ->orWhere('keywords', 'like', '%'.$term.'%')
+                        ->orWhere('introduction', 'like', '%'.$term.'%')
+                        ->orWhere('methodology', 'like', '%'.$term.'%')
+                        ->orWhere('results', 'like', '%'.$term.'%')
+                        ->orWhere('discussion', 'like', '%'.$term.'%')
+                        ->orWhere('conclusion', 'like', '%'.$term.'%')
+                        ->orWhere('recommendations', 'like', '%'.$term.'%');
                 }
             });
         }
 
         return $query->limit(15)->get()
             ->map(function (Research $research) use ($searchTerms) {
-                $researchTerms = $this->tokenize($research->title.' '.$research->keywords.' '.$research->abstract);
-                $matchedTerms = array_values(array_intersect($searchTerms, $researchTerms));
+                $matchedFieldMap = $this->collectMatchedFieldMap($searchTerms, $research);
+                $matchedTerms = array_keys($matchedFieldMap);
                 $research->topic_match_score = count($matchedTerms);
                 $research->matched_terms = array_slice($matchedTerms, 0, 4);
+                $research->matched_sections = $this->summarizeMatchedSections($matchedFieldMap);
 
                 return $research;
             })
@@ -225,17 +283,30 @@ class TopicSuggestionService
                 'research' => $research,
                 'reason' => $this->buildFallbackReason($research),
                 'matched_terms' => $research->matched_terms,
+                'matched_sections' => $research->matched_sections ?? [],
             ];
         })->values()->all();
     }
 
     private function buildFallbackReason(Research $research): string
     {
+        $matchedSections = $research->matched_sections ?? [];
+
         if (! empty($research->matched_terms)) {
-            return 'Matched archive terms: '.implode(', ', $research->matched_terms).'.';
+            $reason = 'Matched archive terms: '.implode(', ', $research->matched_terms).'.';
+
+            if (! empty($matchedSections)) {
+                $reason .= ' Found in '.implode(', ', $matchedSections).'.';
+            }
+
+            return $reason;
         }
 
-        return 'Matched through similar title, abstract, or keyword content in the archive.';
+        if (! empty($matchedSections)) {
+            return 'Matched through similar content found in '.implode(', ', $matchedSections).'.';
+        }
+
+        return 'Matched through similar content in the archived paper chapters.';
     }
 
     private function tokenize(string $text): array
@@ -255,9 +326,23 @@ class TopicSuggestionService
         }, $parts))));
     }
 
-    private function expandSearchTerms(array $terms): array
+    private function expandSearchTerms(array $terms, string $normalizedInterest = ''): array
     {
         $expanded = [];
+
+        if ($normalizedInterest !== '') {
+            foreach ($this->phraseSynonyms as $phrase => $synonyms) {
+                if (! str_contains($normalizedInterest, $phrase)) {
+                    continue;
+                }
+
+                $expanded[] = $phrase;
+
+                foreach ($synonyms as $synonym) {
+                    $expanded[] = $synonym;
+                }
+            }
+        }
 
         foreach ($terms as $term) {
             $normalized = $this->normalizePhrase((string) $term);
@@ -271,9 +356,82 @@ class TopicSuggestionService
             foreach ($this->generateWordVariants($normalized) as $variant) {
                 $expanded[] = $variant;
             }
+
+            foreach ($this->termSynonyms[$normalized] ?? [] as $synonym) {
+                $expanded[] = $synonym;
+            }
         }
 
         return array_values(array_unique(array_filter($expanded)));
+    }
+
+    private function extractPhraseTerms(string $normalizedInterest): array
+    {
+        $phrases = [];
+
+        foreach (array_keys($this->phraseSynonyms) as $phrase) {
+            if (str_contains($normalizedInterest, $phrase)) {
+                $phrases[] = $phrase;
+            }
+        }
+
+        return $phrases;
+    }
+
+    private function collectMatchedFieldMap(array $searchTerms, Research $research): array
+    {
+        $matchedFieldMap = [];
+
+        foreach (self::SEARCHABLE_FIELDS as $field) {
+            $fieldText = (string) ($research->{$field} ?? '');
+
+            if ($fieldText === '') {
+                continue;
+            }
+
+            $normalizedFieldText = $this->normalizePhrase($fieldText) ?? '';
+            $fieldTerms = $this->tokenize($fieldText);
+
+            foreach ($searchTerms as $term) {
+                if (str_contains($term, ' ')) {
+                    if ($normalizedFieldText !== '' && str_contains($normalizedFieldText, $term)) {
+                        $matchedFieldMap[$term][] = $field;
+                    }
+
+                    continue;
+                }
+
+                if (in_array($term, $fieldTerms, true)) {
+                    $matchedFieldMap[$term][] = $field;
+                }
+            }
+        }
+
+        return collect($matchedFieldMap)
+            ->map(fn (array $fields) => array_values(array_unique($fields)))
+            ->all();
+    }
+
+    private function summarizeMatchedSections(array $matchedFieldMap): array
+    {
+        $fieldLabels = [
+            'title' => 'title',
+            'keywords' => 'keywords',
+            'abstract' => 'abstract',
+            'introduction' => 'introduction',
+            'methodology' => 'methodology',
+            'results' => 'results',
+            'discussion' => 'discussion',
+            'conclusion' => 'conclusion',
+            'recommendations' => 'recommendations',
+        ];
+
+        return collect($matchedFieldMap)
+            ->flatten()
+            ->unique()
+            ->map(fn (string $field) => $fieldLabels[$field] ?? $field)
+            ->values()
+            ->all();
     }
 
     private function generateWordVariants(string $term): array

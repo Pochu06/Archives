@@ -33,7 +33,7 @@
                 <span class="font-bold text-gray-900">ARCHIVES</span>
             </a>
             <div class="flex items-center gap-2 ml-auto">
-                <a href="{{ route('research.topic-suggestions') }}" class="px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">AI Topic Suggestions</a>
+                <a href="{{ route('research.topic-suggestions') }}" class="px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">AI Research Locator</a>
                 @if(session('user_id'))
                 <a href="{{ route('dashboard') }}" class="px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">Dashboard</a>
                 @else
@@ -55,11 +55,11 @@
         <div class="bg-gradient-to-r from-blue-50 to-orange-50 border border-blue-100 rounded-2xl p-5 md:p-6 mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-wider text-blue-700 mb-1">New AI Feature</p>
-                <h2 class="text-xl font-bold text-gray-900">Need a thesis or capstone idea?</h2>
-                <p class="text-gray-600 mt-1 max-w-3xl">Use archived research plus AI to generate possible study topics based on your interest, category, and college.</p>
+                <h2 class="text-xl font-bold text-gray-900">Don't know the topic?</h2>
+                <p class="text-gray-600 mt-1 max-w-3xl">Use our AI-powered topic suggestions to discover what you are looking for.</p>
             </div>
             <a href="{{ route('research.topic-suggestions') }}" class="inline-flex items-center justify-center bg-orange-600 text-white px-5 py-3 rounded-xl font-semibold hover:bg-orange-700 transition">
-                <i class="fas fa-lightbulb mr-2"></i> Open Topic Suggestions
+                <i class="fas fa-lightbulb mr-2"></i> Open AI Research Locator
             </a>
         </div>
 

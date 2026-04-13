@@ -100,7 +100,7 @@
                     <i class="fas fa-book-open mr-2"></i> Browse Public Research
                 </a>
                 <a href="{{ route('research.topic-suggestions') }}" class="bg-orange-900/30 border-2 border-white text-white font-bold px-8 py-4 rounded-xl hover:bg-white/10 transition text-lg">
-                    <i class="fas fa-lightbulb mr-2"></i> AI Topic Suggestions
+                    <i class="fas fa-lightbulb mr-2"></i> AI Research Locator
                 </a>
                 @if(session('user_id'))
                     <a href="{{ route('dashboard') }}" class="border-2 border-white text-white font-bold px-8 py-4 rounded-xl hover:bg-white/10 transition text-lg">
