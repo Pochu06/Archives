@@ -13,7 +13,7 @@ ARCHIVES utilizes virtualized storage and intelligent data organization to impro
 - **Kim Anthony Rabut** – Leader  
 - **John Carlo Arellano** – Member  
 - **Lawrence Angelo Orata** – Member  
-- **Jan HArvey Deseo** - Techical Adviser
+- **Jan Harvey Deseo** - Techical Adviser
 
 ---
 
