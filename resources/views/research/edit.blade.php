@@ -229,6 +229,25 @@ function wrapSelection(fieldId, before, after) {
     ta.dispatchEvent(new Event('input'));
 }
 
+function indentSelection(fieldId) {
+    const ta = document.getElementById(fieldId);
+    if (!ta) return;
+
+    ta.focus();
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const blockStart = ta.value.lastIndexOf('\n', Math.max(0, start - 1)) + 1;
+    const nextNewline = ta.value.indexOf('\n', end);
+    const blockEnd = nextNewline === -1 ? ta.value.length : nextNewline;
+    const block = ta.value.substring(blockStart, blockEnd);
+    const indentedBlock = '\t' + block.replace(/\n/g, '\n\t');
+    const lineCount = (block.match(/\n/g) || []).length + 1;
+
+    ta.value = ta.value.substring(0, blockStart) + indentedBlock + ta.value.substring(blockEnd);
+    ta.setSelectionRange(start + 1, end + lineCount);
+    ta.dispatchEvent(new Event('input'));
+}
+
 function insertAtCursor(fieldId, text) {
     const ta = document.getElementById(fieldId);
     if (!ta) return;
@@ -287,14 +306,15 @@ function renderPreview(text, container) {
     let inTable = false;
 
     for (const line of lines) {
-        const trimmed = line.trim();
+        const indentLevel = getIndentLevel(line);
+        const trimmed = stripLeadingIndent(line).trim();
         const figMatch = trimmed.match(/\[figure:\s*(.+?)\s*\|\s*(.+?)\s*\]/);
         if (figMatch) {
             if (inTable && tableRows.length) { html += buildTableHtml(tableRows); tableRows = []; inTable = false; }
             const parts = trimmed.split(/\[figure:\s*.+?\s*\|\s*.+?\s*\]/);
-            if (parts[0] && parts[0].trim()) html += `<p class="section-content">${escHtml(parts[0].trim())}</p>`;
+            if (parts[0] && parts[0].trim()) html += buildParagraphHtml(parts[0].trim(), indentLevel);
             html += `<div class="figure-container"><img src="/storage/research_images/${escHtml(figMatch[1])}" class="figure-image" onerror="this.outerHTML='<p style=\'text-align:center;color:#9ca3af;font-style:italic\'>[Image: ${escHtml(figMatch[1])}]</p>'"><p class="figure-caption">${escHtml(figMatch[2])}</p></div>`;
-            if (parts[1] && parts[1].trim()) html += `<p class="section-content">${escHtml(parts[1].trim())}</p>`;
+            if (parts[1] && parts[1].trim()) html += buildParagraphHtml(parts[1].trim(), indentLevel);
             continue;
         }
         if (/^\|.*\|$/.test(trimmed)) {
@@ -305,7 +325,7 @@ function renderPreview(text, container) {
         } else {
             if (inTable && tableRows.length) { html += buildTableHtml(tableRows); tableRows = []; inTable = false; }
             if (trimmed === '') continue;
-            html += `<p class="section-content">${formatInline(escHtml(trimmed))}</p>`;
+            html += buildParagraphHtml(trimmed, indentLevel);
         }
     }
     if (tableRows.length) html += buildTableHtml(tableRows);
@@ -317,6 +337,54 @@ function formatInline(text) {
     text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
     text = text.replace(/__(.+?)__/g, '<u>$1</u>');
     return text;
+}
+
+function buildParagraphHtml(text, indentLevel = 0) {
+    const style = indentLevel > 0 ? ` style="margin-left:${indentLevel * 2}em;"` : '';
+    return `<p class="section-content"${style}>${formatInline(escHtml(text))}</p>`;
+}
+
+function getIndentLevel(line) {
+    let level = 0;
+    let offset = 0;
+
+    while (offset < line.length) {
+        if (line[offset] === '\t') {
+            level += 1;
+            offset += 1;
+            continue;
+        }
+
+        if (line.slice(offset, offset + 4) === '    ') {
+            level += 1;
+            offset += 4;
+            continue;
+        }
+
+        break;
+    }
+
+    return level;
+}
+
+function stripLeadingIndent(line) {
+    let offset = 0;
+
+    while (offset < line.length) {
+        if (line[offset] === '\t') {
+            offset += 1;
+            continue;
+        }
+
+        if (line.slice(offset, offset + 4) === '    ') {
+            offset += 4;
+            continue;
+        }
+
+        break;
+    }
+
+    return line.slice(offset);
 }
 
 function buildTableHtml(rows) {

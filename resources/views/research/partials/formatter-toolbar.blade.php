@@ -10,6 +10,9 @@
     <button type="button" onclick="wrapSelection('{{ $target }}', '__', '__')" class="fmt-btn" title="Underline (__text__)">
         <i class="fas fa-underline"></i>
     </button>
+    <button type="button" onclick="indentSelection('{{ $target }}')" class="fmt-btn" title="Indent selected paragraph or lines">
+        <i class="fas fa-indent"></i>
+    </button>
     <span class="w-px h-4 bg-gray-300 mx-1"></span>
     <button type="button" onclick="insertTable('{{ $target }}')" class="fmt-btn" title="Insert Table">
         <i class="fas fa-table"></i>

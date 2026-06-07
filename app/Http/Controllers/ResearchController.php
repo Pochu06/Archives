@@ -17,6 +17,20 @@ use Illuminate\Support\Facades\Storage;
 
 class ResearchController extends Controller
 {
+    private function buildAiInsightViewData(
+        Research $research,
+        ResearchSummaryService $researchSummaryService,
+        RelatedResearchService $relatedResearchService
+    ): array {
+        $aiSummary = $researchSummaryService->generateForResearch($research);
+        $relatedResearch = $relatedResearchService->generateForResearch($research);
+
+        $researchSummaryService->queueForResearch($research);
+        $relatedResearchService->queueForResearch($research);
+
+        return compact('aiSummary', 'relatedResearch');
+    }
+
     private function normalizedTitle(?string $title): string
     {
         return trim((string) $title);
@@ -300,8 +314,7 @@ class ResearchController extends Controller
         }
 
         extract($this->buildShowViewData($research));
-        $aiSummary = $researchSummaryService->generateForResearch($research);
-        $relatedResearch = $relatedResearchService->generateForResearch($research);
+        extract($this->buildAiInsightViewData($research, $researchSummaryService, $relatedResearchService));
 
         return view('research.show', compact('research', 'downloadRequest', 'canDownload', 'aiSummary', 'relatedResearch'));
     }
@@ -311,8 +324,7 @@ class ResearchController extends Controller
         $research = Research::with(['user', 'college', 'category'])->approved()->findOrFail($id);
 
         extract($this->buildShowViewData($research));
-        $aiSummary = $researchSummaryService->generateForResearch($research);
-        $relatedResearch = $relatedResearchService->generateForResearch($research);
+        extract($this->buildAiInsightViewData($research, $researchSummaryService, $relatedResearchService));
 
         return view('research.show', compact('research', 'downloadRequest', 'canDownload', 'aiSummary', 'relatedResearch'));
     }

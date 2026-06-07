@@ -2,12 +2,17 @@
 
 namespace App\Services;
 
+use App\Jobs\GenerateResearchSummaryJob;
 use App\Models\Research;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class ResearchSummaryService
 {
+    private const CACHE_VERSION = 'v1';
+
+    private const PENDING_MINUTES = 15;
+
     private OllamaService $ollama;
 
     private int $cacheMinutes;
@@ -20,36 +25,100 @@ class ResearchSummaryService
 
     public function generateForResearch(Research $research): array
     {
-        $abstract = trim(strip_tags((string) $research->abstract));
+        $abstract = $this->extractAbstract($research);
 
         if ($abstract === '') {
             return [
                 'summary' => null,
                 'source' => 'none',
+                'pending' => false,
             ];
         }
 
-        $cacheKey = 'research_summary:'.$research->id.':'.md5($abstract.'|'.$research->updated_at);
+        $aiSummary = Cache::get($this->aiCacheKey($research));
 
-        if (config('services.ollama.enabled', false) && $this->ollama->isAvailable()) {
-            $aiSummary = Cache::remember($cacheKey, now()->addMinutes($this->cacheMinutes), function () use ($research, $abstract) {
-                return $this->generateWithOllama($research->title, $abstract);
-            });
-
-            if ($aiSummary) {
-                return [
-                    'summary' => $aiSummary,
-                    'source' => 'ollama',
-                ];
-            }
-
-            Cache::forget($cacheKey);
+        if (is_string($aiSummary) && trim($aiSummary) !== '') {
+            return [
+                'summary' => $aiSummary,
+                'source' => 'ollama',
+                'pending' => false,
+            ];
         }
 
         return [
             'summary' => $this->generateFallbackSummary($abstract),
             'source' => 'fallback',
+            'pending' => $this->isPending($research),
         ];
+    }
+
+    public function queueForResearch(Research $research): void
+    {
+        if (! $this->shouldQueue($research)) {
+            return;
+        }
+
+        if (! Cache::add($this->pendingCacheKey($research), true, now()->addMinutes(self::PENDING_MINUTES))) {
+            return;
+        }
+
+        GenerateResearchSummaryJob::dispatchAfterResponse($research->id);
+    }
+
+    public function generateAndStoreForResearch(Research $research): void
+    {
+        try {
+            if (! $this->canGenerateAi($research) || Cache::has($this->aiCacheKey($research))) {
+                return;
+            }
+
+            $aiSummary = $this->generateWithOllama($research->title, $this->extractAbstract($research));
+
+            if ($aiSummary) {
+                Cache::put($this->aiCacheKey($research), $aiSummary, now()->addMinutes($this->cacheMinutes));
+            }
+        } finally {
+            Cache::forget($this->pendingCacheKey($research));
+        }
+    }
+
+    private function extractAbstract(Research $research): string
+    {
+        return trim(strip_tags((string) $research->abstract));
+    }
+
+    private function shouldQueue(Research $research): bool
+    {
+        return config('services.ollama.enabled', false)
+            && $this->extractAbstract($research) !== ''
+            && ! Cache::has($this->aiCacheKey($research));
+    }
+
+    private function canGenerateAi(Research $research): bool
+    {
+        return config('services.ollama.enabled', false)
+            && $this->extractAbstract($research) !== ''
+            && $this->ollama->isAvailable();
+    }
+
+    private function isPending(Research $research): bool
+    {
+        return Cache::has($this->pendingCacheKey($research));
+    }
+
+    private function aiCacheKey(Research $research): string
+    {
+        return 'research_summary_ai:'.self::CACHE_VERSION.':'.$research->id.':'.$this->contentHash($research);
+    }
+
+    private function pendingCacheKey(Research $research): string
+    {
+        return 'research_summary_pending:'.self::CACHE_VERSION.':'.$research->id.':'.$this->contentHash($research);
+    }
+
+    private function contentHash(Research $research): string
+    {
+        return md5($this->extractAbstract($research).'|'.$research->updated_at);
     }
 
     private function generateWithOllama(string $title, string $abstract): ?string

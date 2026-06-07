@@ -22,7 +22,7 @@
         <ul class="list-disc pl-5 text-sm text-blue-900 space-y-2">
             <li>Write one section at a time: Abstract, Introduction, Methodology, Results and Discussion, Conclusion, Recommendations, and References.</li>
             <li>Use simple, complete sentences and avoid very long paragraphs.</li>
-            <li>Use the toolbar buttons for bold, italic, underline, tables, and preview.</li>
+            <li>Use the toolbar buttons for bold, italic, underline, indent, tables, and preview.</li>
             <li>For references, put one source per line in APA 7th style.</li>
         </ul>
     </div>
@@ -42,6 +42,10 @@
                 <div class="p-3 rounded-lg bg-gray-50 border border-gray-200">
                     <p class="font-semibold text-gray-800">Underline</p>
                     <p class="font-mono text-gray-600">__key recommendation__</p>
+                </div>
+                <div class="p-3 rounded-lg bg-gray-50 border border-gray-200">
+                    <p class="font-semibold text-gray-800">Indent</p>
+                    <pre class="whitespace-pre-wrap font-mono text-gray-600">    Indented paragraph</pre>
                 </div>
                 <div class="p-3 rounded-lg bg-gray-50 border border-gray-200">
                     <p class="font-semibold text-gray-800">Table</p>

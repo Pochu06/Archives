@@ -119,7 +119,7 @@
 
                 {{-- Tab: Overview --}}
                 <div id="tab-overview" class="tab-content active p-8 space-y-8">
-                    @if(!empty($aiSummary['summary']))
+                    @if(!empty($aiSummary['summary']) || !empty($aiSummary['pending']))
                     <div class="rounded-2xl border border-blue-100 bg-blue-50 p-5">
                         <div class="flex items-start gap-3">
                             <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0">
@@ -128,11 +128,19 @@
                             <div>
                                 <div class="flex flex-wrap items-center gap-2 mb-2">
                                     <h3 class="text-lg font-bold text-gray-900">AI Summary</h3>
-                                    {{-- <span class="text-xs font-semibold px-2.5 py-1 rounded-full {{ ($aiSummary['source'] ?? null) === 'ollama' ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-700' }}">
-                                        {{ ($aiSummary['source'] ?? null) === 'ollama' ? 'Qwen Model' : 'Quick Fallback' }}
-                                    </span> --}}
+                                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full {{ !empty($aiSummary['pending']) && ($aiSummary['source'] ?? null) !== 'ollama' ? 'bg-amber-100 text-amber-700' : (($aiSummary['source'] ?? null) === 'ollama' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700') }}">
+                                        {{ !empty($aiSummary['pending']) && ($aiSummary['source'] ?? null) !== 'ollama' ? 'AI version in progress' : (($aiSummary['source'] ?? null) === 'ollama' ? 'AI ready' : 'Quick version') }}
+                                    </span>
                                 </div>
+                                @if(!empty($aiSummary['summary']))
                                 <p class="text-gray-700 leading-relaxed text-[15px]">{{ $aiSummary['summary'] }}</p>
+                                @else
+                                <p class="text-gray-700 leading-relaxed text-[15px]">The AI summary is being prepared in the background. Refresh this page in a moment to load it.</p>
+                                @endif
+
+                                @if(!empty($aiSummary['pending']) && ($aiSummary['source'] ?? null) !== 'ollama')
+                                <p class="text-xs text-blue-700 mt-3">Showing the quick summary first so the page opens immediately while the AI-enhanced version is still being generated.</p>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -318,15 +326,19 @@
             </div>
             @endif
 
-            @if(!empty($relatedResearch['items']))
+            @if(!empty($relatedResearch['items']) || !empty($relatedResearch['pending']))
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-4">
                 <div class="flex items-center justify-between gap-3">
                     <div>
                         <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">Related Research</p>
                         <p class="text-sm text-gray-600">Suggested from matching keywords and similar abstract content</p>
                     </div>
+                    <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full {{ !empty($relatedResearch['pending']) && ($relatedResearch['source'] ?? null) !== 'ollama' ? 'bg-amber-100 text-amber-700' : (($relatedResearch['source'] ?? null) === 'ollama' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700') }}">
+                        {{ !empty($relatedResearch['pending']) && ($relatedResearch['source'] ?? null) !== 'ollama' ? 'AI reranking in progress' : (($relatedResearch['source'] ?? null) === 'ollama' ? 'AI ranked' : 'Quick matches') }}
+                    </span>
                 </div>
 
+                @if(!empty($relatedResearch['items']))
                 <div class="space-y-3">
                     @foreach($relatedResearch['items'] as $item)
                     <a href="{{ session('user_id') ? route('research.show', $item['research']->id) : route('research.public-show', $item['research']->id) }}" class="block rounded-xl border border-gray-200 p-4 hover:border-orange-300 hover:bg-orange-50 transition">
@@ -348,6 +360,15 @@
                     </a>
                     @endforeach
                 </div>
+                @else
+                <div class="rounded-xl border border-dashed border-gray-200 p-4 bg-gray-50">
+                    <p class="text-sm text-gray-600">The system is finding related research in the background. Refresh this page shortly to load the AI-ranked matches.</p>
+                </div>
+                @endif
+
+                @if(!empty($relatedResearch['pending']) && ($relatedResearch['source'] ?? null) !== 'ollama')
+                <p class="text-xs text-amber-700">Showing quick matches first so the page loads immediately while AI reranking finishes in the background.</p>
+                @endif
             </div>
             @endif
         </div>

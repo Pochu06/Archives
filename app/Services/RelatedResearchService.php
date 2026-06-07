@@ -2,12 +2,19 @@
 
 namespace App\Services;
 
+use App\Jobs\GenerateRelatedResearchJob;
 use App\Models\Research;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
 class RelatedResearchService
 {
+    private const AI_CACHE_VERSION = 'v1';
+
+    private const FALLBACK_CACHE_VERSION = 'v1';
+
+    private const PENDING_MINUTES = 15;
+
     private OllamaService $ollama;
 
     private int $cacheMinutes;
@@ -28,39 +35,182 @@ class RelatedResearchService
 
     public function generateForResearch(Research $research): array
     {
-        $cacheKey = 'related_research:v2:'.$research->id.':'.md5(implode('|', [
+        $aiItems = $this->getCachedAiItems($research);
+
+        if (! empty($aiItems)) {
+            return [
+                'items' => $aiItems,
+                'source' => 'ollama',
+                'pending' => false,
+            ];
+        }
+
+        $fallbackItems = $this->getFallbackItems($research);
+
+        return [
+            'items' => $fallbackItems,
+            'source' => empty($fallbackItems) ? 'none' : 'fallback',
+            'pending' => $this->isPending($research),
+        ];
+    }
+
+    public function queueForResearch(Research $research): void
+    {
+        if (! $this->shouldQueue($research)) {
+            return;
+        }
+
+        if (! Cache::add($this->pendingCacheKey($research), true, now()->addMinutes(self::PENDING_MINUTES))) {
+            return;
+        }
+
+        GenerateRelatedResearchJob::dispatchAfterResponse($research->id);
+    }
+
+    public function generateAndStoreForResearch(Research $research): void
+    {
+        try {
+            if (! $this->canGenerateAi() || Cache::has($this->aiCacheKey($research))) {
+                return;
+            }
+
+            $candidates = $this->collectCandidates($research);
+
+            if ($candidates->isEmpty()) {
+                return;
+            }
+
+            $ranked = $this->rerankWithOllama($research, $candidates);
+
+            if (! empty($ranked)) {
+                Cache::put($this->aiCacheKey($research), $this->serializeItems($ranked), now()->addMinutes($this->cacheMinutes));
+            }
+        } finally {
+            Cache::forget($this->pendingCacheKey($research));
+        }
+    }
+
+    private function getFallbackItems(Research $research): array
+    {
+        $items = Cache::remember($this->fallbackCacheKey($research), now()->addMinutes($this->cacheMinutes), function () use ($research) {
+            $candidates = $this->collectCandidates($research);
+
+            if ($candidates->isEmpty()) {
+                return [];
+            }
+
+            return $this->serializeItems($this->fallbackMatches($candidates));
+        });
+
+        return $this->hydrateItems(is_array($items) ? $items : []);
+    }
+
+    private function getCachedAiItems(Research $research): array
+    {
+        $items = Cache::get($this->aiCacheKey($research), []);
+
+        return $this->hydrateItems(is_array($items) ? $items : []);
+    }
+
+    private function serializeItems(array $items): array
+    {
+        return array_values(array_filter(array_map(function (array $item) {
+            $relatedResearch = $item['research'] ?? null;
+
+            if (! $relatedResearch instanceof Research || ! $relatedResearch->id) {
+                return null;
+            }
+
+            return [
+                'research_id' => (int) $relatedResearch->id,
+                'reason' => trim((string) ($item['reason'] ?? '')),
+                'shared_keywords' => array_values(array_filter($item['shared_keywords'] ?? [], function ($keyword) {
+                    return trim((string) $keyword) !== '';
+                })),
+            ];
+        }, $items)));
+    }
+
+    private function hydrateItems(array $items): array
+    {
+        $ids = collect($items)
+            ->pluck('research_id')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+
+        if (empty($ids)) {
+            return [];
+        }
+
+        $researchMap = Research::with(['college', 'category'])
+            ->whereIn('id', $ids)
+            ->get()
+            ->keyBy('id');
+
+        return collect($items)
+            ->map(function (array $item) use ($researchMap) {
+                $research = $researchMap->get((int) ($item['research_id'] ?? 0));
+
+                if (! $research) {
+                    return null;
+                }
+
+                return [
+                    'research' => $research,
+                    'reason' => trim((string) ($item['reason'] ?? '')) ?: 'Related based on overlapping topic and abstract content.',
+                    'shared_keywords' => array_values(array_filter($item['shared_keywords'] ?? [], function ($keyword) {
+                        return trim((string) $keyword) !== '';
+                    })),
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    private function shouldQueue(Research $research): bool
+    {
+        return config('services.ollama.enabled', false)
+            && ! Cache::has($this->aiCacheKey($research));
+    }
+
+    private function canGenerateAi(): bool
+    {
+        return config('services.ollama.enabled', false)
+            && $this->ollama->isAvailable();
+    }
+
+    private function isPending(Research $research): bool
+    {
+        return Cache::has($this->pendingCacheKey($research));
+    }
+
+    private function aiCacheKey(Research $research): string
+    {
+        return 'related_research_ai:'.self::AI_CACHE_VERSION.':'.$research->id.':'.$this->contentHash($research);
+    }
+
+    private function fallbackCacheKey(Research $research): string
+    {
+        return 'related_research_fallback:'.self::FALLBACK_CACHE_VERSION.':'.$research->id.':'.$this->contentHash($research);
+    }
+
+    private function pendingCacheKey(Research $research): string
+    {
+        return 'related_research_pending:'.self::AI_CACHE_VERSION.':'.$research->id.':'.$this->contentHash($research);
+    }
+
+    private function contentHash(Research $research): string
+    {
+        return md5(implode('|', [
             $research->title,
             $research->abstract,
             $research->keywords,
             $research->updated_at,
         ]));
-
-        return Cache::remember($cacheKey, now()->addMinutes($this->cacheMinutes), function () use ($research) {
-            $candidates = $this->collectCandidates($research);
-
-            if ($candidates->isEmpty()) {
-                return [
-                    'items' => [],
-                    'source' => 'none',
-                ];
-            }
-
-            if (config('services.ollama.enabled', false) && $this->ollama->isAvailable()) {
-                $ranked = $this->rerankWithOllama($research, $candidates);
-
-                if (! empty($ranked)) {
-                    return [
-                        'items' => $ranked,
-                        'source' => 'ollama',
-                    ];
-                }
-            }
-
-            return [
-                'items' => $this->fallbackMatches($candidates),
-                'source' => 'fallback',
-            ];
-        });
     }
 
     private function collectCandidates(Research $research): Collection

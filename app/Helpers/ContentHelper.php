@@ -30,7 +30,8 @@ class ContentHelper
         $tableRows = [];
 
         foreach ($lines as $line) {
-            $trimmed = trim($line);
+            $indentLevel = self::getIndentLevel($line);
+            $trimmed = trim(self::removeLeadingIndent($line));
 
             // Check for figure syntax: [figure: filename | caption]
             // Can appear as the entire line or inline within text
@@ -51,11 +52,11 @@ class ContentHelper
                 $after = isset($parts[1]) ? trim($parts[1]) : '';
 
                 if ($before !== '') {
-                    $html .= '<p class="section-content">' . self::formatInline($before) . '</p>';
+                    $html .= self::buildParagraph($before, $indentLevel);
                 }
                 $html .= self::buildFigure($filename, $caption, $context);
                 if ($after !== '') {
-                    $html .= '<p class="section-content">' . self::formatInline($after) . '</p>';
+                    $html .= self::buildParagraph($after, $indentLevel);
                 }
                 continue;
             }
@@ -84,7 +85,7 @@ class ContentHelper
                 if ($trimmed === '') {
                     continue;
                 } else {
-                    $html .= '<p class="section-content">' . self::formatInline($trimmed) . '</p>';
+                    $html .= self::buildParagraph($trimmed, $indentLevel);
                 }
             }
         }
@@ -110,6 +111,58 @@ class ContentHelper
         // Underline: __text__
         $text = preg_replace('/__(.+?)__/', '<u>$1</u>', $text);
         return $text;
+    }
+
+    private static function buildParagraph(string $text, int $indentLevel = 0): string
+    {
+        $style = $indentLevel > 0 ? ' style="margin-left: ' . ($indentLevel * 2) . 'em;"' : '';
+
+        return '<p class="section-content"' . $style . '>' . self::formatInline($text) . '</p>';
+    }
+
+    private static function getIndentLevel(string $line): int
+    {
+        $level = 0;
+        $offset = 0;
+
+        while ($offset < strlen($line)) {
+            if (substr($line, $offset, 1) === "\t") {
+                $level++;
+                $offset++;
+                continue;
+            }
+
+            if (substr($line, $offset, 4) === '    ') {
+                $level++;
+                $offset += 4;
+                continue;
+            }
+
+            break;
+        }
+
+        return $level;
+    }
+
+    private static function removeLeadingIndent(string $line): string
+    {
+        $offset = 0;
+
+        while ($offset < strlen($line)) {
+            if (substr($line, $offset, 1) === "\t") {
+                $offset++;
+                continue;
+            }
+
+            if (substr($line, $offset, 4) === '    ') {
+                $offset += 4;
+                continue;
+            }
+
+            break;
+        }
+
+        return substr($line, $offset);
     }
 
     private static function buildFigure(string $filename, string $caption, string $context): string
