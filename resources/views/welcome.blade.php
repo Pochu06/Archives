@@ -270,5 +270,6 @@
             <p>© {{ date('Y') }} ARCHIVES. All rights reserved.</p>
         </div>
     </footer>
+@include('chatbot.widget')
 </body>
 </html>

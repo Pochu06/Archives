@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\ResearchController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CollegeController;
@@ -22,6 +23,11 @@ Route::post('/register', [AuthController::class, 'register'])->name('register.po
 
 // Dashboard
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+// AI Chatbot
+Route::get('/chatbot', [ChatbotController::class, 'index'])->name('chatbot.index');
+Route::post('/chatbot', [ChatbotController::class, 'store'])->name('chatbot.store');
+Route::post('/chatbot/reset', [ChatbotController::class, 'reset'])->name('chatbot.reset');
 
 // Research Archive
 Route::get('/research/public', [ResearchController::class, 'publicIndex'])->name('research.public');

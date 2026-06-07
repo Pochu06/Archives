@@ -202,5 +202,6 @@
         </section>
         @endif
     </main>
+@include('chatbot.widget')
 </body>
 </html>

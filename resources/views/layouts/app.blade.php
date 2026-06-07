@@ -75,6 +75,9 @@
             <a href="{{ route('research.index') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('research.index') || request()->routeIs('research.show') ? 'active' : '' }}">
                 <i class="fas fa-archive w-5"></i><span>Research Archive</span>
             </a>
+            <a href="{{ route('chatbot.index') }}" data-chatbot-open class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('chatbot.*') ? 'active' : '' }}">
+                <i class="fas fa-robot w-5"></i><span>AI Assistant</span>
+            </a>
             <a href="{{ route('research.create') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('research.create') ? 'active' : '' }}">
                 <i class="fas fa-plus-circle w-5"></i><span>Archive Paper</span>
             </a>
@@ -195,6 +198,7 @@
                     <span class="font-bold text-gray-900">ARCHIVES</span>
                 </a>
                 <div class="flex items-center gap-2">
+                    <a href="{{ route('chatbot.index') }}" data-chatbot-open class="px-3 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">AI Assistant</a>
                     <a href="{{ route('research.public') }}" class="px-3 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">Browse Research</a>
                     <a href="{{ route('login') }}" class="px-3 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">Login</a>
                     <a href="{{ route('register') }}" class="px-3 py-2 rounded-lg text-sm font-semibold text-white bg-orange-600 hover:bg-orange-700">Register</a>
@@ -221,6 +225,8 @@
     </div>
 @endif
 @endif
+
+@include('chatbot.widget')
 
 <script>
 (() => {

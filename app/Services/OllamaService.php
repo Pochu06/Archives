@@ -13,6 +13,10 @@ class OllamaService
 
     private int $timeout;
 
+    private ?string $lastFailureType = null;
+
+    private ?string $lastFailureMessage = null;
+
     public function __construct()
     {
         $this->baseUrl = config('services.ollama.base_url', 'http://localhost:11434');
@@ -22,15 +26,50 @@ class OllamaService
 
     public function chat(string $prompt, ?string $systemPrompt = null, array $options = []): ?string
     {
-        try {
-            $messages = [];
+        $messages = [];
 
-            if ($systemPrompt) {
-                $messages[] = ['role' => 'system', 'content' => $systemPrompt];
+        if ($systemPrompt) {
+            $messages[] = ['role' => 'system', 'content' => $systemPrompt];
+        }
+
+        $messages[] = ['role' => 'user', 'content' => $prompt];
+
+        return $this->chatMessages($messages, $options);
+    }
+
+    public function chatMessages(array $messages, array $options = []): ?string
+    {
+        $this->lastFailureType = null;
+        $this->lastFailureMessage = null;
+
+        $messages = array_values(array_filter(array_map(function ($message) {
+            if (! is_array($message)) {
+                return null;
             }
 
-            $messages[] = ['role' => 'user', 'content' => $prompt];
+            $role = trim((string) ($message['role'] ?? ''));
+            $content = trim((string) ($message['content'] ?? ''));
 
+            if ($role === '' || $content === '') {
+                return null;
+            }
+
+            return [
+                'role' => $role,
+                'content' => $content,
+            ];
+        }, $messages)));
+
+        if ($messages === []) {
+            $this->lastFailureType = 'validation';
+            $this->lastFailureMessage = 'No chat messages were provided.';
+
+            return null;
+        }
+
+        $logContext = trim((string) ($options['log_context'] ?? 'chat request'));
+
+        try {
             $response = Http::timeout((int) ($options['timeout'] ?? $this->timeout))
                 ->post("{$this->baseUrl}/api/chat", [
                     'model' => $options['model'] ?? $this->model,
@@ -46,17 +85,35 @@ class OllamaService
                 return $response->json('message.content');
             }
 
-            Log::warning('Ollama API error while generating research summary', [
+            $this->lastFailureType = 'http';
+            $this->lastFailureMessage = 'Ollama returned HTTP '.$response->status().'.';
+
+            Log::warning('Ollama API error during '.$logContext, [
                 'status' => $response->status(),
                 'body' => $response->body(),
             ]);
         } catch (\Throwable $exception) {
-            Log::error('Ollama connection failed while generating research summary', [
-                'message' => $exception->getMessage(),
+            $message = $exception->getMessage();
+
+            $this->lastFailureType = str_contains($message, 'cURL error 28') ? 'timeout' : 'connection';
+            $this->lastFailureMessage = $message;
+
+            Log::error('Ollama connection failed during '.$logContext, [
+                'message' => $message,
             ]);
         }
 
         return null;
+    }
+
+    public function getLastFailureType(): ?string
+    {
+        return $this->lastFailureType;
+    }
+
+    public function getLastFailureMessage(): ?string
+    {
+        return $this->lastFailureMessage;
     }
 
     public function isAvailable(): bool
