@@ -212,13 +212,9 @@
                                     <dt class="text-gray-500">Publication Year</dt>
                                     <dd class="font-semibold text-gray-800">{{ $research->publication_year }}</dd>
                                 </div>
-                                <div class="flex justify-between border-b border-gray-100 pb-2">
-                                    <dt class="text-gray-500">Archived by</dt>
-                                    <dd class="font-semibold text-gray-800">{{ $research->user->name ?? 'N/A' }}</dd>
-                                </div>
                                 <div class="flex justify-between">
                                     <dt class="text-gray-500">Date Archived</dt>
-                                    <dd class="font-semibold text-gray-800">{{ $research->created_at->format('M d, Y') }}</dd>
+                                    <dd class="font-semibold text-gray-800">{{ $research->created_at->format('M Y') }}</dd>
                                 </div>
                             </dl>
                         </div>
