@@ -67,24 +67,28 @@ class RelatedResearchService
         GenerateRelatedResearchJob::dispatchAfterResponse($research->id);
     }
 
-    public function generateAndStoreForResearch(Research $research): void
+    public function generateAndStoreForResearch(Research $research): bool
     {
         try {
             if (! $this->canGenerateAi() || Cache::has($this->aiCacheKey($research))) {
-                return;
+                return false;
             }
 
             $candidates = $this->collectCandidates($research);
 
             if ($candidates->isEmpty()) {
-                return;
+                return false;
             }
 
             $ranked = $this->rerankWithOllama($research, $candidates);
 
             if (! empty($ranked)) {
                 Cache::put($this->aiCacheKey($research), $this->serializeItems($ranked), now()->addMinutes($this->cacheMinutes));
+
+                return true;
             }
+
+            return false;
         } finally {
             Cache::forget($this->pendingCacheKey($research));
         }

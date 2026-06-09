@@ -65,18 +65,22 @@ class ResearchSummaryService
         GenerateResearchSummaryJob::dispatchAfterResponse($research->id);
     }
 
-    public function generateAndStoreForResearch(Research $research): void
+    public function generateAndStoreForResearch(Research $research): bool
     {
         try {
             if (! $this->canGenerateAi($research) || Cache::has($this->aiCacheKey($research))) {
-                return;
+                return false;
             }
 
             $aiSummary = $this->generateWithOllama($research->title, $this->extractAbstract($research));
 
             if ($aiSummary) {
                 Cache::put($this->aiCacheKey($research), $aiSummary, now()->addMinutes($this->cacheMinutes));
+
+                return true;
             }
+
+            return false;
         } finally {
             Cache::forget($this->pendingCacheKey($research));
         }

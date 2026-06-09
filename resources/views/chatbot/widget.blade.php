@@ -97,7 +97,6 @@
                 </div>
 
                 <div class="mt-4 flex flex-wrap items-center gap-2 text-xs">
-                    <span class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 font-semibold text-white">
                     <button type="button" data-chatbot-clear class="rounded-full bg-white/10 px-3 py-1.5 font-semibold text-white transition hover:bg-white/20">Clear chat</button>
                 </div>
             </div>

@@ -163,7 +163,11 @@
                     </div>
                 </div>
                 <div class="hidden sm:flex items-center space-x-3">
+                    @include('layouts.partials.notification-center')
                     <span class="text-sm text-gray-600 text-right">{{ date('l, F j, Y') }}</span>
+                </div>
+                <div class="flex items-center gap-3 sm:hidden">
+                    @include('layouts.partials.notification-center')
                 </div>
             </div>
         </header>
@@ -258,6 +262,28 @@
         } else {
             sidebar.classList.add('-translate-x-full');
         }
+    });
+})();
+
+(() => {
+    document.addEventListener('click', (event) => {
+        document.querySelectorAll('[data-notification-center]').forEach((container) => {
+            const panel = container.querySelector('[data-notification-panel]');
+
+            if (!panel) {
+                return;
+            }
+
+            if (container.contains(event.target)) {
+                if (event.target.closest('[data-notification-toggle]')) {
+                    panel.classList.toggle('hidden');
+                }
+
+                return;
+            }
+
+            panel.classList.add('hidden');
+        });
     });
 })();
 </script>

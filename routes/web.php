@@ -9,6 +9,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\CollegeController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DownloadRequestController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SubmissionController;
 
 // Welcome / Landing
@@ -65,6 +66,10 @@ Route::get('/my-requests', [DownloadRequestController::class, 'myRequests'])->na
 Route::get('/download-requests', [DownloadRequestController::class, 'index'])->name('download-request.index');
 Route::post('/download-requests/{id}/approve', [DownloadRequestController::class, 'approve'])->name('download-request.approve');
 Route::post('/download-requests/{id}/reject', [DownloadRequestController::class, 'reject'])->name('download-request.reject');
+
+// Notifications
+Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.mark-all-read');
+Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.mark-read');
 
 // User Management
 Route::get('/users', [UserController::class, 'index'])->name('users.index');

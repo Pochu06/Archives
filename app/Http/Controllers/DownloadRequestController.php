@@ -4,11 +4,47 @@ namespace App\Http\Controllers;
 
 use App\Models\DownloadRequest;
 use App\Models\Research;
+use App\Models\User;
+use App\Notifications\InAppAlertNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class DownloadRequestController extends Controller
 {
+    private function notifyRdeReviewers(DownloadRequest $downloadRequest): void
+    {
+        $reviewers = User::query()
+            ->where('role', 'super_admin')
+            ->orWhere(function ($query) {
+                $query->where('role', 'admin')
+                    ->whereNull('college_id');
+            })
+            ->get();
+
+        foreach ($reviewers as $reviewer) {
+            $reviewer->notify(new InAppAlertNotification([
+                'type' => 'download_request_received',
+                'title' => 'New download request received',
+                'message' => ($downloadRequest->user->name ?? 'A user').' requested access to "'.($downloadRequest->research->title ?? 'a research paper').'".',
+                'action_url' => route('download-request.index'),
+                'action_label' => 'Review Requests',
+                'icon' => 'fa-inbox',
+                'level' => 'info',
+            ]));
+        }
+    }
+
+    private function notifyRequestOwner(DownloadRequest $downloadRequest, array $payload): void
+    {
+        $recipient = $downloadRequest->user()->first();
+
+        if (! $recipient) {
+            return;
+        }
+
+        $recipient->notify(new InAppAlertNotification($payload));
+    }
+
     private function authCheck()
     {
         if (!session('user_id')) {
@@ -43,12 +79,15 @@ class DownloadRequestController extends Controller
             }
         }
 
-        DownloadRequest::create([
+        $downloadRequest = DownloadRequest::create([
             'user_id' => session('user_id'),
             'research_id' => $researchId,
             'purpose' => $validated['purpose'],
             'status' => 'pending',
         ]);
+
+        $downloadRequest->load(['user', 'research']);
+        $this->notifyRdeReviewers($downloadRequest);
 
         return redirect()->back()->with('success', 'Download request submitted! Please wait for RDE Office approval.');
     }
@@ -93,11 +132,21 @@ class DownloadRequestController extends Controller
         if ($r = $this->authCheck()) return $r;
         $this->requireRDE();
 
-        $downloadRequest = DownloadRequest::findOrFail($id);
+        $downloadRequest = DownloadRequest::with(['user', 'research'])->findOrFail($id);
         $downloadRequest->update([
             'status' => 'approved',
             'reviewed_by' => session('user_id'),
             'reviewed_at' => now(),
+        ]);
+
+        $this->notifyRequestOwner($downloadRequest, [
+            'type' => 'download_request_decision',
+            'title' => 'Download request approved',
+            'message' => 'Your request to download "'.($downloadRequest->research->title ?? 'this research paper').'" was approved by the RDE office.',
+            'action_url' => route('research.show', $downloadRequest->research_id),
+            'action_label' => 'Open Research',
+            'icon' => 'fa-file-arrow-down',
+            'level' => 'success',
         ]);
 
         return redirect()->back()->with('success', 'Download request approved.');
@@ -113,12 +162,25 @@ class DownloadRequestController extends Controller
             'rejection_reason' => 'required|string|max:500',
         ]);
 
-        $downloadRequest = DownloadRequest::findOrFail($id);
+        $downloadRequest = DownloadRequest::with(['user', 'research'])->findOrFail($id);
         $downloadRequest->update([
             'status' => 'rejected',
             'reviewed_by' => session('user_id'),
             'reviewed_at' => now(),
             'rejection_reason' => $validated['rejection_reason'],
+        ]);
+
+        $this->notifyRequestOwner($downloadRequest, [
+            'type' => 'download_request_decision',
+            'title' => 'Download request rejected',
+            'message' => 'Your request to download "'.($downloadRequest->research->title ?? 'this research paper').'" was rejected by the RDE office.',
+            'action_url' => route('download-request.my'),
+            'action_label' => 'View Requests',
+            'icon' => 'fa-file-circle-xmark',
+            'level' => 'danger',
+            'meta' => [
+                'reason' => $validated['rejection_reason'],
+            ],
         ]);
 
         return redirect()->back()->with('success', 'Download request rejected.');

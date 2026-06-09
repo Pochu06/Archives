@@ -329,9 +329,9 @@
                         <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">Related Research</p>
                         <p class="text-sm text-gray-600">Suggested from matching keywords and similar abstract content</p>
                     </div>
-                    <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full {{ !empty($relatedResearch['pending']) && ($relatedResearch['source'] ?? null) !== 'ollama' ? 'bg-amber-100 text-amber-700' : (($relatedResearch['source'] ?? null) === 'ollama' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700') }}">
+                    {{-- <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full {{ !empty($relatedResearch['pending']) && ($relatedResearch['source'] ?? null) !== 'ollama' ? 'bg-amber-100 text-amber-700' : (($relatedResearch['source'] ?? null) === 'ollama' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700') }}">
                         {{ !empty($relatedResearch['pending']) && ($relatedResearch['source'] ?? null) !== 'ollama' ? 'AI reranking in progress' : (($relatedResearch['source'] ?? null) === 'ollama' ? 'AI ranked' : 'Quick matches') }}
-                    </span>
+                    </span> --}}
                 </div>
 
                 @if(!empty($relatedResearch['items']))

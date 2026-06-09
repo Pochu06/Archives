@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Research;
+use App\Notifications\InAppAlertNotification;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
@@ -73,6 +74,17 @@ class SubmissionController extends Controller
             return redirect()->route('dashboard')->with('error', 'Unauthorized.');
         }
         return null;
+    }
+
+    private function notifyResearchOwner(Research $research, array $payload): void
+    {
+        $recipient = $research->user()->first();
+
+        if (! $recipient) {
+            return;
+        }
+
+        $recipient->notify(new InAppAlertNotification($payload));
     }
 
     public function index(Request $request)
@@ -163,6 +175,16 @@ class SubmissionController extends Controller
             'rejection_reason' => null,
         ]);
 
+        $this->notifyResearchOwner($research, [
+            'type' => 'approval_decision',
+            'title' => 'College review passed',
+            'message' => '"'.$research->title.'" passed college review and is now waiting for RDE approval.',
+            'action_url' => route('research.show', $research->id),
+            'action_label' => 'View Submission',
+            'icon' => 'fa-building-columns',
+            'level' => 'success',
+        ]);
+
         return redirect()->back()->with('success', 'Paper approved by college and forwarded to the RDE office.');
     }
 
@@ -192,6 +214,16 @@ class SubmissionController extends Controller
             'rejection_reason' => $validated['reason'],
             'approved_by' => null,
             'approved_at' => null,
+        ]);
+
+        $this->notifyResearchOwner($research, [
+            'type' => 'approval_decision',
+            'title' => 'Submission rejected by college',
+            'message' => '"'.$research->title.'" was rejected during college review. Open the submission to see the reason.',
+            'action_url' => route('research.show', $research->id),
+            'action_label' => 'Review Feedback',
+            'icon' => 'fa-circle-xmark',
+            'level' => 'danger',
         ]);
 
         return redirect()->back()->with('success', 'Paper rejected at the college review stage.');
@@ -228,6 +260,16 @@ class SubmissionController extends Controller
             'approved_at' => null,
         ]);
 
+        $this->notifyResearchOwner($research, [
+            'type' => 'revision_request',
+            'title' => 'College revision requested',
+            'message' => 'Your submission "'.$research->title.'" needs updates before it can move forward.',
+            'action_url' => route('research.edit', $research->id),
+            'action_label' => 'Revise Submission',
+            'icon' => 'fa-rotate-left',
+            'level' => 'warning',
+        ]);
+
         return redirect()->back()->with('success', 'Revision request sent back to the student from the college review stage.');
     }
 
@@ -249,6 +291,16 @@ class SubmissionController extends Controller
             'revision_fields' => null,
             'revision_field_notes' => null,
             'rejection_reason' => null,
+        ]);
+
+        $this->notifyResearchOwner($research, [
+            'type' => 'approval_decision',
+            'title' => 'Research approved',
+            'message' => '"'.$research->title.'" was approved by the RDE office and added to the archive.',
+            'action_url' => route('research.show', $research->id),
+            'action_label' => 'Open Research',
+            'icon' => 'fa-circle-check',
+            'level' => 'success',
         ]);
 
         return redirect()->back()->with('success', 'Paper approved by the RDE office and added to the archive.');
@@ -276,6 +328,16 @@ class SubmissionController extends Controller
             'rejection_reason' => $validated['reason'],
             'approved_by' => null,
             'approved_at' => null,
+        ]);
+
+        $this->notifyResearchOwner($research, [
+            'type' => 'approval_decision',
+            'title' => 'Submission rejected by RDE',
+            'message' => '"'.$research->title.'" was rejected during final review. Open the submission to see the decision details.',
+            'action_url' => route('research.show', $research->id),
+            'action_label' => 'Review Feedback',
+            'icon' => 'fa-circle-xmark',
+            'level' => 'danger',
         ]);
 
         return redirect()->back()->with('success', 'Paper rejected at the RDE review stage.');
@@ -306,6 +368,16 @@ class SubmissionController extends Controller
             'rejection_reason' => null,
             'approved_by' => null,
             'approved_at' => null,
+        ]);
+
+        $this->notifyResearchOwner($research, [
+            'type' => 'revision_request',
+            'title' => 'RDE revision requested',
+            'message' => 'Your submission "'.$research->title.'" needs revision before final approval.',
+            'action_url' => route('research.edit', $research->id),
+            'action_label' => 'Revise Submission',
+            'icon' => 'fa-file-pen',
+            'level' => 'warning',
         ]);
 
         return redirect()->back()->with('success', 'Revision request sent back to the student from the RDE review stage.');
