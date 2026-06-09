@@ -12,6 +12,8 @@ class ArchiveChatbotService
 
     private const MAX_HISTORY_MESSAGES = 8;
 
+    private const OUT_OF_SCOPE_REPLY = 'I can only help with ARCHIVES system use, archived research, research discovery, and basic research-writing questions. Please ask something related to the archive or your research work.';
+
     private OllamaService $ollama;
 
     private array $stopWords = [
@@ -19,6 +21,14 @@ class ArchiveChatbotService
         'into', 'need', 'paper', 'papers', 'please', 'question', 'research', 'show', 'tell', 'that',
         'their', 'them', 'there', 'these', 'they', 'this', 'thesis', 'what', 'which', 'with', 'would',
         'your',
+    ];
+
+    private array $archiveIntentKeywords = [
+        'abstract', 'adviser', 'adviser', 'ai assistant', 'approval', 'approved', 'archive', 'archived', 'author',
+        'capstone', 'category', 'chatbot', 'citation', 'college', 'dashboard', 'download', 'filter', 'full text',
+        'introduction', 'keyword', 'literature', 'method', 'methodology', 'paper', 'preview', 'proposal', 'recommendation',
+        'references', 'related research', 'research', 'results', 'revision', 'rde', 'study', 'submission', 'system',
+        'thesis', 'topic', 'upload',
     ];
 
     public function __construct(?OllamaService $ollama = null)
@@ -30,6 +40,14 @@ class ArchiveChatbotService
     {
         $message = trim($message);
         $references = $this->findRelevantResearch($message);
+
+        if (! $this->isArchiveScopedQuestion($message, $references)) {
+            return [
+                'reply' => self::OUT_OF_SCOPE_REPLY,
+                'references' => [],
+                'status' => 'out_of_scope',
+            ];
+        }
 
         if (! $this->isAvailable()) {
             return [
@@ -106,9 +124,36 @@ class ArchiveChatbotService
             'Do not claim that no archived research exists if records are provided in the context.',
             'Do not invent archived papers, authors, years, categories, or findings that are not present in the provided context.',
             'If the context is insufficient, say that clearly and then give general guidance.',
+            'Refuse any request that is not about the ARCHIVES system, archived research, research discovery, or basic research-writing support.',
             'Keep answers concise, practical, and student-friendly.',
             $context,
         ]);
+    }
+
+    private function isArchiveScopedQuestion(string $message, Collection $references): bool
+    {
+        if ($references->isNotEmpty()) {
+            return true;
+        }
+
+        $normalized = Str::lower(trim($message));
+
+        if ($normalized === '') {
+            return false;
+        }
+
+        foreach ($this->archiveIntentKeywords as $keyword) {
+            if (str_contains($normalized, $keyword)) {
+                return true;
+            }
+        }
+
+        if (preg_match('/\b(how|where|can|could|why|when|which|find|search|submit|upload|download|preview|request|revise|approve|use|open|filter)\b/', $normalized) === 1
+            && preg_match('/\b(archive|system|research|paper|thesis|topic|download|approval|rde|submission|pdf|abstract|methodology|reference|college|category|keyword)\b/', $normalized) === 1) {
+            return true;
+        }
+
+        return false;
     }
 
     private function normalizeHistory(array $history): array

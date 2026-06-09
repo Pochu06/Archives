@@ -89,7 +89,7 @@
                     <div>
                         <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-orange-100">ARCHI</p>
                         <h2 id="chatbotModalTitle" class="mt-1 text-lg font-bold">ARCHIVES AI Assistant</h2>
-                        <p class="mt-1 text-sm text-orange-50">Ask about archived research without leaving the current page.</p>
+                        <p class="mt-1 text-sm text-orange-50">Ask only about archived research, ARCHIVES features, or research-writing help.</p>
                     </div>
                     <button type="button" data-chatbot-close class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20" aria-label="Close AI assistant">
                         <i class="fas fa-times"></i>
@@ -108,7 +108,7 @@
                         <i class="fas fa-comments"></i>
                     </div>
                     <h3 class="mt-4 text-lg font-bold text-gray-900">Start a conversation</h3>
-                    <p class="mt-2 text-sm leading-6 text-gray-600">Ask for archived papers, topic directions, or a quick explanation of a research method.</p>
+                    <p class="mt-2 text-sm leading-6 text-gray-600">Ask for archived papers, archive-system help, topic directions, or a quick explanation of a research method.</p>
                 </div>
                 @endif
 
@@ -146,7 +146,7 @@
                 <form data-chatbot-form action="{{ route('chatbot.store') }}" method="POST" class="space-y-3">
                     @csrf
                     <label for="chatbotWidgetMessage" class="sr-only">Message</label>
-                    <textarea id="chatbotWidgetMessage" data-chatbot-message name="message" rows="3" maxlength="2000" class="w-full rounded-2xl border border-gray-300 px-4 py-3 text-sm text-gray-800 focus:border-orange-500 focus:outline-none" placeholder="Ask about a topic, an archived paper, or research guidance..."></textarea>
+                    <textarea id="chatbotWidgetMessage" data-chatbot-message name="message" rows="3" maxlength="2000" class="w-full rounded-2xl border border-gray-300 px-4 py-3 text-sm text-gray-800 focus:border-orange-500 focus:outline-none" placeholder="Ask about archived research, ARCHIVES features, or research guidance..."></textarea>
                     <div class="flex items-center justify-between gap-3">
                         <p class="text-xs leading-5 text-gray-500"></p>
                         <button type="submit" data-chatbot-submit class="inline-flex items-center gap-2 rounded-2xl bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60">

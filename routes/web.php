@@ -45,6 +45,7 @@ Route::get('/research/{id}', [ResearchController::class, 'show'])->name('researc
 Route::get('/research/{id}/edit', [ResearchController::class, 'edit'])->name('research.edit');
 Route::put('/research/{id}', [ResearchController::class, 'update'])->name('research.update');
 Route::delete('/research/{id}', [ResearchController::class, 'destroy'])->name('research.destroy');
+Route::get('/research/{id}/preview', [ResearchController::class, 'preview'])->name('research.preview');
 Route::get('/research/{id}/download', [ResearchController::class, 'download'])->name('research.download');
 Route::post('/research/upload-image', [ResearchController::class, 'uploadImage'])->name('research.upload-image');
 Route::post('/research/delete-image', [ResearchController::class, 'deleteImage'])->name('research.delete-image');

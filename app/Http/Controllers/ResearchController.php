@@ -17,6 +17,34 @@ use Illuminate\Support\Facades\Storage;
 
 class ResearchController extends Controller
 {
+    private function canDownloadResearch(Research $research): bool
+    {
+        $userId = session('user_id');
+        $role = session('user_role');
+        $collegeId = session('user_college_id');
+
+        if (! $userId) {
+            return false;
+        }
+
+        if ($role === 'super_admin' || ($role === 'admin' && ! $collegeId)) {
+            return true;
+        }
+
+        return DownloadRequest::where('user_id', $userId)
+            ->where('research_id', $research->id)
+            ->where('status', 'approved')
+            ->exists();
+    }
+
+    private function buildResearchPdf(Research $research)
+    {
+        $pdf = Pdf::loadView('research.pdf', compact('research'));
+        $pdf->setPaper('letter', 'portrait');
+
+        return $pdf;
+    }
+
     private function buildAiInsightViewData(
         Research $research,
         ResearchSummaryService $researchSummaryService,
@@ -61,8 +89,7 @@ class ResearchController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->first();
 
-            $canDownload = ($role === 'super_admin' || ($role === 'admin' && !$collegeId))
-                || ($downloadRequest && $downloadRequest->status === 'approved');
+            $canDownload = $this->canDownloadResearch($research);
         }
 
         return compact('research', 'downloadRequest', 'canDownload');
@@ -434,26 +461,27 @@ class ResearchController extends Controller
         if ($r = $this->authCheck()) return $r;
         $research = Research::with(['user', 'college', 'category'])->findOrFail($id);
 
-        $role = session('user_role');
-        $collegeId = session('user_college_id');
-
-        // RDE and super_admin can always download
-        if (!($role === 'super_admin' || ($role === 'admin' && !$collegeId))) {
-            $approved = DownloadRequest::where('user_id', session('user_id'))
-                ->where('research_id', $id)
-                ->where('status', 'approved')
-                ->exists();
-
-            if (!$approved) {
-                return redirect()->back()->with('error', 'You need an approved download request to download this paper.');
-            }
+        if (! $this->canDownloadResearch($research)) {
+            return redirect()->back()->with('error', 'You need an approved download request to download this paper.');
         }
 
-        $pdf = Pdf::loadView('research.pdf', compact('research'));
-        $pdf->setPaper('letter', 'portrait');
+        $filename = $research->title . '.pdf';
+
+        return $this->buildResearchPdf($research)->download($filename);
+    }
+
+    public function preview($id)
+    {
+        if ($r = $this->authCheck()) return $r;
+        $research = Research::with(['user', 'college', 'category'])->findOrFail($id);
+
+        if (! $this->canDownloadResearch($research)) {
+            return redirect()->back()->with('error', 'You need an approved download request to preview this PDF.');
+        }
 
         $filename = $research->title . '.pdf';
-        return $pdf->download($filename);
+
+        return $this->buildResearchPdf($research)->stream($filename);
     }
 
     public function uploadImage(Request $request)

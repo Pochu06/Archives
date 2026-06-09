@@ -16,7 +16,7 @@
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-[0.2em] text-orange-100">ARCHI</p>
                         <h3 class="mt-1 text-2xl font-bold">ARCHIVES AI Assistant</h3>
-                        <p class="mt-2 max-w-2xl text-sm text-orange-50">The chatbot is now available as a floating modal, so you can ask questions about archived research from any page without leaving what you are doing.</p>
+                        <p class="mt-2 max-w-2xl text-sm text-orange-50">The chatbot is available as a floating modal and only answers questions about the ARCHIVES system, archived research, and research-writing support.</p>
                     </div>
                 </div>
             </div>
@@ -36,13 +36,14 @@
             <div class="space-y-4">
                 <div class="rounded-3xl border border-orange-100 bg-orange-50 p-5">
                     <h4 class="text-lg font-bold text-gray-900">How it works now</h4>
-                    <p class="mt-2 text-sm leading-6 text-gray-600">Use the round AI Assistant button in the bottom-right corner. The modal keeps your recent conversation and lets you ask follow-up questions while staying on the same screen.</p>
+                    <p class="mt-2 text-sm leading-6 text-gray-600">Use the round AI Assistant button in the bottom-right corner. The modal keeps your recent conversation, but it only supports ARCHIVES-related questions and research guidance.</p>
                 </div>
 
                 <div class="rounded-3xl border border-blue-100 bg-blue-50 p-5">
                     <h4 class="text-lg font-bold text-gray-900">What you can ask</h4>
                     <div class="mt-3 space-y-2 text-sm leading-6 text-gray-600">
                         <p>Find archived papers related to a topic.</p>
+                        <p>Ask how to use archive features like search, download requests, approvals, or previews.</p>
                         <p>Get topic refinement ideas before writing a thesis.</p>
                         <p>Ask for plain-language explanations of research sections or methods.</p>
                     </div>

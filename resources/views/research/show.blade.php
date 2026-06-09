@@ -119,6 +119,42 @@
 
                 {{-- Tab: Overview --}}
                 <div id="tab-overview" class="tab-content active p-8 space-y-8">
+                    <div>
+                        <div class="flex items-center justify-between gap-3 mb-4">
+                            <h3 class="text-lg font-bold text-gray-900">Abstract</h3>
+                            <span class="text-xs font-semibold uppercase tracking-wide text-gray-400">Abstract-first preview</span>
+                        </div>
+                        <div class="rounded-2xl border border-gray-200 bg-gray-50 p-5">
+                            <p class="text-gray-700 leading-relaxed text-[15px]">{{ $research->abstract }}</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-4">Quick Metadata</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                            <div class="rounded-2xl border border-gray-200 bg-white p-4">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">College</p>
+                                <p class="mt-2 text-sm font-bold text-gray-800">{{ $research->college->code ?? 'N/A' }}</p>
+                                <p class="text-xs text-gray-500 mt-1">{{ $research->college->name ?? 'No college assigned' }}</p>
+                            </div>
+                            <div class="rounded-2xl border border-gray-200 bg-white p-4">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Category</p>
+                                <p class="mt-2 text-sm font-bold text-gray-800">{{ $research->category->name ?? 'Uncategorized' }}</p>
+                                <p class="text-xs text-gray-500 mt-1">Research classification</p>
+                            </div>
+                            <div class="rounded-2xl border border-gray-200 bg-white p-4">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Publication Year</p>
+                                <p class="mt-2 text-sm font-bold text-gray-800">{{ $research->publication_year }}</p>
+                                <p class="text-xs text-gray-500 mt-1">Archived {{ $research->created_at->format('M d, Y') }}</p>
+                            </div>
+                            <div class="rounded-2xl border border-gray-200 bg-white p-4">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">PDF Access</p>
+                                <p class="mt-2 text-sm font-bold {{ $canDownload ? 'text-green-700' : 'text-amber-700' }}">{{ $canDownload ? 'Preview unlocked' : 'Request required' }}</p>
+                                <p class="text-xs text-gray-500 mt-1">{{ $canDownload ? 'Inline preview and full download available' : 'Request approval to unlock the full PDF preview' }}</p>
+                            </div>
+                        </div>
+                    </div>
+
                     @if(!empty($aiSummary['summary']) || !empty($aiSummary['pending']))
                     <div class="rounded-2xl border border-blue-100 bg-blue-50 p-5">
                         <div class="flex items-start gap-3">
@@ -147,8 +183,30 @@
                     @endif
 
                     <div>
-                        <h3 class="text-lg font-bold text-gray-900 mb-4">Abstract</h3>
-                        <p class="text-gray-700 leading-relaxed text-[15px]">{{ $research->abstract }}</p>
+                        <div class="flex items-center justify-between gap-3 mb-4">
+                            <div>
+                                <h3 class="text-lg font-bold text-gray-900">PDF Preview</h3>
+                                <p class="text-sm text-gray-500">Review the formatted document before downloading it.</p>
+                            </div>
+                        </div>
+
+                        @if($canDownload)
+                        <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                            <iframe src="{{ route('research.preview', $research->id) }}#toolbar=0&navpanes=0&scrollbar=1" class="h-[42rem] w-full" title="PDF Preview"></iframe>
+                        </div>
+                        @else
+                        <div class="rounded-2xl border border-dashed border-amber-300 bg-amber-50 p-6">
+                            <div class="flex items-start gap-4">
+                                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
+                                    <i class="fas fa-file-pdf text-lg"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-base font-bold text-amber-900">Inline PDF preview is locked</h4>
+                                    <p class="mt-2 text-sm leading-6 text-amber-800">You can review the abstract, metadata, and AI summary first. Request download approval to unlock the formatted full-text preview and final PDF export.</p>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
                     </div>
 
                     @if($research->keywords)
@@ -240,6 +298,28 @@
         <div class="w-full lg:w-72 shrink-0 space-y-4">
             {{-- Download / Request Card --}}
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                <div class="mb-4 rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Preview Snapshot</p>
+                    <div class="mt-3 grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                            <p class="text-gray-400">Authors</p>
+                            <p class="font-semibold text-gray-800">{{ count(array_filter(array_map('trim', explode(',', $research->authors)))) }}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-400">Keywords</p>
+                            <p class="font-semibold text-gray-800">{{ count(array_filter(array_map('trim', explode(',', $research->keywords ?? '')))) }}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-400">Status</p>
+                            <p class="font-semibold text-gray-800">{{ $research->status_label }}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-400">Format</p>
+                            <p class="font-semibold text-gray-800">PDF</p>
+                        </div>
+                    </div>
+                </div>
+
                 @if(!session('user_id'))
                     <div class="text-center">
                         <p class="text-sm text-gray-700 mb-2">Login to request or download the full-text PDF.</p>
