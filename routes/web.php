@@ -33,6 +33,7 @@ Route::post('/chatbot/reset', [ChatbotController::class, 'reset'])->name('chatbo
 // Research Archive
 Route::get('/research/public', [ResearchController::class, 'publicIndex'])->name('research.public');
 Route::get('/research/public/{id}', [ResearchController::class, 'publicShow'])->name('research.public-show');
+Route::get('/authors/{id}', [ResearchController::class, 'authorProfile'])->name('authors.show');
 Route::get('/research/topic-suggestions', [ResearchController::class, 'topicSuggestions'])->name('research.topic-suggestions');
 Route::get('/research', [ResearchController::class, 'index'])->name('research.index');
 Route::get('/research/create', [ResearchController::class, 'create'])->name('research.create');
@@ -73,6 +74,9 @@ Route::post('/notifications/read-all', [NotificationController::class, 'markAllR
 Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.mark-read');
 
 // User Management
+Route::get('/profile/edit', [UserController::class, 'editProfile'])->name('profile.edit');
+Route::put('/profile', [UserController::class, 'updateProfile'])->name('profile.update');
+
 Route::get('/users', [UserController::class, 'index'])->name('users.index');
 Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
 Route::post('/users', [UserController::class, 'store'])->name('users.store');

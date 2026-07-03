@@ -104,6 +104,14 @@
                 <div class="text-xs text-gray-500 space-y-1 mb-4">
                     <p><span class="font-semibold text-gray-700">College:</span> {{ $item->college->code ?? 'N/A' }}</p>
                     <p><span class="font-semibold text-gray-700">Authors:</span> {{ $item->authors }}</p>
+                    <p>
+                        <span class="font-semibold text-gray-700">Archived by:</span>
+                        @if($item->user)
+                        <a href="{{ route('authors.show', $item->user->id) }}" class="text-orange-700 hover:underline">{{ $item->user->name }}</a>
+                        @else
+                        N/A
+                        @endif
+                    </p>
                 </div>
 
                 <div class="mt-auto flex gap-2">

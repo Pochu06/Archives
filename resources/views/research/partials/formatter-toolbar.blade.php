@@ -21,6 +21,15 @@
         <i class="fas fa-image"></i>
     </button>
     <div class="flex-1"></div>
+    <label class="text-xs text-gray-500 mr-1" for="table-design-{{ $target }}">Table</label>
+    <select
+        id="table-design-{{ $target }}"
+        class="text-xs border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-700"
+        onchange="setTableDesign(this.value)">
+        <option value="classic">Classic</option>
+        <option value="striped">Striped</option>
+        <option value="minimal">Minimal</option>
+    </select>
     <button type="button" onclick="togglePreview('{{ $target }}')" class="fmt-btn preview-toggle" data-target="{{ $target }}" title="Toggle Preview">
         <i class="fas fa-eye"></i> <span class="text-xs ml-0.5">Preview</span>
     </button>

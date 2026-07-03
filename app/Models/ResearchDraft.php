@@ -13,7 +13,7 @@ class ResearchDraft extends Model
         'user_id', 'title', 'abstract', 'introduction', 'methodology',
         'results', 'discussion', 'references', 'conclusion',
         'recommendations', 'keywords', 'authors',
-        'college_id', 'category_id', 'publication_year', 'last_saved_at',
+        'college_id', 'category_id', 'publication_year', 'table_design', 'last_saved_at',
     ];
 
     protected $casts = [

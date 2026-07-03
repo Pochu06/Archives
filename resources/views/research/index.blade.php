@@ -69,6 +69,14 @@
                 <div class="text-xs text-gray-500 space-y-1">
                     <p><i class="fas fa-user mr-1 text-orange-400"></i> {{ $r->authors }}</p>
                     <p><i class="fas fa-tag mr-1 text-orange-400"></i> {{ $r->category->name ?? 'N/A' }}</p>
+                    <p>
+                        <i class="fas fa-user-circle mr-1 text-orange-400"></i>
+                        @if($r->user)
+                        <a href="{{ route('authors.show', $r->user->id) }}" class="text-orange-700 hover:underline">{{ $r->user->name }}</a>
+                        @else
+                        N/A
+                        @endif
+                    </p>
                 </div>
             </div>
             <div class="border-t border-gray-100 p-4 flex gap-2">

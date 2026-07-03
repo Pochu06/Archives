@@ -91,6 +91,9 @@
                 <i class="fas fa-clipboard-list w-5"></i><span>My Requests</span>
             </a>
             @endif
+            <a href="{{ route('profile.edit') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('profile.*') ? 'active' : '' }}">
+                <i class="fas fa-user-cog w-5"></i><span>My Profile</span>
+            </a>
             @if(in_array(session('user_role'), ['super_admin', 'admin']))
             <div class="pt-3">
                 <p class="text-orange-400 text-xs font-semibold uppercase tracking-wider px-3 mb-1">Management</p>

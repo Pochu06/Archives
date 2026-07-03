@@ -360,7 +360,11 @@
                 </div>
                 <div class="border-t border-gray-100 pt-3">
                     <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">Archived by</p>
-                    <p class="text-sm font-semibold text-gray-800">{{ $research->user->name ?? 'N/A' }}</p>
+                    @if($research->user)
+                    <a href="{{ route('authors.show', $research->user->id) }}" class="text-sm font-semibold text-orange-700 hover:underline">{{ $research->user->name }}</a>
+                    @else
+                    <p class="text-sm font-semibold text-gray-800">N/A</p>
+                    @endif
                 </div>
                 <div class="border-t border-gray-100 pt-3">
                     <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">Date Archived</p>

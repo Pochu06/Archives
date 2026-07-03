@@ -11,6 +11,16 @@
     .fmt-preview .content-table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.85rem; }
     .fmt-preview .content-table th, .fmt-preview .content-table td { border: 1px solid #d1d5db; padding: 8px 12px; text-align: left; }
     .fmt-preview .content-table th { background: #f9fafb; font-weight: 600; }
+    .fmt-preview .content-table.table-style-classic { border: 1px solid #d1d5db; }
+    .fmt-preview .content-table.table-style-classic th { background: #f9fafb; color: #111827; }
+    .fmt-preview .content-table.table-style-striped { border: 1px solid #e5e7eb; }
+    .fmt-preview .content-table.table-style-striped th { background: #fff7ed; color: #9a3412; border-color: #fed7aa; }
+    .fmt-preview .content-table.table-style-striped td { border-color: #e5e7eb; }
+    .fmt-preview .content-table.table-style-striped tbody tr:nth-child(even) td { background: #f9fafb; }
+    .fmt-preview .content-table.table-style-minimal { border-collapse: separate; border-spacing: 0; }
+    .fmt-preview .content-table.table-style-minimal th,
+    .fmt-preview .content-table.table-style-minimal td { border: none; border-bottom: 1px solid #e5e7eb; padding: 10px 12px; }
+    .fmt-preview .content-table.table-style-minimal th { background: transparent; color: #374151; text-transform: uppercase; font-size: 12px; letter-spacing: 0.03em; }
     .fmt-preview .figure-container { text-align: center; margin: 1rem 0; }
     .fmt-preview .figure-image { max-width: 80%; margin: 0 auto; border-radius: 8px; }
     .fmt-preview .figure-caption { font-size: 0.85rem; color: #6b7280; margin-top: 0.5rem; font-style: italic; }
@@ -59,6 +69,7 @@
         <form action="{{ route('research.update', $research->id) }}" method="POST" class="p-8 space-y-6">
             @csrf
             @method('PUT')
+            <input type="hidden" name="table_design" id="tableDesignInput" value="{{ old('table_design', $research->table_design ?? 'classic') }}">
 
             <div>
                 <label class="block text-gray-700 font-semibold mb-2">Research Title <span class="text-red-500">*</span></label>
@@ -273,6 +284,43 @@ function insertFigure(fieldId) {
     insertAtCursor(fieldId, template);
 }
 
+function getTableDesign() {
+    const allowed = ['classic', 'striped', 'minimal'];
+    const hiddenInput = document.getElementById('tableDesignInput');
+    if (hiddenInput && allowed.includes(hiddenInput.value)) {
+        return hiddenInput.value;
+    }
+    const saved = localStorage.getItem('researchTableDesign');
+    return allowed.includes(saved) ? saved : 'classic';
+}
+
+function setTableDesignInput(styleName) {
+    const hiddenInput = document.getElementById('tableDesignInput');
+    if (hiddenInput) hiddenInput.value = styleName;
+}
+
+function syncTableDesignSelectors(styleName) {
+    document.querySelectorAll('select[id^="table-design-"]').forEach(sel => {
+        if (sel.value !== styleName) sel.value = styleName;
+    });
+}
+
+function refreshVisiblePreviews() {
+    document.querySelectorAll('.fmt-preview').forEach(preview => {
+        if (preview.classList.contains('hidden')) return;
+        const fieldId = preview.id.replace('preview-', '');
+        const textarea = document.getElementById(fieldId);
+        if (textarea) renderPreview(textarea.value, preview);
+    });
+}
+
+function setTableDesign(styleName) {
+    localStorage.setItem('researchTableDesign', styleName);
+    setTableDesignInput(styleName);
+    syncTableDesignSelectors(styleName);
+    refreshVisiblePreviews();
+}
+
 function togglePreview(fieldId) {
     const ta = document.getElementById(fieldId);
     const preview = document.getElementById('preview-' + fieldId);
@@ -389,8 +437,9 @@ function stripLeadingIndent(line) {
 
 function buildTableHtml(rows) {
     if (!rows.length) return '';
+    const tableDesign = getTableDesign();
     const header = rows.shift();
-    let h = '<table class="content-table"><thead><tr>' + header.map(c => `<th>${formatInline(escHtml(c))}</th>`).join('') + '</tr></thead>';
+    let h = `<table class="content-table table-style-${tableDesign}"><thead><tr>` + header.map(c => `<th>${formatInline(escHtml(c))}</th>`).join('') + '</tr></thead>';
     if (rows.length) {
         h += '<tbody>' + rows.map(r => '<tr>' + r.map(c => `<td>${formatInline(escHtml(c))}</td>`).join('') + '</tr>').join('') + '</tbody>';
     }
@@ -458,5 +507,7 @@ document.getElementById('figureUpload').addEventListener('change', function(e) {
         })
         .catch(() => { status.textContent = 'Upload failed.'; });
 });
+
+    setTableDesign(getTableDesign());
 </script>
 @endsection

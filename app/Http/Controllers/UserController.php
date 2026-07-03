@@ -9,11 +9,59 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
+    private function requireAuth()
+    {
+        if (!session('user_id')) return redirect()->route('login');
+        return null;
+    }
+
     private function requireRole(array $roles)
     {
         if (!session('user_id')) return redirect()->route('login');
         if (!in_array(session('user_role'), $roles)) return redirect()->route('dashboard')->with('error', 'Unauthorized.');
         return null;
+    }
+
+    public function editProfile()
+    {
+        if ($r = $this->requireAuth()) return $r;
+
+        $user = User::with('college')->findOrFail(session('user_id'));
+        return view('users.profile', compact('user'));
+    }
+
+    public function updateProfile(Request $request)
+    {
+        if ($r = $this->requireAuth()) return $r;
+
+        $user = User::findOrFail(session('user_id'));
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            'student_id' => 'nullable|string|max:50',
+            'password' => 'nullable|min:8|confirmed',
+        ]);
+
+        $updateData = [
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'student_id' => $validated['student_id'] ?? null,
+        ];
+
+        if (!empty($validated['password'])) {
+            $updateData['password'] = Hash::make($validated['password']);
+        }
+
+        $user->update($updateData);
+
+        // Keep sidebar/header session info in sync after profile updates.
+        session([
+            'user_name' => $user->name,
+            'user_email' => $user->email,
+        ]);
+
+        return redirect()->route('profile.edit')->with('success', 'Profile updated successfully!');
     }
 
     public function index(Request $request)

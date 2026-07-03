@@ -155,6 +155,37 @@
         .content-table td {
             text-indent: 0;
         }
+        .content-table.table-style-classic {
+            border: 1px solid #000;
+        }
+        .content-table.table-style-classic th {
+            background-color: #f0f0f0;
+            color: #000;
+        }
+        .content-table.table-style-striped {
+            border: 1px solid #444;
+        }
+        .content-table.table-style-striped th {
+            background-color: #ececec;
+            color: #000;
+        }
+        .content-table.table-style-striped tbody tr:nth-child(even) td {
+            background-color: #f8f8f8;
+        }
+        .content-table.table-style-minimal {
+            border-collapse: collapse;
+        }
+        .content-table.table-style-minimal th,
+        .content-table.table-style-minimal td {
+            border: 0;
+            border-bottom: 1px solid #777;
+            padding: 8px 10px;
+        }
+        .content-table.table-style-minimal th {
+            background: transparent;
+            text-transform: uppercase;
+            font-size: 10pt;
+        }
         .table-caption {
             font-style: italic;
             font-size: 11pt;
@@ -220,28 +251,34 @@
         @endif
     </div>
 
-    @php use App\Helpers\ContentHelper; @endphp
+    @php
+        use App\Helpers\ContentHelper;
+        $tableDesign = in_array($research->table_design, ['classic', 'striped', 'minimal'], true)
+            ? $research->table_design
+            : 'classic';
+        $tableClass = 'content-table table-style-' . $tableDesign;
+    @endphp
 
     {{-- ══ INTRODUCTION ══ --}}
     @if($research->introduction)
     <div class="section-heading">INTRODUCTION</div>
-    {!! ContentHelper::renderContent($research->introduction, 'content-table', 'pdf') !!}
+    {!! ContentHelper::renderContent($research->introduction, $tableClass, 'pdf') !!}
     @endif
 
     {{-- ══ METHODOLOGY ══ --}}
     @if($research->methodology)
     <div class="section-heading">METHODOLOGY</div>
-    {!! ContentHelper::renderContent($research->methodology, 'content-table', 'pdf') !!}
+    {!! ContentHelper::renderContent($research->methodology, $tableClass, 'pdf') !!}
     @endif
 
     {{-- ══ RESULTS AND DISCUSSION ══ --}}
     @if($research->results || $research->discussion)
     <div class="section-heading">RESULTS AND DISCUSSION</div>
     @if($research->results)
-    {!! ContentHelper::renderContent($research->results, 'content-table', 'pdf') !!}
+    {!! ContentHelper::renderContent($research->results, $tableClass, 'pdf') !!}
     @endif
     @if($research->discussion)
-    {!! ContentHelper::renderContent($research->discussion, 'content-table', 'pdf') !!}
+    {!! ContentHelper::renderContent($research->discussion, $tableClass, 'pdf') !!}
     @endif
     @endif
 
@@ -250,11 +287,11 @@
     <div class="section-heading">CONCLUSION AND RECOMMENDATIONS</div>
     @if($research->conclusion)
     <div class="sub-heading">Conclusion</div>
-    {!! ContentHelper::renderContent($research->conclusion, 'content-table', 'pdf') !!}
+    {!! ContentHelper::renderContent($research->conclusion, $tableClass, 'pdf') !!}
     @endif
     @if($research->recommendations)
     <div class="sub-heading">Recommendations</div>
-    {!! ContentHelper::renderContent($research->recommendations, 'content-table', 'pdf') !!}
+    {!! ContentHelper::renderContent($research->recommendations, $tableClass, 'pdf') !!}
     @endif
     @endif
 

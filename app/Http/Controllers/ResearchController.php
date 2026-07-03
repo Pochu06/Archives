@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Research;
 use App\Models\College;
 use App\Models\Category;
+use App\Models\User;
 use App\Services\RelatedResearchService;
 use App\Services\ResearchSummaryService;
 use App\Services\TopicSuggestionService;
@@ -205,6 +206,67 @@ class ResearchController extends Controller
         return view('research.topic-suggestions', compact('colleges', 'categories', 'suggestions', 'mode'));
     }
 
+    public function authorProfile(Request $request, $id)
+    {
+        $author = User::with('college')->findOrFail($id);
+
+        $baseQuery = Research::with(['user', 'college', 'category'])
+            ->where('user_id', $author->id);
+
+        $role = session('user_role');
+        $viewerId = (int) session('user_id');
+        $viewerCollegeId = session('user_college_id');
+
+        if ($role === 'super_admin' || ($role === 'admin' && ! $viewerCollegeId)) {
+            // RDE users can view all author submissions.
+        } elseif ($role === 'admin' && $viewerCollegeId) {
+            $baseQuery->where(function ($query) use ($viewerCollegeId) {
+                $query->where('college_id', $viewerCollegeId)
+                    ->orWhere('status', Research::STATUS_APPROVED);
+            });
+        } elseif ($viewerId === (int) $author->id && $viewerId !== 0) {
+            // Authors can view all of their own submissions.
+        } else {
+            $baseQuery->approved();
+        }
+
+        $visibleResearchCount = (clone $baseQuery)->count();
+        $categories = Category::whereIn(
+            'id',
+            (clone $baseQuery)->select('category_id')->whereNotNull('category_id')->distinct()
+        )
+            ->orderBy('name')
+            ->get();
+
+        $query = clone $baseQuery;
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%$search%")
+                    ->orWhere('abstract', 'like', "%$search%")
+                    ->orWhere('keywords', 'like', "%$search%")
+                    ->orWhere('authors', 'like', "%$search%");
+            });
+        }
+
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        if ($request->filled('year')) {
+            $query->where('publication_year', $request->year);
+        }
+
+        $research = $query
+            ->orderBy('created_at', 'desc')
+            ->paginate(12)
+            ->withQueryString();
+
+        return view('research.author', compact('author', 'research', 'categories', 'visibleResearchCount'));
+    }
+
     public function create()
     {
         if ($r = $this->authCheck()) return $r;
@@ -225,8 +287,11 @@ class ResearchController extends Controller
             'title', 'abstract', 'introduction', 'methodology',
             'results', 'references', 'conclusion',
             'recommendations', 'keywords', 'authors',
-            'college_id', 'category_id', 'publication_year',
+            'college_id', 'category_id', 'publication_year', 'table_design',
         ]);
+        $data['table_design'] = in_array($data['table_design'] ?? null, ['classic', 'striped', 'minimal'], true)
+            ? $data['table_design']
+            : 'classic';
         $data['discussion'] = null;
         $data['user_id'] = $userId;
         $data['last_saved_at'] = now();
@@ -291,11 +356,13 @@ class ResearchController extends Controller
             'college_id' => 'required|exists:colleges,id',
             'category_id' => 'required|exists:categories,id',
             'publication_year' => 'required|integer|min:2000|max:' . (date('Y') + 1),
+            'table_design' => 'nullable|in:classic,striped,minimal',
         ], [
             'title.unique' => 'A research paper with this title has already been submitted.',
         ]);
 
         $validated['discussion'] = null;
+        $validated['table_design'] = $validated['table_design'] ?? 'classic';
 
         $validated['user_id'] = session('user_id');
 
@@ -401,11 +468,13 @@ class ResearchController extends Controller
             'college_id' => 'required|exists:colleges,id',
             'category_id' => 'required|exists:categories,id',
             'publication_year' => 'required|integer|min:2000|max:' . (date('Y') + 1),
+            'table_design' => 'nullable|in:classic,striped,minimal',
         ], [
             'title.unique' => 'A research paper with this title already exists.',
         ]);
 
         $validated['discussion'] = null;
+        $validated['table_design'] = $validated['table_design'] ?? 'classic';
 
         if ($role === 'student') {
             if ($research->status === Research::STATUS_REVISION_COLLEGE) {

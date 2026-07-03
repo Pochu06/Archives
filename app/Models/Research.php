@@ -33,7 +33,7 @@ class Research extends Model
         'results', 'discussion', 'references', 'conclusion',
         'recommendations', 'keywords', 'authors',
         'college_id', 'category_id', 'user_id',
-        'publication_year', 'status', 'approved_by', 'approved_at', 'rejection_reason', 'revision_notes', 'revision_fields', 'revision_field_notes',
+        'publication_year', 'table_design', 'status', 'approved_by', 'approved_at', 'rejection_reason', 'revision_notes', 'revision_fields', 'revision_field_notes',
     ];
 
     protected $casts = [
