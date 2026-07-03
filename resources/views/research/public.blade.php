@@ -113,9 +113,72 @@
             @endforeach
         </div>
 
-        <div class="mt-6">
-            {{ $research->links() }}
+        @if($research->hasPages())
+        <div class="mt-8 bg-white border border-gray-200 rounded-2xl px-4 py-4 sm:px-6 sm:py-5">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <p class="text-sm text-gray-600">
+                    Showing
+                    <span class="font-semibold text-gray-900">{{ $research->firstItem() }}</span>
+                    to
+                    <span class="font-semibold text-gray-900">{{ $research->lastItem() }}</span>
+                    of
+                    <span class="font-semibold text-gray-900">{{ $research->total() }}</span>
+                    results
+                </p>
+
+                <nav class="flex items-center gap-1.5" aria-label="Pagination">
+                    @if($research->onFirstPage())
+                    <span class="inline-flex items-center justify-center h-9 px-3 rounded-lg border border-gray-200 text-gray-300 cursor-not-allowed">
+                        <i class="fas fa-chevron-left text-xs"></i>
+                    </span>
+                    @else
+                    <a href="{{ $research->previousPageUrl() }}" class="inline-flex items-center justify-center h-9 px-3 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition" aria-label="Previous page">
+                        <i class="fas fa-chevron-left text-xs"></i>
+                    </a>
+                    @endif
+
+                    @php
+                    $currentPage = $research->currentPage();
+                    $lastPage = $research->lastPage();
+                    $startPage = max(1, $currentPage - 2);
+                    $endPage = min($lastPage, $currentPage + 2);
+                    @endphp
+
+                    @if($startPage > 1)
+                    <a href="{{ $research->url(1) }}" class="inline-flex items-center justify-center min-w-9 h-9 px-3 rounded-lg border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition">1</a>
+                    @if($startPage > 2)
+                    <span class="inline-flex items-center justify-center min-w-9 h-9 px-2 text-gray-400 text-sm">...</span>
+                    @endif
+                    @endif
+
+                    @for($page = $startPage; $page <= $endPage; $page++)
+                    @if($page == $currentPage)
+                    <span aria-current="page" class="inline-flex items-center justify-center min-w-9 h-9 px-3 rounded-lg bg-orange-600 text-white text-sm font-semibold shadow-sm">{{ $page }}</span>
+                    @else
+                    <a href="{{ $research->url($page) }}" class="inline-flex items-center justify-center min-w-9 h-9 px-3 rounded-lg border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition">{{ $page }}</a>
+                    @endif
+                    @endfor
+
+                    @if($endPage < $lastPage)
+                    @if($endPage < $lastPage - 1)
+                    <span class="inline-flex items-center justify-center min-w-9 h-9 px-2 text-gray-400 text-sm">...</span>
+                    @endif
+                    <a href="{{ $research->url($lastPage) }}" class="inline-flex items-center justify-center min-w-9 h-9 px-3 rounded-lg border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition">{{ $lastPage }}</a>
+                    @endif
+
+                    @if($research->hasMorePages())
+                    <a href="{{ $research->nextPageUrl() }}" class="inline-flex items-center justify-center h-9 px-3 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition" aria-label="Next page">
+                        <i class="fas fa-chevron-right text-xs"></i>
+                    </a>
+                    @else
+                    <span class="inline-flex items-center justify-center h-9 px-3 rounded-lg border border-gray-200 text-gray-300 cursor-not-allowed">
+                        <i class="fas fa-chevron-right text-xs"></i>
+                    </span>
+                    @endif
+                </nav>
+            </div>
         </div>
+        @endif
         @else
         <div class="bg-white border border-gray-200 rounded-2xl p-12 text-center">
             <i class="fas fa-folder-open text-4xl text-gray-300 mb-3"></i>

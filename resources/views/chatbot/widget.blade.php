@@ -69,7 +69,6 @@
             <i class="fas fa-robot"></i>
         </span>
         <span class="hidden pr-1 text-left sm:block">
-            <span class="block text-xs uppercase tracking-[0.2em] text-orange-100">ARCHIVES</span>
             <span class="block text-sm font-semibold">Ask ARCHI</span>
         </span>
     </button>

@@ -298,28 +298,6 @@
         <div class="w-full lg:w-72 shrink-0 space-y-4">
             {{-- Download / Request Card --}}
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                <div class="mb-4 rounded-2xl border border-gray-100 bg-gray-50 p-4">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Preview Snapshot</p>
-                    <div class="mt-3 grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                            <p class="text-gray-400">Authors</p>
-                            <p class="font-semibold text-gray-800">{{ count(array_filter(array_map('trim', explode(',', $research->authors)))) }}</p>
-                        </div>
-                        <div>
-                            <p class="text-gray-400">Keywords</p>
-                            <p class="font-semibold text-gray-800">{{ count(array_filter(array_map('trim', explode(',', $research->keywords ?? '')))) }}</p>
-                        </div>
-                        <div>
-                            <p class="text-gray-400">Status</p>
-                            <p class="font-semibold text-gray-800">{{ $research->status_label }}</p>
-                        </div>
-                        <div>
-                            <p class="text-gray-400">Format</p>
-                            <p class="font-semibold text-gray-800">PDF</p>
-                        </div>
-                    </div>
-                </div>
-
                 @if(!session('user_id'))
                     <div class="text-center">
                         <p class="text-sm text-gray-700 mb-2">Login to request or download the full-text PDF.</p>

@@ -82,7 +82,7 @@ class AuthController extends Controller
             'user_college_id' => $user->college_id,
         ]);
 
-        return redirect()->route('dashboard')->with('success', 'Welcome to the Research Archive!');
+        return redirect()->route('dashboard')->with('success', 'Welcome to ARCHIVES!');
     }
 
     public function logout()
