@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\User;
 use App\Services\RelatedResearchService;
 use App\Services\ResearchSummaryService;
+use App\Services\ResearchThrustService;
 use App\Services\TopicSuggestionService;
 use App\Models\ResearchDraft;
 use Illuminate\Http\Request;
@@ -63,6 +64,36 @@ class ResearchController extends Controller
     private function normalizedTitle(?string $title): string
     {
         return trim((string) $title);
+    }
+
+    private function normalizeThrustSelections($thrusts): array
+    {
+        if (is_string($thrusts)) {
+            $thrusts = [$thrusts];
+        }
+
+        if (! is_array($thrusts)) {
+            return [];
+        }
+
+        return array_values(array_unique(array_filter(array_map(static function ($thrust) {
+            $thrust = trim((string) $thrust);
+
+            return $thrust === '' ? null : $thrust;
+        }, $thrusts))));
+    }
+
+    private function resolvePrimaryThrust(array $thrusts, array $suggestion = []): ?string
+    {
+        if (! empty($thrusts[0])) {
+            return $thrusts[0];
+        }
+
+        if (! empty($suggestion['thrust'])) {
+            return $suggestion['thrust'];
+        }
+
+        return null;
     }
 
     private function combinedResultsAndDiscussion(?string $results, ?string $discussion): string
@@ -273,7 +304,9 @@ class ResearchController extends Controller
         $colleges = College::where('active', true)->get();
         $categories = Category::all();
         $draft = ResearchDraft::where('user_id', session('user_id'))->first();
-        return view('research.create', compact('colleges', 'categories', 'draft'));
+        $thrustOptions = ResearchThrustService::options();
+
+        return view('research.create', compact('colleges', 'categories', 'draft', 'thrustOptions'));
     }
 
     public function saveDraft(Request $request)
@@ -282,16 +315,23 @@ class ResearchController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
         }
 
+        $thrustService = new ResearchThrustService();
         $userId = session('user_id');
         $data = $request->only([
             'title', 'abstract', 'introduction', 'methodology',
             'results', 'references', 'conclusion',
             'recommendations', 'keywords', 'authors',
-            'college_id', 'category_id', 'publication_year', 'table_design',
+            'thrust', 'thrusts', 'college_id', 'category_id', 'publication_year', 'table_design',
         ]);
         $data['table_design'] = in_array($data['table_design'] ?? null, ['classic', 'striped', 'minimal'], true)
             ? $data['table_design']
             : 'classic';
+        $suggestion = $thrustService->suggest($data, true);
+        $data['thrusts'] = $this->normalizeThrustSelections($data['thrusts'] ?? []);
+        if ($data['thrusts'] === []) {
+            $data['thrusts'] = $suggestion['thrusts'] ?? [];
+        }
+        $data['thrust'] = $this->resolvePrimaryThrust($data['thrusts'], $suggestion);
         $data['discussion'] = null;
         $data['user_id'] = $userId;
         $data['last_saved_at'] = now();
@@ -338,6 +378,8 @@ class ResearchController extends Controller
     {
         if ($r = $this->authCheck()) return $r;
 
+        $thrustService = new ResearchThrustService();
+
         $request->merge([
             'title' => $this->normalizedTitle($request->input('title')),
         ]);
@@ -353,6 +395,8 @@ class ResearchController extends Controller
             'recommendations' => 'required|string',
             'keywords' => 'required|string|max:500',
             'authors' => 'required|string|max:500',
+            'thrusts' => 'nullable|array',
+            'thrusts.*' => ['string', Rule::in(ResearchThrustService::options())],
             'college_id' => 'required|exists:colleges,id',
             'category_id' => 'required|exists:categories,id',
             'publication_year' => 'required|integer|min:2000|max:' . (date('Y') + 1),
@@ -363,6 +407,12 @@ class ResearchController extends Controller
 
         $validated['discussion'] = null;
         $validated['table_design'] = $validated['table_design'] ?? 'classic';
+        $validated['thrusts'] = $this->normalizeThrustSelections($request->input('thrusts', []));
+        $suggestion = $thrustService->suggest($validated, true);
+        if ($validated['thrusts'] === []) {
+            $validated['thrusts'] = $suggestion['thrusts'] ?? [];
+        }
+        $validated['thrust'] = $this->resolvePrimaryThrust($validated['thrusts'], $suggestion);
 
         $validated['user_id'] = session('user_id');
 
@@ -436,7 +486,8 @@ class ResearchController extends Controller
 
         $colleges = College::where('active', true)->get();
         $categories = Category::all();
-        return view('research.edit', compact('research', 'colleges', 'categories'));
+        $thrustOptions = ResearchThrustService::options();
+        return view('research.edit', compact('research', 'colleges', 'categories', 'thrustOptions'));
     }
 
     public function update(Request $request, $id)
@@ -445,6 +496,7 @@ class ResearchController extends Controller
         $research = Research::findOrFail($id);
         $role = session('user_role');
         $userId = session('user_id');
+        $thrustService = new ResearchThrustService();
 
         if (!in_array($role, ['super_admin', 'admin']) && $research->user_id != $userId) {
             return redirect()->route('research.index')->with('error', 'Unauthorized action.');
@@ -465,6 +517,8 @@ class ResearchController extends Controller
             'recommendations' => 'required|string',
             'keywords' => 'required|string|max:500',
             'authors' => 'required|string|max:500',
+            'thrusts' => 'nullable|array',
+            'thrusts.*' => ['string', Rule::in(ResearchThrustService::options())],
             'college_id' => 'required|exists:colleges,id',
             'category_id' => 'required|exists:categories,id',
             'publication_year' => 'required|integer|min:2000|max:' . (date('Y') + 1),
@@ -475,6 +529,12 @@ class ResearchController extends Controller
 
         $validated['discussion'] = null;
         $validated['table_design'] = $validated['table_design'] ?? 'classic';
+        $validated['thrusts'] = $this->normalizeThrustSelections($request->input('thrusts', []));
+        $suggestion = $thrustService->suggest($validated, true);
+        if ($validated['thrusts'] === []) {
+            $validated['thrusts'] = $suggestion['thrusts'] ?? [];
+        }
+        $validated['thrust'] = $this->resolvePrimaryThrust($validated['thrusts'], $suggestion);
 
         if ($role === 'student') {
             if ($research->status === Research::STATUS_REVISION_COLLEGE) {
@@ -507,6 +567,32 @@ class ResearchController extends Controller
         }
 
         return redirect()->route('research.show', $id)->with('success', $message);
+    }
+
+    public function thrustSuggestion(Request $request)
+    {
+        if (!session('user_id')) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        $thrustService = new ResearchThrustService();
+
+        $validated = $request->validate([
+            'title' => 'nullable|string|max:500',
+            'keywords' => 'nullable|string|max:500',
+            'abstract' => 'nullable|string',
+            'introduction' => 'nullable|string',
+            'methodology' => 'nullable|string',
+            'results' => 'nullable|string',
+            'conclusion' => 'nullable|string',
+            'recommendations' => 'nullable|string',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'suggestion' => $thrustService->suggest($validated, true),
+            'options' => ResearchThrustService::options(),
+        ]);
     }
 
     public function destroy($id)

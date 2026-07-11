@@ -204,6 +204,28 @@
                     </select>
                 </div>
                 <div>
+                    <label class="block text-gray-700 font-semibold mb-2">CSU Thrusts <span class="text-red-500">*</span></label>
+                    <input type="hidden" name="thrust" id="thrustInput" value="{{ old('thrust', $research->thrust) }}">
+                    <div class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-700 min-h-[52px] @error('thrust') border-red-400 @enderror">
+                        <div>
+                            <p id="thrustValue" class="font-semibold text-gray-800">{{ old('thrust', $research->thrust) ?: 'AI will suggest the closest thrust automatically...' }}</p>
+                            <p id="thrustMeta" class="text-xs text-gray-500 mt-1">Not sure? Let AI review the title, abstract, and keywords to suggest the best CSU thrusts.</p>
+                        </div>
+                        <div id="thrustStatus" class="text-xs font-semibold text-orange-600 whitespace-nowrap mt-2">AI-assisted</div>
+                        <div id="thrustTags" class="flex flex-wrap gap-2 mt-3"></div>
+                        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            @foreach($thrustOptions as $thrustOption)
+                            <label class="flex items-start gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:border-orange-300">
+                                <input type="checkbox" name="thrusts[]" value="{{ $thrustOption }}" class="mt-1 h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500" {{ in_array($thrustOption, old('thrusts', $research->thrusts ?? ($research->thrust ? [$research->thrust] : [])), true) ? 'checked' : '' }}>
+                                <span>{{ $thrustOption }}</span>
+                            </label>
+                            @endforeach
+                        </div>
+                    </div>
+                    @error('thrust')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
+                    @error('thrusts')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
+                </div>
+                <div>
                     <label class="block text-gray-700 font-semibold mb-2">Publication Year</label>
                     <select name="publication_year" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-500">
                         @for($y = date('Y') + 1; $y >= 2000; $y--)
@@ -452,6 +474,119 @@ function escHtml(s) {
     return d.innerHTML;
 }
 
+// ── CSU Thrust Auto-Detection ──
+const form = document.querySelector("form[action='{{ route('research.update', $research->id) }}']");
+const thrustInput = document.getElementById('thrustInput');
+const thrustValue = document.getElementById('thrustValue');
+const thrustMeta = document.getElementById('thrustMeta');
+const thrustStatus = document.getElementById('thrustStatus');
+const thrustTags = document.getElementById('thrustTags');
+let thrustRequestTimer;
+let thrustRequestAbort = null;
+
+function getThrustPayload() {
+    return {
+        title: document.querySelector('input[name="title"]').value || '',
+        keywords: document.querySelector('input[name="keywords"]').value || '',
+        abstract: document.getElementById('abstract').value || '',
+        introduction: document.getElementById('introduction').value || '',
+        methodology: document.getElementById('methodology').value || '',
+        results: document.getElementById('results').value || '',
+        conclusion: document.getElementById('conclusion').value || '',
+        recommendations: document.getElementById('recommendations').value || '',
+    };
+}
+
+function selectedThrustsFromForm() {
+    return Array.from(document.querySelectorAll('input[name="thrusts[]"]:checked')).map(input => input.value);
+}
+
+function renderThrustTags(thrusts) {
+    if (!thrustTags) return;
+
+    thrustTags.innerHTML = '';
+
+    if (!thrusts.length) {
+        thrustTags.innerHTML = '<span class="text-xs text-gray-400">No thrust selected yet.</span>';
+        return;
+    }
+
+    thrusts.forEach(thrust => {
+        const chip = document.createElement('span');
+        chip.className = 'inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-800';
+        chip.textContent = thrust;
+        thrustTags.appendChild(chip);
+    });
+}
+
+function setThrustSuggestion(thrust, reason, source, thrusts = []) {
+    if (!thrustInput || !thrustValue || !thrustMeta || !thrustStatus) return;
+
+    thrustInput.value = thrust || '';
+    thrustValue.textContent = thrusts.length ? `${thrust || 'Detected thrust'} (${thrusts.length})` : (thrust || 'Detecting thrust automatically...');
+    thrustMeta.textContent = reason || 'Based on the title, abstract, and keywords.';
+    thrustStatus.textContent = source === 'ollama' ? 'AI' : (source === 'keyword' ? 'Auto' : 'Pending');
+    renderThrustTags(thrusts.length ? thrusts : (thrust ? [thrust] : []));
+
+    document.querySelectorAll('input[name="thrusts[]"]').forEach(input => {
+        input.checked = thrusts.includes(input.value);
+    });
+}
+
+function requestThrustSuggestion() {
+    const payload = getThrustPayload();
+
+    if (thrustRequestAbort) {
+        thrustRequestAbort.abort();
+    }
+
+    thrustRequestAbort = new AbortController();
+
+    if (thrustStatus) {
+        thrustStatus.textContent = 'Checking...';
+    }
+
+    fetch('{{ route("research.thrust-suggestion") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+        },
+        body: JSON.stringify(payload),
+        signal: thrustRequestAbort.signal,
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success || !data.suggestion) return;
+        setThrustSuggestion(data.suggestion.thrust, data.suggestion.reason, data.suggestion.source, data.suggestion.thrusts || []);
+    })
+    .catch(err => {
+        if (err.name === 'AbortError') return;
+        if (thrustStatus) thrustStatus.textContent = 'Auto';
+    });
+}
+
+function scheduleThrustSuggestion() {
+    clearTimeout(thrustRequestTimer);
+    thrustRequestTimer = setTimeout(requestThrustSuggestion, 450);
+}
+
+['title', 'keywords', 'abstract', 'introduction', 'methodology', 'results', 'conclusion', 'recommendations'].forEach(fieldId => {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+    field.addEventListener('input', scheduleThrustSuggestion);
+    field.addEventListener('change', scheduleThrustSuggestion);
+});
+
+document.querySelectorAll('input[name="thrusts[]"]').forEach(input => {
+    input.addEventListener('change', () => {
+        const thrusts = selectedThrustsFromForm();
+        renderThrustTags(thrusts);
+        if (thrustInput) thrustInput.value = thrusts[0] || '';
+        if (thrustValue) thrustValue.textContent = thrusts.length ? `${thrusts[0]} (${thrusts.length})` : 'Detecting thrust automatically...';
+    });
+});
+
 // ── Image Upload ──
 document.getElementById('figureUpload').addEventListener('change', function(e) {
     const file = e.target.files[0];
@@ -507,6 +642,14 @@ document.getElementById('figureUpload').addEventListener('change', function(e) {
         })
         .catch(() => { status.textContent = 'Upload failed.'; });
 });
+
+const initialThrusts = selectedThrustsFromForm();
+renderThrustTags(initialThrusts);
+if (initialThrusts.length > 0) {
+    setThrustSuggestion(initialThrusts[0], 'Current thrust selection loaded.', 'saved', initialThrusts);
+} else {
+    requestThrustSuggestion();
+}
 
     setTableDesign(getTableDesign());
 </script>

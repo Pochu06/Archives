@@ -351,6 +351,10 @@
                     <p class="text-sm font-semibold text-gray-800">{{ $research->category->name ?? 'N/A' }}</p>
                 </div>
                 <div class="border-t border-gray-100 pt-3">
+                    <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">Thrust</p>
+                    <p class="text-sm font-semibold text-gray-800">{{ $research->thrust ?? 'N/A' }}</p>
+                </div>
+                <div class="border-t border-gray-100 pt-3">
                     <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">Status</p>
                     <span class="inline-flex text-xs px-2.5 py-1 rounded-full font-semibold {{ $research->status_badge }}">{{ $research->status_label }}</span>
                 </div>

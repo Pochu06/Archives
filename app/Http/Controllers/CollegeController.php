@@ -17,7 +17,7 @@ class CollegeController extends Controller
     public function index()
     {
         if ($r = $this->requireSuperAdmin()) return $r;
-        $colleges = College::withCount('research', 'users')->orderBy('name')->paginate(10);
+        $colleges = College::withCount(['research', 'users'])->orderBy('name')->paginate(10);
         return view('colleges.index', compact('colleges'));
     }
 
@@ -59,7 +59,7 @@ class CollegeController extends Controller
             'description' => 'nullable|string',
             'dean' => 'nullable|string|max:255',
             'contact_email' => 'nullable|email',
-            'active' => 'boolean',
+            'active' => 'nullable|boolean',
         ]);
         $validated['active'] = $request->has('active');
         $college->update($validated);

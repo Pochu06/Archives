@@ -38,7 +38,7 @@
                 </div>
             </div>
             <div class="flex items-center">
-                <input type="checkbox" name="active" id="active" {{ old('active', $college->active) ? 'checked' : '' }} class="w-4 h-4 text-orange-600 rounded">
+                <input type="checkbox" name="active" value="1" id="active" {{ old('active', $college->active) ? 'checked' : '' }} class="w-4 h-4 text-orange-600 rounded">
                 <label for="active" class="ml-2 text-gray-700 font-semibold">College is Active</label>
             </div>
             <div class="flex justify-end gap-3">

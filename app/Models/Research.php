@@ -32,13 +32,14 @@ class Research extends Model
         'title', 'abstract', 'introduction', 'methodology',
         'results', 'discussion', 'references', 'conclusion',
         'recommendations', 'keywords', 'authors',
-        'college_id', 'category_id', 'user_id',
+        'thrust', 'thrusts', 'college_id', 'category_id', 'user_id',
         'publication_year', 'table_design', 'status', 'approved_by', 'approved_at', 'rejection_reason', 'revision_notes', 'revision_fields', 'revision_field_notes',
     ];
 
     protected $casts = [
         'publication_year' => 'integer',
         'approved_at' => 'datetime',
+        'thrusts' => 'array',
         'revision_fields' => 'array',
         'revision_field_notes' => 'array',
     ];

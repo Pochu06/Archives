@@ -8,6 +8,7 @@ use App\Http\Controllers\ResearchController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CollegeController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ThrustController;
 use App\Http\Controllers\DownloadRequestController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SubmissionController;
@@ -35,6 +36,7 @@ Route::get('/research/public', [ResearchController::class, 'publicIndex'])->name
 Route::get('/research/public/{id}', [ResearchController::class, 'publicShow'])->name('research.public-show');
 Route::get('/authors/{id}', [ResearchController::class, 'authorProfile'])->name('authors.show');
 Route::get('/research/topic-suggestions', [ResearchController::class, 'topicSuggestions'])->name('research.topic-suggestions');
+Route::post('/research/thrust-suggestion', [ResearchController::class, 'thrustSuggestion'])->name('research.thrust-suggestion');
 Route::get('/research', [ResearchController::class, 'index'])->name('research.index');
 Route::get('/research/create', [ResearchController::class, 'create'])->name('research.create');
 Route::get('/research/tutorial', [ResearchController::class, 'tutorial'])->name('research.tutorial');
@@ -99,3 +101,12 @@ Route::post('/categories', [CategoryController::class, 'store'])->name('categori
 Route::get('/categories/{id}/edit', [CategoryController::class, 'edit'])->name('categories.edit');
 Route::put('/categories/{id}', [CategoryController::class, 'update'])->name('categories.update');
 Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+
+// Thrust Management
+Route::get('/thrusts', [ThrustController::class, 'index'])->name('thrusts.index');
+Route::get('/thrusts/create', [ThrustController::class, 'create'])->name('thrusts.create');
+Route::post('/thrusts', [ThrustController::class, 'store'])->name('thrusts.store');
+Route::get('/thrusts/{id}/edit', [ThrustController::class, 'edit'])->name('thrusts.edit');
+Route::put('/thrusts/{id}', [ThrustController::class, 'update'])->name('thrusts.update');
+Route::post('/thrusts/{id}/toggle', [ThrustController::class, 'toggle'])->name('thrusts.toggle');
+Route::delete('/thrusts/{id}', [ThrustController::class, 'destroy'])->name('thrusts.destroy');

@@ -134,6 +134,9 @@
             </a>
             @endif
             @if(session('user_role') === 'super_admin')
+            <a href="{{ route('thrusts.index') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('thrusts.*') ? 'active' : '' }}">
+                <i class="fas fa-bullseye w-5"></i><span>Thrusts</span>
+            </a>
             <a href="{{ route('colleges.index') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('colleges.*') ? 'active' : '' }}">
                 <i class="fas fa-university w-5"></i><span>Colleges</span>
             </a>
