@@ -33,7 +33,9 @@
                 <span class="font-bold text-gray-900">ARCHIVES</span>
             </a>
             <div class="flex items-center gap-2 ml-auto">
+                @if(session('user_id'))
                 <a href="{{ route('research.topic-suggestions') }}" class="px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">AI Research Locator</a>
+                @endif
                 @if(session('user_id'))
                 <a href="{{ route('dashboard') }}" class="px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">Dashboard</a>
                 @else
@@ -52,6 +54,7 @@
     </header>
 
     <main class="max-w-7xl mx-auto px-4 py-8">
+        @if(session('user_id'))
         <div class="bg-gradient-to-r from-blue-50 to-orange-50 border border-blue-100 rounded-2xl p-5 md:p-6 mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-wider text-blue-700 mb-1">New AI Feature</p>
@@ -62,6 +65,7 @@
                 <i class="fas fa-lightbulb mr-2"></i> Open AI Research Locator
             </a>
         </div>
+        @endif
 
         <form method="GET" action="{{ route('research.public') }}" class="bg-white border border-gray-200 rounded-2xl p-4 md:p-5 mb-6">
             <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
@@ -195,6 +199,8 @@
         </div>
         @endif
     </main>
+@if(session('user_id'))
 @include('chatbot.widget')
+@endif
 </body>
 </html>

@@ -208,7 +208,6 @@
                     <span class="font-bold text-gray-900">ARCHIVES</span>
                 </a>
                 <div class="flex items-center gap-2">
-                    <a href="{{ route('chatbot.index') }}" data-chatbot-open class="px-3 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">AI Assistant</a>
                     <a href="{{ route('research.public') }}" class="px-3 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">Browse Research</a>
                     <a href="{{ route('login') }}" class="px-3 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">Login</a>
                     <a href="{{ route('register') }}" class="px-3 py-2 rounded-lg text-sm font-semibold text-white bg-orange-600 hover:bg-orange-700">Register</a>
@@ -236,7 +235,9 @@
 @endif
 @endif
 
+@if(session('user_id'))
 @include('chatbot.widget')
+@endif
 
 <script>
 (() => {

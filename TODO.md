@@ -21,3 +21,42 @@
 (Original TODO items tracked as completed)
 
 **Progress**: Making fully functional per plan.
+
+---
+
+## QoL and Extra Features Backlog
+
+### Priority 1 - Quality of Life (High ROI)
+- [ ] Saved searches and smart filter presets (college, year, category, status)
+- [ ] Bulk actions for admins (approve, reject, assign adviser, tag category)
+- [ ] Submission status timeline with timestamps and actors
+- [ ] In-app notifications center with optional daily/weekly email digest
+- [ ] Draft autosave and resumable uploads for large research files
+- [ ] Duplicate detection warning using title and abstract similarity
+
+### Priority 2 - Product Enhancements
+- [ ] Public research showcase page (featured, trending, top downloaded)
+- [ ] Citation export (APA, MLA, IEEE, BibTeX)
+- [ ] Download and view analytics per paper, college, and topic
+- [ ] Adviser workload balancing and assignment suggestions
+- [ ] Versioned submissions with side-by-side comparison
+- [ ] Related research recommendations by keyword, thrust, and category
+
+### Priority 3 - AI-Assisted Features
+- [ ] AI metadata extraction from uploaded PDF (title, authors, abstract, keywords)
+- [ ] AI abstract quality checker before final submission
+- [ ] AI reviewer assistant for structured rubric suggestions
+- [ ] AI topic suggestion based on archive gaps and trend data
+
+### Priority 4 - Admin, Security, and Governance
+- [ ] Action audit trail (approve/reject/edit/delete with actor and timestamp)
+- [ ] Soft delete and restore bin for research records
+- [ ] Data export center (CSV/Excel) for reporting and accreditation
+- [ ] Queue and background job monitoring dashboard
+- [ ] Watermarked downloads for traceability
+- [ ] Time-limited access links for restricted documents
+
+### Suggested Build Order (6 Weeks)
+- [ ] Week 1-2: Saved filters, bulk actions, status timeline, notifications center
+- [ ] Week 3-4: Citation export, analytics, duplicate detection, autosave/resumable upload
+- [ ] Week 5-6: AI metadata extraction, related research, audit trail, restore bin

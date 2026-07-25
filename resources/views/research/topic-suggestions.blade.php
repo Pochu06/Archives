@@ -202,6 +202,8 @@
         </section>
         @endif
     </main>
+@if(session('user_id'))
 @include('chatbot.widget')
+@endif
 </body>
 </html>
