@@ -1,6 +1,6 @@
 {{-- Formatter Toolbar - include above any textarea that supports tables/figures --}}
 {{-- Usage: @include('research.partials.formatter-toolbar', ['target' => 'fieldname']) --}}
-<div class="flex items-center gap-1 bg-gray-50 border border-b-0 border-gray-200 rounded-t-xl px-3 py-1.5">
+<div class="flex flex-wrap items-center gap-1 bg-gray-50 border border-b-0 border-gray-200 rounded-t-xl px-3 py-1.5">
     <button type="button" onclick="wrapSelection('{{ $target }}', '**', '**')" class="fmt-btn" title="Bold (**text**)">
         <i class="fas fa-bold"></i>
     </button>
@@ -20,17 +20,20 @@
     <button type="button" onclick="insertFigure('{{ $target }}')" class="fmt-btn" title="Insert Figure Placeholder">
         <i class="fas fa-image"></i>
     </button>
-    <div class="flex-1"></div>
-    <label class="text-xs text-gray-500 mr-1" for="table-design-{{ $target }}">Table</label>
-    <select
-        id="table-design-{{ $target }}"
-        class="text-xs border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-700"
-        onchange="setTableDesign(this.value)">
-        <option value="classic">Classic</option>
-        <option value="striped">Striped</option>
-        <option value="minimal">Minimal</option>
-    </select>
-    <button type="button" onclick="togglePreview('{{ $target }}')" class="fmt-btn preview-toggle" data-target="{{ $target }}" title="Toggle Preview">
-        <i class="fas fa-eye"></i> <span class="text-xs ml-0.5">Preview</span>
-    </button>
+    <div class="w-full sm:w-auto sm:ml-auto flex items-center justify-between sm:justify-end gap-1 mt-1 sm:mt-0">
+        <div class="flex items-center gap-1 min-w-0">
+            <label class="text-xs text-gray-500" for="table-design-{{ $target }}">Table</label>
+            <select
+                id="table-design-{{ $target }}"
+                class="text-xs border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-700 max-w-[110px]"
+                onchange="setTableDesign(this.value)">
+                <option value="classic">Classic</option>
+                <option value="striped">Striped</option>
+                <option value="minimal">Minimal</option>
+            </select>
+        </div>
+        <button type="button" onclick="togglePreview('{{ $target }}')" class="fmt-btn preview-toggle" data-target="{{ $target }}" title="Toggle Preview">
+            <i class="fas fa-eye"></i> <span class="text-xs ml-0.5 hidden sm:inline">Preview</span>
+        </button>
+    </div>
 </div>
