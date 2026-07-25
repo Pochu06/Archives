@@ -52,7 +52,7 @@ class DashboardController extends Controller
 
             $totalResearch = $researchQuery->count();
             $totalStudents = $userQuery->count();
-            $recentResearch = $recentQuery->orderBy('created_at', 'desc')->take(8)->get();
+            $recentResearch = $recentQuery->orderBy('created_at', 'desc')->take(5)->get();
             $pendingResearch = $pendingQuery->count();
 
             return view('dashboards.admin', compact(

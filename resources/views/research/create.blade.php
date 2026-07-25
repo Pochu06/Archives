@@ -218,7 +218,7 @@
                 <h3 class="text-lg font-bold text-gray-800 mb-4"><i class="fas fa-info-circle text-orange-500 mr-2"></i>Classification</h3>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">College <span class="text-red-500">*</span></label>
                     <select name="college_id" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 @error('college_id') border-red-400 @enderror">
@@ -240,28 +240,6 @@
                     @error('category_id')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-semibold mb-2">CSU Thrusts <span class="text-red-500">*</span></label>
-                    <input type="hidden" name="thrust" id="thrustInput" value="{{ old('thrust') }}">
-                    <div class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-700 min-h-[52px] @error('thrust') border-red-400 @enderror">
-                        <div>
-                            <p id="thrustValue" class="font-semibold text-gray-800">{{ old('thrust') ?: 'AI will suggest the closest thrust automatically...' }}</p>
-                            <p id="thrustMeta" class="text-xs text-gray-500 mt-1">Not sure? Fill in the title, abstract, and keywords, and AI will suggest one or more CSU thrusts for you.</p>
-                        </div>
-                        <div id="thrustStatus" class="text-xs font-semibold text-orange-600 whitespace-nowrap mt-2">AI-assisted</div>
-                        <div id="thrustTags" class="flex flex-wrap gap-2 mt-3"></div>
-                        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            @foreach($thrustOptions as $thrustOption)
-                            <label class="flex items-start gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:border-orange-300">
-                                <input type="checkbox" name="thrusts[]" value="{{ $thrustOption }}" class="mt-1 h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500" {{ in_array($thrustOption, old('thrusts', []), true) ? 'checked' : '' }}>
-                                <span>{{ $thrustOption }}</span>
-                            </label>
-                            @endforeach
-                        </div>
-                    </div>
-                    @error('thrust')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
-                    @error('thrusts')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
-                </div>
-                <div>
                     <label class="block text-gray-700 font-semibold mb-2">Publication Year <span class="text-red-500">*</span></label>
                     <select name="publication_year" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 @error('publication_year') border-red-400 @enderror">
                         <option value="">Select Year</option>
@@ -273,6 +251,27 @@
                 </div>
             </div>
 
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2">CSU Thrusts <span class="text-red-500">*</span></label>
+                <input type="hidden" name="thrust" id="thrustInput" value="{{ old('thrust') }}">
+                <div class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-700 min-h-[52px] @error('thrust') border-red-400 @enderror">
+                    <div>
+                        <p id="thrustValue" class="font-semibold text-gray-800">{{ old('thrust') ?: 'AI will suggest the closest thrust automatically...' }}</p>
+                        <p id="thrustMeta" class="text-xs text-gray-500 mt-1">Not sure? Fill in the title, abstract, and keywords, and AI will suggest one or more CSU thrusts for you.</p>
+                    </div>
+                    <div id="thrustStatus" class="text-xs font-semibold text-orange-600 whitespace-nowrap mt-2">AI-assisted</div>
+                    <div id="thrustTags" class="flex flex-wrap gap-2 mt-3"></div>
+                    <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+                        @foreach($thrustOptions as $thrustOption)
+                        <label class="flex items-start gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:border-orange-300">
+                            <input type="checkbox" name="thrusts[]" value="{{ $thrustOption }}" class="mt-1 h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500" {{ in_array($thrustOption, old('thrusts', []), true) ? 'checked' : '' }}>
+                            <span>{{ $thrustOption }}</span>
+                        </label>
+                        @endforeach
+                    </div>
+                </div>
+                @error('thrust')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
+                @error('thrusts')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
             </div>
 
             <div class="flex flex-col sm:flex-row justify-end gap-3 pt-2">
