@@ -202,7 +202,7 @@
         </section>
         @endif
     </main>
-@if(session('user_id'))
+@if(session('user_id') && ($aiFeaturesEnabled ?? true))
 @include('chatbot.widget')
 @endif
 </body>

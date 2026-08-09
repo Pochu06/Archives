@@ -4,6 +4,27 @@
 @section('page-subtitle', 'System-wide overview and statistics')
 @section('content')
 <div class="space-y-6">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+                <h3 class="font-bold text-gray-800 text-lg">AI Features Control</h3>
+                <p class="text-sm text-gray-600 mt-1">Temporarily disable AI-powered tools such as the assistant, topic locator, and auto thrust suggestion.</p>
+            </div>
+            <form action="{{ route('settings.ai-features') }}" method="POST" class="flex items-center gap-3">
+                @csrf
+                <input type="hidden" name="enabled" value="0">
+                <label class="inline-flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <input type="checkbox" name="enabled" value="1" class="h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500" {{ ($aiFeaturesEnabled ?? true) ? 'checked' : '' }}>
+                    AI features enabled
+                </label>
+                <button type="submit" class="bg-orange-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-orange-700">Save</button>
+            </form>
+        </div>
+        <p class="mt-3 text-xs {{ ($aiFeaturesEnabled ?? true) ? 'text-emerald-700' : 'text-amber-700' }}">
+            Status: {{ ($aiFeaturesEnabled ?? true) ? 'Enabled' : 'Disabled by super admin' }}
+        </p>
+    </div>
+
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div class="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl p-5 text-white shadow-lg">
             <i class="fas fa-archive text-2xl mb-3 opacity-80"></i>

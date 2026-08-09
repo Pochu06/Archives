@@ -70,12 +70,16 @@
             @csrf
             @method('PUT')
             <input type="hidden" name="table_design" id="tableDesignInput" value="{{ old('table_design', $research->table_design ?? 'classic') }}">
+            <input type="hidden" name="file_path" id="sourceFilePathInput" value="{{ old('file_path', $research->file_path) }}">
+            <input type="hidden" name="file_name" id="sourceFileNameInput" value="{{ old('file_name', $research->file_name) }}">
+            <input type="hidden" id="uploadSessionId" value="{{ $resumableUploadId }}">
 
             <div>
                 <label class="block text-gray-700 font-semibold mb-2">Research Title <span class="text-red-500">*</span></label>
                 <input type="text" name="title" value="{{ old('title', $research->title) }}"
                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-500">
                 @error('title')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
+                <div id="duplicateWarning" class="hidden mt-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"></div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -120,6 +124,26 @@
                 <div id="uploadedFigures" class="mt-3 space-y-2 hidden">
                     <p class="text-xs font-semibold text-gray-600 mb-1">Uploaded figures — copy the syntax and paste into any section:</p>
                 </div>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-2">
+                <h4 class="font-semibold text-gray-700 mb-2"><i class="fas fa-file-arrow-up text-blue-600 mr-1"></i> Optional Source File Upload (Resumable)</h4>
+                <p class="text-xs text-gray-600 mb-3">Replace or attach a large PDF/DOC/DOCX source file with resumable chunk upload.</p>
+                <div class="flex flex-wrap items-center gap-3">
+                    <label class="cursor-pointer bg-white border-2 border-dashed border-blue-300 rounded-xl px-5 py-3 hover:border-blue-500 transition flex items-center gap-2 text-sm text-gray-700">
+                        <i class="fas fa-cloud-upload-alt text-blue-600"></i> Choose Research File
+                        <input type="file" id="sourceFileUpload" accept=".pdf,.doc,.docx,.rtf,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain" class="hidden">
+                    </label>
+                    <span id="sourceFileStatus" class="text-sm text-gray-500">{{ $research->file_name ? 'Current file attached.' : 'No source file selected.' }}</span>
+                </div>
+                <div class="mt-3 h-2 w-full rounded-full bg-blue-100 overflow-hidden hidden" id="sourceFileProgressWrap">
+                    <div id="sourceFileProgressBar" class="h-full bg-blue-600 transition-all" style="width: 0%"></div>
+                </div>
+                <p id="sourceFileMeta" class="mt-2 text-xs text-blue-700">
+                    @if($research->file_path && $research->file_name)
+                    <a href="{{ Storage::url($research->file_path) }}" target="_blank" class="underline hover:text-blue-900">{{ $research->file_name }}</a>
+                    @endif
+                </p>
             </div>
 
             <div>
@@ -208,10 +232,10 @@
                     <input type="hidden" name="thrust" id="thrustInput" value="{{ old('thrust', $research->thrust) }}">
                     <div class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-700 min-h-[52px] @error('thrust') border-red-400 @enderror">
                         <div>
-                            <p id="thrustValue" class="font-semibold text-gray-800">{{ old('thrust', $research->thrust) ?: 'AI will suggest the closest thrust automatically...' }}</p>
-                            <p id="thrustMeta" class="text-xs text-gray-500 mt-1">Not sure? Let AI review the title, abstract, and keywords to suggest the best CSU thrusts.</p>
+                            <p id="thrustValue" class="font-semibold text-gray-800">{{ old('thrust', $research->thrust) ?: (($aiFeaturesEnabled ?? true) ? 'AI will suggest the closest thrust automatically...' : 'Select one or more CSU thrusts manually.') }}</p>
+                            <p id="thrustMeta" class="text-xs text-gray-500 mt-1">{{ ($aiFeaturesEnabled ?? true) ? 'Not sure? Let AI review the title, abstract, and keywords to suggest the best CSU thrusts.' : 'AI thrust suggestion is disabled. Choose the most relevant thrusts manually.' }}</p>
                         </div>
-                        <div id="thrustStatus" class="text-xs font-semibold text-orange-600 whitespace-nowrap mt-2">AI-assisted</div>
+                        <div id="thrustStatus" class="text-xs font-semibold text-orange-600 whitespace-nowrap mt-2">{{ ($aiFeaturesEnabled ?? true) ? 'AI-assisted' : 'Manual' }}</div>
                         <div id="thrustTags" class="flex flex-wrap gap-2 mt-3"></div>
                         <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
                             @foreach($thrustOptions as $thrustOption)
@@ -483,6 +507,18 @@ const thrustStatus = document.getElementById('thrustStatus');
 const thrustTags = document.getElementById('thrustTags');
 let thrustRequestTimer;
 let thrustRequestAbort = null;
+let duplicateCheckTimer;
+
+const duplicateWarning = document.getElementById('duplicateWarning');
+const sourceFileUpload = document.getElementById('sourceFileUpload');
+const sourceFileStatus = document.getElementById('sourceFileStatus');
+const sourceFileMeta = document.getElementById('sourceFileMeta');
+const sourceFileProgressWrap = document.getElementById('sourceFileProgressWrap');
+const sourceFileProgressBar = document.getElementById('sourceFileProgressBar');
+const sourceFilePathInput = document.getElementById('sourceFilePathInput');
+const sourceFileNameInput = document.getElementById('sourceFileNameInput');
+const uploadSessionIdInput = document.getElementById('uploadSessionId');
+const aiFeaturesEnabled = @json((bool) ($aiFeaturesEnabled ?? true));
 
 function getThrustPayload() {
     return {
@@ -525,7 +561,7 @@ function setThrustSuggestion(thrust, reason, source, thrusts = []) {
     thrustInput.value = thrust || '';
     thrustValue.textContent = thrusts.length ? `${thrust || 'Detected thrust'} (${thrusts.length})` : (thrust || 'Detecting thrust automatically...');
     thrustMeta.textContent = reason || 'Based on the title, abstract, and keywords.';
-    thrustStatus.textContent = source === 'ollama' ? 'AI' : (source === 'keyword' ? 'Auto' : 'Pending');
+    thrustStatus.textContent = source === 'ollama' ? 'AI' : (source === 'keyword' ? 'Auto' : (source === 'disabled' ? 'Manual' : 'Pending'));
     renderThrustTags(thrusts.length ? thrusts : (thrust ? [thrust] : []));
 
     document.querySelectorAll('input[name="thrusts[]"]').forEach(input => {
@@ -534,6 +570,11 @@ function setThrustSuggestion(thrust, reason, source, thrusts = []) {
 }
 
 function requestThrustSuggestion() {
+    if (!aiFeaturesEnabled) {
+        if (thrustStatus) thrustStatus.textContent = 'Manual';
+        return;
+    }
+
     const payload = getThrustPayload();
 
     if (thrustRequestAbort) {
@@ -567,8 +608,146 @@ function requestThrustSuggestion() {
 }
 
 function scheduleThrustSuggestion() {
+    if (!aiFeaturesEnabled) {
+        return;
+    }
+
     clearTimeout(thrustRequestTimer);
     thrustRequestTimer = setTimeout(requestThrustSuggestion, 450);
+}
+
+function renderDuplicateWarning(matches) {
+    if (!duplicateWarning) return;
+
+    if (!matches || matches.length === 0) {
+        duplicateWarning.classList.add('hidden');
+        duplicateWarning.innerHTML = '';
+        return;
+    }
+
+    const rows = matches.map((match) => {
+        return `<li><a href="${match.url}" class="underline hover:text-amber-900" target="_blank">${match.title}</a> (${match.college || 'N/A'}, ${match.year || 'N/A'}) - similarity ${match.score}%</li>`;
+    }).join('');
+
+    duplicateWarning.innerHTML = `<p class="font-semibold mb-1"><i class="fas fa-triangle-exclamation mr-1"></i>Potential duplicate research detected:</p><ul class="list-disc list-inside space-y-1">${rows}</ul>`;
+    duplicateWarning.classList.remove('hidden');
+}
+
+function scheduleDuplicateCheck() {
+    clearTimeout(duplicateCheckTimer);
+    duplicateCheckTimer = setTimeout(runDuplicateCheck, 550);
+}
+
+function runDuplicateCheck() {
+    const title = document.querySelector('input[name="title"]')?.value?.trim() || '';
+    const abstract = document.getElementById('abstract')?.value || '';
+
+    if (title.length < 3) {
+        renderDuplicateWarning([]);
+        return;
+    }
+
+    fetch('{{ route("research.duplicate-check") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+        },
+        body: JSON.stringify({ title, abstract, ignore_id: {{ $research->id }} }),
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (!data.success) return;
+            renderDuplicateWarning(data.matches || []);
+        })
+        .catch(() => {
+            renderDuplicateWarning([]);
+        });
+}
+
+async function uploadSourceFileInChunks(file) {
+    if (!uploadSessionIdInput || !sourceFilePathInput || !sourceFileNameInput) return;
+
+    const chunkSize = 2 * 1024 * 1024;
+    const totalChunks = Math.max(1, Math.ceil(file.size / chunkSize));
+    const uploadId = uploadSessionIdInput.value;
+
+    sourceFileProgressWrap.classList.remove('hidden');
+    sourceFileProgressBar.style.width = '0%';
+    sourceFileStatus.textContent = 'Preparing resumable upload...';
+    sourceFileMeta.textContent = `${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`;
+
+    const statusQuery = new URLSearchParams({
+        upload_id: uploadId,
+        total_chunks: String(totalChunks),
+    });
+
+    const statusResponse = await fetch(`{{ route("research.uploads.status") }}?${statusQuery.toString()}`);
+    const statusData = await statusResponse.json();
+    const uploadedSet = new Set(statusData.uploaded_indexes || []);
+
+    let completed = uploadedSet.size;
+    sourceFileProgressBar.style.width = `${Math.floor((completed / totalChunks) * 100)}%`;
+
+    for (let index = 0; index < totalChunks; index++) {
+        if (uploadedSet.has(index)) {
+            continue;
+        }
+
+        sourceFileStatus.textContent = `Uploading chunk ${index + 1} of ${totalChunks}...`;
+
+        const start = index * chunkSize;
+        const end = Math.min(file.size, start + chunkSize);
+        const chunk = file.slice(start, end);
+
+        const formData = new FormData();
+        formData.append('upload_id', uploadId);
+        formData.append('file_name', file.name);
+        formData.append('chunk_index', String(index));
+        formData.append('total_chunks', String(totalChunks));
+        formData.append('chunk', chunk, `${file.name}.part${index}`);
+        formData.append('_token', '{{ csrf_token() }}');
+
+        const chunkResponse = await fetch('{{ route("research.uploads.chunk") }}', {
+            method: 'POST',
+            body: formData,
+        });
+
+        const chunkData = await chunkResponse.json();
+
+        if (!chunkData.success) {
+            throw new Error(chunkData.message || 'Chunk upload failed.');
+        }
+
+        completed++;
+        sourceFileProgressBar.style.width = `${Math.floor((completed / totalChunks) * 100)}%`;
+    }
+
+    sourceFileStatus.textContent = 'Finalizing uploaded file...';
+
+    const completeResponse = await fetch('{{ route("research.uploads.complete") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+        },
+        body: JSON.stringify({
+            upload_id: uploadId,
+            file_name: file.name,
+            total_chunks: totalChunks,
+        }),
+    });
+
+    const completeData = await completeResponse.json();
+
+    if (!completeData.success) {
+        throw new Error(completeData.message || 'Unable to finalize upload.');
+    }
+
+    sourceFilePathInput.value = completeData.file_path;
+    sourceFileNameInput.value = completeData.file_name;
+    sourceFileStatus.innerHTML = '<i class="fas fa-check text-green-600 mr-1"></i> Source file uploaded';
+    sourceFileMeta.innerHTML = `<a href="${completeData.url}" target="_blank" class="underline hover:text-blue-900">${completeData.file_name}</a>`;
 }
 
 ['title', 'keywords', 'abstract', 'introduction', 'methodology', 'results', 'conclusion', 'recommendations'].forEach(fieldId => {
@@ -585,6 +764,24 @@ document.querySelectorAll('input[name="thrusts[]"]').forEach(input => {
         if (thrustInput) thrustInput.value = thrusts[0] || '';
         if (thrustValue) thrustValue.textContent = thrusts.length ? `${thrusts[0]} (${thrusts.length})` : 'Detecting thrust automatically...';
     });
+});
+
+document.querySelector('input[name="title"]')?.addEventListener('input', scheduleDuplicateCheck);
+document.getElementById('abstract')?.addEventListener('input', scheduleDuplicateCheck);
+
+sourceFileUpload?.addEventListener('change', async function(event) {
+    const file = event.target.files[0];
+
+    if (!file) return;
+
+    try {
+        await uploadSourceFileInChunks(file);
+    } catch (error) {
+        sourceFileStatus.innerHTML = '<i class="fas fa-exclamation-circle text-red-600 mr-1"></i> Upload failed';
+        sourceFileMeta.textContent = error.message || 'Could not upload source file.';
+    }
+
+    event.target.value = '';
 });
 
 // ── Image Upload ──
@@ -648,8 +845,12 @@ renderThrustTags(initialThrusts);
 if (initialThrusts.length > 0) {
     setThrustSuggestion(initialThrusts[0], 'Current thrust selection loaded.', 'saved', initialThrusts);
 } else {
-    requestThrustSuggestion();
+    if (aiFeaturesEnabled) {
+        requestThrustSuggestion();
+    }
 }
+
+runDuplicateCheck();
 
     setTableDesign(getTableDesign());
 </script>

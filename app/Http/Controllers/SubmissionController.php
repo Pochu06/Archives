@@ -3,12 +3,26 @@
 namespace App\Http\Controllers;
 
 use App\Models\Research;
+use App\Models\Category;
+use App\Models\College;
 use App\Notifications\InAppAlertNotification;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class SubmissionController extends Controller
 {
+    private function logStatusEvent(Research $research, string $action, ?string $fromStatus, ?string $toStatus, ?string $notes = null, array $meta = []): void
+    {
+        $research->statusEvents()->create([
+            'actor_id' => session('user_id'),
+            'action' => $action,
+            'from_status' => $fromStatus,
+            'to_status' => $toStatus,
+            'notes' => $notes,
+            'meta' => $meta === [] ? null : $meta,
+        ]);
+    }
+
     private function revisionFieldRules(): array
     {
         return ['required', 'array', 'min:1'];
@@ -124,8 +138,12 @@ class SubmissionController extends Controller
         $defaultPendingStatus = Research::STATUS_PENDING_COLLEGE;
         $showRdeLabels = false;
         $revisionFieldOptions = Research::revisionFieldOptions();
+        $categories = Category::orderBy('name')->get();
+        $colleges = College::where('id', session('user_college_id'))
+            ->orderBy('name')
+            ->get();
 
-        return view('admin.submissions', compact('research', 'pageTitle', 'pageSubtitle', 'approveRouteName', 'revisionRouteName', 'rejectRouteName', 'defaultPendingStatus', 'showRdeLabels', 'revisionFieldOptions'));
+        return view('admin.submissions', compact('research', 'pageTitle', 'pageSubtitle', 'approveRouteName', 'revisionRouteName', 'rejectRouteName', 'defaultPendingStatus', 'showRdeLabels', 'revisionFieldOptions', 'categories', 'colleges'));
     }
 
     public function rdeIndex(Request $request)
@@ -149,8 +167,184 @@ class SubmissionController extends Controller
         $defaultPendingStatus = Research::STATUS_PENDING_RDE;
         $showRdeLabels = true;
         $revisionFieldOptions = Research::revisionFieldOptions();
+        $categories = Category::orderBy('name')->get();
+        $colleges = College::query()
+            ->orderBy('name')
+            ->get();
 
-        return view('admin.submissions', compact('research', 'pageTitle', 'pageSubtitle', 'approveRouteName', 'revisionRouteName', 'rejectRouteName', 'defaultPendingStatus', 'showRdeLabels', 'revisionFieldOptions'));
+        return view('admin.submissions', compact('research', 'pageTitle', 'pageSubtitle', 'approveRouteName', 'revisionRouteName', 'rejectRouteName', 'defaultPendingStatus', 'showRdeLabels', 'revisionFieldOptions', 'categories', 'colleges'));
+    }
+
+    public function bulkUpdate(Request $request)
+    {
+        if ($r = $this->requireAuth()) return $r;
+
+        $isCollegeAdmin = session('user_role') === 'admin' && session('user_college_id');
+        $isRde = session('user_role') === 'super_admin' || (session('user_role') === 'admin' && ! session('user_college_id'));
+
+        if (! $isCollegeAdmin && ! $isRde) {
+            return redirect()->route('dashboard')->with('error', 'Unauthorized.');
+        }
+
+        $validated = $request->validate([
+            'research_ids' => 'required|array|min:1',
+            'research_ids.*' => 'integer|exists:research,id',
+            'action' => 'required|in:approve,reject,assign_college,tag_category',
+            'reason' => 'nullable|string|max:1000',
+            'college_id' => 'nullable|exists:colleges,id',
+            'category_id' => 'nullable|exists:categories,id',
+        ]);
+
+        if ($validated['action'] === 'reject' && empty(trim((string) ($validated['reason'] ?? '')))) {
+            return redirect()->back()->with('error', 'A rejection reason is required for bulk reject.');
+        }
+
+        if ($validated['action'] === 'assign_college' && empty($validated['college_id'])) {
+            return redirect()->back()->with('error', 'Select a college before running bulk college assignment.');
+        }
+
+        if ($validated['action'] === 'assign_college' && $isCollegeAdmin && (int) $validated['college_id'] !== (int) session('user_college_id')) {
+            return redirect()->back()->with('error', 'College admins can only assign submissions to their own college.');
+        }
+
+        if ($validated['action'] === 'tag_category' && empty($validated['category_id'])) {
+            return redirect()->back()->with('error', 'Select a category before running bulk category tagging.');
+        }
+
+        $query = Research::whereIn('id', $validated['research_ids']);
+
+        if ($isCollegeAdmin) {
+            $query->where('college_id', session('user_college_id'));
+        }
+
+        $records = $query->get();
+        $updatedCount = 0;
+        $skippedCount = 0;
+
+        foreach ($records as $research) {
+            $fromStatus = $research->status;
+            $changed = false;
+
+            if ($validated['action'] === 'approve') {
+                if ($isCollegeAdmin && $research->status === Research::STATUS_PENDING_COLLEGE) {
+                    $research->update([
+                        'status' => Research::STATUS_PENDING_RDE,
+                        'revision_notes' => null,
+                        'revision_fields' => null,
+                        'revision_field_notes' => null,
+                        'rejection_reason' => null,
+                    ]);
+                    $this->notifyResearchOwner($research, [
+                        'type' => 'approval_decision',
+                        'title' => 'College review passed',
+                        'message' => '"'.$research->title.'" passed college review and is now waiting for RDE approval.',
+                        'action_url' => route('research.show', $research->id),
+                        'action_label' => 'View Submission',
+                        'icon' => 'fa-building-columns',
+                        'level' => 'success',
+                    ]);
+                    $this->logStatusEvent($research, 'bulk_approved_college', $fromStatus, $research->status);
+                    $changed = true;
+                } elseif ($isRde && $research->status === Research::STATUS_PENDING_RDE) {
+                    $research->update([
+                        'status' => Research::STATUS_APPROVED,
+                        'approved_by' => session('user_id'),
+                        'approved_at' => now(),
+                        'revision_notes' => null,
+                        'revision_fields' => null,
+                        'revision_field_notes' => null,
+                        'rejection_reason' => null,
+                    ]);
+                    $this->notifyResearchOwner($research, [
+                        'type' => 'approval_decision',
+                        'title' => 'Research approved',
+                        'message' => '"'.$research->title.'" was approved by the RDE office and added to the archive.',
+                        'action_url' => route('research.show', $research->id),
+                        'action_label' => 'Open Research',
+                        'icon' => 'fa-circle-check',
+                        'level' => 'success',
+                    ]);
+                    $this->logStatusEvent($research, 'bulk_approved_rde', $fromStatus, $research->status);
+                    $changed = true;
+                }
+            }
+
+            if ($validated['action'] === 'reject') {
+                $reason = trim((string) $validated['reason']);
+
+                if ($isCollegeAdmin && $research->status === Research::STATUS_PENDING_COLLEGE) {
+                    $research->update([
+                        'status' => Research::STATUS_REJECTED_COLLEGE,
+                        'revision_notes' => null,
+                        'revision_fields' => null,
+                        'revision_field_notes' => null,
+                        'rejection_reason' => $reason,
+                        'approved_by' => null,
+                        'approved_at' => null,
+                    ]);
+                    $this->notifyResearchOwner($research, [
+                        'type' => 'approval_decision',
+                        'title' => 'Submission rejected by college',
+                        'message' => '"'.$research->title.'" was rejected during college review. Open the submission to see the reason.',
+                        'action_url' => route('research.show', $research->id),
+                        'action_label' => 'Review Feedback',
+                        'icon' => 'fa-circle-xmark',
+                        'level' => 'danger',
+                    ]);
+                    $this->logStatusEvent($research, 'bulk_rejected_college', $fromStatus, $research->status, $reason);
+                    $changed = true;
+                } elseif ($isRde && $research->status === Research::STATUS_PENDING_RDE) {
+                    $research->update([
+                        'status' => Research::STATUS_REJECTED_RDE,
+                        'revision_notes' => null,
+                        'revision_fields' => null,
+                        'revision_field_notes' => null,
+                        'rejection_reason' => $reason,
+                        'approved_by' => null,
+                        'approved_at' => null,
+                    ]);
+                    $this->notifyResearchOwner($research, [
+                        'type' => 'approval_decision',
+                        'title' => 'Submission rejected by RDE',
+                        'message' => '"'.$research->title.'" was rejected during final review. Open the submission to see the decision details.',
+                        'action_url' => route('research.show', $research->id),
+                        'action_label' => 'Review Feedback',
+                        'icon' => 'fa-circle-xmark',
+                        'level' => 'danger',
+                    ]);
+                    $this->logStatusEvent($research, 'bulk_rejected_rde', $fromStatus, $research->status, $reason);
+                    $changed = true;
+                }
+            }
+
+            if ($validated['action'] === 'assign_college') {
+                $research->update([
+                    'college_id' => $validated['college_id'],
+                ]);
+                $this->logStatusEvent($research, 'bulk_assigned_college', $fromStatus, $research->status, null, [
+                    'college_id' => (int) $validated['college_id'],
+                ]);
+                $changed = true;
+            }
+
+            if ($validated['action'] === 'tag_category') {
+                $research->update([
+                    'category_id' => $validated['category_id'],
+                ]);
+                $this->logStatusEvent($research, 'bulk_tagged_category', $fromStatus, $research->status, null, [
+                    'category_id' => (int) $validated['category_id'],
+                ]);
+                $changed = true;
+            }
+
+            if ($changed) {
+                $updatedCount++;
+            } else {
+                $skippedCount++;
+            }
+        }
+
+        return redirect()->back()->with('success', 'Bulk action finished. Updated: '.$updatedCount.'. Skipped: '.$skippedCount.'.');
     }
 
     public function approveByCollege($id)
@@ -174,6 +368,8 @@ class SubmissionController extends Controller
             'revision_field_notes' => null,
             'rejection_reason' => null,
         ]);
+
+        $this->logStatusEvent($research, 'approved_by_college', Research::STATUS_PENDING_COLLEGE, Research::STATUS_PENDING_RDE);
 
         $this->notifyResearchOwner($research, [
             'type' => 'approval_decision',
@@ -215,6 +411,8 @@ class SubmissionController extends Controller
             'approved_by' => null,
             'approved_at' => null,
         ]);
+
+        $this->logStatusEvent($research, 'rejected_by_college', Research::STATUS_PENDING_COLLEGE, Research::STATUS_REJECTED_COLLEGE, $validated['reason']);
 
         $this->notifyResearchOwner($research, [
             'type' => 'approval_decision',
@@ -260,6 +458,11 @@ class SubmissionController extends Controller
             'approved_at' => null,
         ]);
 
+        $this->logStatusEvent($research, 'revision_requested_by_college', Research::STATUS_PENDING_COLLEGE, Research::STATUS_REVISION_COLLEGE, null, [
+            'fields' => $selectedFields,
+            'field_notes' => $fieldNotes,
+        ]);
+
         $this->notifyResearchOwner($research, [
             'type' => 'revision_request',
             'title' => 'College revision requested',
@@ -292,6 +495,8 @@ class SubmissionController extends Controller
             'revision_field_notes' => null,
             'rejection_reason' => null,
         ]);
+
+        $this->logStatusEvent($research, 'approved_by_rde', Research::STATUS_PENDING_RDE, Research::STATUS_APPROVED);
 
         $this->notifyResearchOwner($research, [
             'type' => 'approval_decision',
@@ -329,6 +534,8 @@ class SubmissionController extends Controller
             'approved_by' => null,
             'approved_at' => null,
         ]);
+
+        $this->logStatusEvent($research, 'rejected_by_rde', Research::STATUS_PENDING_RDE, Research::STATUS_REJECTED_RDE, $validated['reason']);
 
         $this->notifyResearchOwner($research, [
             'type' => 'approval_decision',
@@ -368,6 +575,11 @@ class SubmissionController extends Controller
             'rejection_reason' => null,
             'approved_by' => null,
             'approved_at' => null,
+        ]);
+
+        $this->logStatusEvent($research, 'revision_requested_by_rde', Research::STATUS_PENDING_RDE, Research::STATUS_REVISION_RDE, null, [
+            'fields' => $selectedFields,
+            'field_notes' => $fieldNotes,
         ]);
 
         $this->notifyResearchOwner($research, [

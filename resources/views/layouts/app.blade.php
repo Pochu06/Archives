@@ -75,9 +75,11 @@
             <a href="{{ route('research.index') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('research.index') || request()->routeIs('research.show') ? 'active' : '' }}">
                 <i class="fas fa-archive w-5"></i><span>Research Archive</span>
             </a>
+            @if($aiFeaturesEnabled ?? true)
             <a href="{{ route('chatbot.index') }}" data-chatbot-open class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('chatbot.*') ? 'active' : '' }}">
                 <i class="fas fa-robot w-5"></i><span>AI Assistant</span>
             </a>
+            @endif
             <a href="{{ route('research.create') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('research.create') ? 'active' : '' }}">
                 <i class="fas fa-plus-circle w-5"></i><span>Archive Paper</span>
             </a>
@@ -235,7 +237,7 @@
 @endif
 @endif
 
-@if(session('user_id'))
+@if(session('user_id') && ($aiFeaturesEnabled ?? true))
 @include('chatbot.widget')
 @endif
 

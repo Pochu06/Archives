@@ -53,6 +53,18 @@
 
             <div class="pt-2 border-t border-gray-100"></div>
 
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2">Notification Email Digest</label>
+                <select name="notification_digest_frequency" class="w-full md:w-80 px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-500">
+                    <option value="none" {{ old('notification_digest_frequency', $user->notification_digest_frequency ?? 'none') === 'none' ? 'selected' : '' }}>Off</option>
+                    <option value="daily" {{ old('notification_digest_frequency', $user->notification_digest_frequency ?? 'none') === 'daily' ? 'selected' : '' }}>Daily digest</option>
+                    <option value="weekly" {{ old('notification_digest_frequency', $user->notification_digest_frequency ?? 'none') === 'weekly' ? 'selected' : '' }}>Weekly digest</option>
+                </select>
+                <p class="text-xs text-gray-500 mt-2">Receive unread approval/revision alerts in email summaries.</p>
+            </div>
+
+            <div class="pt-2 border-t border-gray-100"></div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">New Password <span class="text-gray-400 font-normal text-xs">(leave blank to keep current)</span></label>

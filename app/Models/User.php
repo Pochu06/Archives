@@ -12,7 +12,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name', 'email', 'password', 'role', 'college_id',
-        'student_id', 'status',
+        'student_id', 'status', 'notification_digest_frequency', 'notification_digest_last_sent_at',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -20,6 +20,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'notification_digest_last_sent_at' => 'datetime',
     ];
 
     public function college()
@@ -30,6 +31,16 @@ class User extends Authenticatable
     public function research()
     {
         return $this->hasMany(Research::class, 'user_id');
+    }
+
+    public function savedSearches()
+    {
+        return $this->hasMany(SavedSearch::class);
+    }
+
+    public function submissionStatusEvents()
+    {
+        return $this->hasMany(SubmissionStatusEvent::class, 'actor_id');
     }
 
     public function getRoleBadgeAttribute()

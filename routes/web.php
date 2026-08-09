@@ -25,6 +25,7 @@ Route::post('/register', [AuthController::class, 'register'])->name('register.po
 
 // Dashboard
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+Route::post('/settings/ai-features', [DashboardController::class, 'updateAiFeatures'])->name('settings.ai-features');
 
 // AI Chatbot
 Route::get('/chatbot', [ChatbotController::class, 'index'])->name('chatbot.index');
@@ -38,18 +39,26 @@ Route::get('/authors/{id}', [ResearchController::class, 'authorProfile'])->name(
 Route::get('/research/topic-suggestions', [ResearchController::class, 'topicSuggestions'])->name('research.topic-suggestions');
 Route::post('/research/thrust-suggestion', [ResearchController::class, 'thrustSuggestion'])->name('research.thrust-suggestion');
 Route::get('/research', [ResearchController::class, 'index'])->name('research.index');
+Route::post('/research/saved-searches', [ResearchController::class, 'saveSearch'])->name('research.saved-searches.store');
+Route::get('/research/saved-searches/{id}/apply', [ResearchController::class, 'applySavedSearch'])->name('research.saved-searches.apply');
+Route::delete('/research/saved-searches/{id}', [ResearchController::class, 'destroySavedSearch'])->name('research.saved-searches.destroy');
 Route::get('/research/create', [ResearchController::class, 'create'])->name('research.create');
 Route::get('/research/tutorial', [ResearchController::class, 'tutorial'])->name('research.tutorial');
 Route::post('/research', [ResearchController::class, 'store'])->name('research.store');
 Route::post('/research/save-draft', [ResearchController::class, 'saveDraft'])->name('research.save-draft');
 Route::get('/research/load-draft', [ResearchController::class, 'loadDraft'])->name('research.load-draft');
 Route::delete('/research/delete-draft', [ResearchController::class, 'deleteDraft'])->name('research.delete-draft');
+Route::post('/research/duplicate-check', [ResearchController::class, 'checkDuplicates'])->name('research.duplicate-check');
+Route::post('/research/uploads/chunk', [ResearchController::class, 'uploadFileChunk'])->name('research.uploads.chunk');
+Route::get('/research/uploads/status', [ResearchController::class, 'uploadFileStatus'])->name('research.uploads.status');
+Route::post('/research/uploads/complete', [ResearchController::class, 'completeFileUpload'])->name('research.uploads.complete');
 Route::get('/research/{id}', [ResearchController::class, 'show'])->name('research.show');
 Route::get('/research/{id}/edit', [ResearchController::class, 'edit'])->name('research.edit');
 Route::put('/research/{id}', [ResearchController::class, 'update'])->name('research.update');
 Route::delete('/research/{id}', [ResearchController::class, 'destroy'])->name('research.destroy');
 Route::get('/research/{id}/preview', [ResearchController::class, 'preview'])->name('research.preview');
 Route::get('/research/{id}/download', [ResearchController::class, 'download'])->name('research.download');
+Route::get('/research/{id}/certificate', [ResearchController::class, 'certificate'])->name('research.certificate');
 Route::post('/research/upload-image', [ResearchController::class, 'uploadImage'])->name('research.upload-image');
 Route::post('/research/delete-image', [ResearchController::class, 'deleteImage'])->name('research.delete-image');
 
@@ -58,6 +67,7 @@ Route::get('/my-submissions', [SubmissionController::class, 'index'])->name('sub
 Route::get('/college-submissions', [SubmissionController::class, 'collegeIndex'])->name('submissions.college');
 Route::get('/rde-submissions', [SubmissionController::class, 'rdeIndex'])->name('submissions.rde');
 Route::post('/submissions/{id}/college-approve', [SubmissionController::class, 'approveByCollege'])->name('submissions.college-approve');
+Route::post('/submissions/bulk-update', [SubmissionController::class, 'bulkUpdate'])->name('submissions.bulk-update');
 Route::post('/submissions/{id}/college-revision', [SubmissionController::class, 'requestRevisionByCollege'])->name('submissions.college-revision');
 Route::post('/submissions/{id}/college-reject', [SubmissionController::class, 'rejectByCollege'])->name('submissions.college-reject');
 Route::post('/submissions/{id}/rde-approve', [SubmissionController::class, 'approveByRde'])->name('submissions.rde-approve');

@@ -19,10 +19,55 @@
             <button type="submit" class="bg-orange-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-orange-700">Filter</button>
         </form>
     </div>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <form method="POST" action="{{ route('submissions.bulk-update') }}" id="bulkActionForm" class="grid grid-cols-1 lg:grid-cols-6 gap-3">
+            @csrf
+            <div class="lg:col-span-2">
+                <label class="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Bulk Action</label>
+                <select name="action" id="bulkActionSelect" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-orange-500" required>
+                    <option value="">Select action</option>
+                    <option value="approve">Approve selected</option>
+                    <option value="reject">Reject selected</option>
+                    <option value="assign_college">Assign college</option>
+                    <option value="tag_category">Tag category</option>
+                </select>
+            </div>
+            <div class="lg:col-span-2 hidden" id="bulkReasonGroup">
+                <label class="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Rejection Reason</label>
+                <input type="text" id="bulkReasonInput" name="reason" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-orange-500" placeholder="Reason for rejection...">
+            </div>
+            <div class="lg:col-span-2 hidden" id="bulkCollegeGroup">
+                <label class="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Assign College</label>
+                <select id="bulkCollegeInput" name="college_id" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-orange-500">
+                    <option value="">Select college</option>
+                    @foreach($colleges as $college)
+                    <option value="{{ $college->id }}">{{ $college->name }}{{ $college->code ? ' ('.$college->code.')' : '' }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="lg:col-span-2 hidden" id="bulkCategoryGroup">
+                <label class="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Tag Category</label>
+                <select id="bulkCategoryInput" name="category_id" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-orange-500">
+                    <option value="">Select category</option>
+                    @foreach($categories as $category)
+                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="lg:col-span-6 flex items-center justify-between gap-3">
+                <p class="text-xs text-gray-500">Select rows in the table below, then run a bulk action.</p>
+                <button type="submit" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700">Run Bulk Action</button>
+            </div>
+            <div id="bulkHiddenInputs"></div>
+        </form>
+    </div>
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <table class="min-w-full">
             <thead class="bg-orange-50 border-b border-orange-100">
                 <tr>
+                    <th class="px-3 py-3.5 text-left text-xs font-bold text-orange-800 uppercase">
+                        <input type="checkbox" id="selectAllRows" class="h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500">
+                    </th>
                     <th class="px-5 py-3.5 text-left text-xs font-bold text-orange-800 uppercase">Title</th>
                     <th class="px-5 py-3.5 text-left text-xs font-bold text-orange-800 uppercase">Student</th>
                     <th class="px-5 py-3.5 text-left text-xs font-bold text-orange-800 uppercase">Category</th>
@@ -35,6 +80,9 @@
             <tbody class="divide-y divide-gray-50">
                 @forelse($research as $r)
                 <tr class="hover:bg-orange-50/20">
+                    <td class="px-3 py-4 align-top">
+                        <input type="checkbox" class="bulk-row-checkbox h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500" value="{{ $r->id }}">
+                    </td>
                     <td class="px-5 py-4 max-w-md">
                         <a href="{{ route('research.show', $r->id) }}" class="font-semibold text-gray-800 hover:text-orange-600 text-sm line-clamp-2">{{ $r->title }}</a>
                     </td>
@@ -77,7 +125,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" class="px-5 py-16 text-center">
+                    <td colspan="8" class="px-5 py-16 text-center">
                         <i class="fas fa-tasks text-5xl text-gray-300 mb-3"></i>
                         <p class="text-gray-500">No student submissions found.</p>
                     </td>
@@ -209,5 +257,57 @@ function openRejectModal(id) {
     document.getElementById('rejectForm').action = template.replace('__ID__', id);
     document.getElementById('rejectModal').classList.remove('hidden');
 }
+
+const bulkActionSelect = document.getElementById('bulkActionSelect');
+const bulkReasonGroup = document.getElementById('bulkReasonGroup');
+const bulkCollegeGroup = document.getElementById('bulkCollegeGroup');
+const bulkCategoryGroup = document.getElementById('bulkCategoryGroup');
+const bulkReasonInput = document.getElementById('bulkReasonInput');
+const bulkCollegeInput = document.getElementById('bulkCollegeInput');
+const bulkCategoryInput = document.getElementById('bulkCategoryInput');
+const bulkHiddenInputs = document.getElementById('bulkHiddenInputs');
+const selectAllRows = document.getElementById('selectAllRows');
+const rowCheckboxes = Array.from(document.querySelectorAll('.bulk-row-checkbox'));
+const bulkActionForm = document.getElementById('bulkActionForm');
+
+function syncBulkActionFields() {
+    const action = bulkActionSelect.value;
+
+    bulkReasonGroup.classList.toggle('hidden', action !== 'reject');
+    bulkCollegeGroup.classList.toggle('hidden', action !== 'assign_college');
+    bulkCategoryGroup.classList.toggle('hidden', action !== 'tag_category');
+
+    bulkReasonInput.required = action === 'reject';
+    bulkCollegeInput.required = action === 'assign_college';
+    bulkCategoryInput.required = action === 'tag_category';
+}
+
+bulkActionSelect.addEventListener('change', syncBulkActionFields);
+syncBulkActionFields();
+
+selectAllRows?.addEventListener('change', function() {
+    rowCheckboxes.forEach((checkbox) => {
+        checkbox.checked = selectAllRows.checked;
+    });
+});
+
+rowCheckboxes.forEach((checkbox) => {
+    checkbox.addEventListener('change', () => {
+        const selectedCount = rowCheckboxes.filter((item) => item.checked).length;
+        selectAllRows.checked = selectedCount === rowCheckboxes.length;
+    });
+});
+
+bulkActionForm.addEventListener('submit', function(event) {
+    const selectedIds = rowCheckboxes.filter((checkbox) => checkbox.checked).map((checkbox) => checkbox.value);
+
+    if (selectedIds.length === 0) {
+        event.preventDefault();
+        alert('Select at least one submission first.');
+        return;
+    }
+
+    bulkHiddenInputs.innerHTML = selectedIds.map((id) => `<input type="hidden" name="research_ids[]" value="${id}">`).join('');
+});
 </script>
 @endsection

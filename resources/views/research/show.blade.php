@@ -72,7 +72,7 @@
             <i class="fas fa-arrow-left mr-1"></i> Back to Archive
         </a>
         <div class="flex gap-2">
-            @if(in_array(session('user_role'), ['super_admin', 'admin']) || $research->user_id == session('user_id'))
+            @if(in_array(session('user_role'), ['super_admin', 'admin']) || ($research->user_id == session('user_id') && $research->status !== \App\Models\Research::STATUS_APPROVED))
             <a href="{{ route('research.edit', $research->id) }}" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition">
                 <i class="fas fa-edit mr-1"></i> Edit
             </a>
@@ -337,6 +337,16 @@
                     </button>
                     <p class="text-xs text-gray-500 text-center mt-2">Requires approval from RDE Office</p>
                 @endif
+
+                @if(session('user_id') && $research->status === \App\Models\Research::STATUS_APPROVED && (in_array(session('user_role'), ['super_admin', 'admin'], true) || (int) $research->user_id === (int) session('user_id')))
+                <a href="{{ route('research.certificate', $research->id) }}" target="_blank" class="mt-3 block w-full border border-green-600 text-green-700 py-3 rounded-xl font-bold hover:bg-green-50 transition text-sm text-center">
+                    <i class="fas fa-award mr-1"></i> Print Approval Certificate
+                </a>
+                <a href="{{ route('research.certificate', ['id' => $research->id, 'download' => 1]) }}" class="mt-2 block w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition text-sm text-center">
+                    <i class="fas fa-file-arrow-down mr-1"></i> Download Certificate PDF
+                </a>
+                <p class="text-xs text-gray-500 text-center mt-2">Certificate of RDE approval for recognition</p>
+                @endif
             </div>
 
             {{-- Info Card --}}
@@ -377,6 +387,28 @@
             </div>
 
             {{-- Keywords Card --}}
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-3">Submission Timeline</p>
+                <div class="space-y-3">
+                    @forelse(($statusTimeline ?? collect()) as $event)
+                    <div class="border-l-2 border-orange-200 pl-3">
+                        <p class="text-xs font-semibold text-orange-700">{{ ucfirst(str_replace('_', ' ', $event->action)) }}</p>
+                        <p class="text-xs text-gray-600 mt-1">
+                            {{ $event->from_status ? ucfirst(str_replace('_', ' ', $event->from_status)) : 'Initial' }}
+                            <i class="fas fa-arrow-right mx-1 text-gray-400"></i>
+                            {{ $event->to_status ? ucfirst(str_replace('_', ' ', $event->to_status)) : 'Deleted' }}
+                        </p>
+                        @if($event->notes)
+                        <p class="text-xs text-gray-500 mt-1">{{ $event->notes }}</p>
+                        @endif
+                        <p class="text-[11px] text-gray-400 mt-1">{{ $event->actor?->name ?? 'System' }} · {{ $event->created_at?->format('M d, Y h:i A') }}</p>
+                    </div>
+                    @empty
+                    <p class="text-xs text-gray-500">No timeline events yet.</p>
+                    @endforelse
+                </div>
+            </div>
+
             @if($research->keywords)
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
                 <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-3">Keywords</p>

@@ -41,12 +41,14 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email,' . $user->id,
             'student_id' => 'nullable|string|max:50',
             'password' => 'nullable|min:8|confirmed',
+            'notification_digest_frequency' => 'nullable|in:none,daily,weekly',
         ]);
 
         $updateData = [
             'name' => $validated['name'],
             'email' => $validated['email'],
             'student_id' => $validated['student_id'] ?? null,
+            'notification_digest_frequency' => $validated['notification_digest_frequency'] ?? 'none',
         ];
 
         if (!empty($validated['password'])) {

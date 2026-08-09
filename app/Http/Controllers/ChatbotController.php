@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\ArchiveChatbotService;
+use App\Services\FeatureToggleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,16 +13,28 @@ class ChatbotController extends Controller
 {
     private const SESSION_KEY = 'chatbot.messages';
 
-    public function index(ArchiveChatbotService $chatbotService): View
+    public function index(ArchiveChatbotService $chatbotService, FeatureToggleService $featureToggleService): View|RedirectResponse
     {
+        if (! $featureToggleService->aiFeaturesEnabled()) {
+            abort(404);
+        }
+
         return view('chatbot.index', [
             'messages' => $this->messages(),
             'chatbotAvailable' => $chatbotService->isAvailable(),
         ]);
     }
 
-    public function store(Request $request, ArchiveChatbotService $chatbotService): JsonResponse|RedirectResponse
+    public function store(Request $request, ArchiveChatbotService $chatbotService, FeatureToggleService $featureToggleService): JsonResponse|RedirectResponse
     {
+        if (! $featureToggleService->aiFeaturesEnabled()) {
+            if ($request->expectsJson()) {
+                return response()->json(['ok' => false, 'message' => 'Not Found'], 404);
+            }
+
+            abort(404);
+        }
+
         $validated = $request->validate([
             'message' => 'required|string|max:2000',
         ]);
@@ -58,8 +71,16 @@ class ChatbotController extends Controller
         return redirect()->route('chatbot.index');
     }
 
-    public function reset(Request $request): JsonResponse|RedirectResponse
+    public function reset(Request $request, FeatureToggleService $featureToggleService): JsonResponse|RedirectResponse
     {
+        if (! $featureToggleService->aiFeaturesEnabled()) {
+            if ($request->expectsJson()) {
+                return response()->json(['ok' => false, 'message' => 'Not Found'], 404);
+            }
+
+            abort(404);
+        }
+
         $request->session()->forget(self::SESSION_KEY);
 
         if ($request->expectsJson()) {

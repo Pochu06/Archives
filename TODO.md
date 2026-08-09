@@ -27,18 +27,17 @@
 ## QoL and Extra Features Backlog
 
 ### Priority 1 - Quality of Life (High ROI)
-- [ ] Saved searches and smart filter presets (college, year, category, status)
-- [ ] Bulk actions for admins (approve, reject, assign adviser, tag category)
-- [ ] Submission status timeline with timestamps and actors
-- [ ] In-app notifications center with optional daily/weekly email digest
-- [ ] Draft autosave and resumable uploads for large research files
-- [ ] Duplicate detection warning using title and abstract similarity
+- [x] Saved searches and smart filter presets (college, year, category, status)
+- [x] Bulk actions for admins (approve, reject, assign college, tag category)
+- [x] Submission status timeline with timestamps and actors
+- [x] In-app notifications center with optional daily/weekly email digest
+- [x] Draft autosave and resumable uploads for large research files
+- [x] Duplicate detection warning using title and abstract similarity
 
 ### Priority 2 - Product Enhancements
 - [ ] Public research showcase page (featured, trending, top downloaded)
 - [ ] Citation export (APA, MLA, IEEE, BibTeX)
 - [ ] Download and view analytics per paper, college, and topic
-- [ ] Adviser workload balancing and assignment suggestions
 - [ ] Versioned submissions with side-by-side comparison
 - [ ] Related research recommendations by keyword, thrust, and category
 

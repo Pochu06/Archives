@@ -33,7 +33,7 @@ class Research extends Model
         'results', 'discussion', 'references', 'conclusion',
         'recommendations', 'keywords', 'authors',
         'thrust', 'thrusts', 'college_id', 'category_id', 'user_id',
-        'publication_year', 'table_design', 'status', 'approved_by', 'approved_at', 'rejection_reason', 'revision_notes', 'revision_fields', 'revision_field_notes',
+        'publication_year', 'table_design', 'status', 'adviser_id', 'file_path', 'file_name', 'approved_by', 'approved_at', 'rejection_reason', 'revision_notes', 'revision_fields', 'revision_field_notes',
     ];
 
     protected $casts = [
@@ -78,6 +78,11 @@ class Research extends Model
     public function approver()
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function statusEvents()
+    {
+        return $this->hasMany(SubmissionStatusEvent::class)->orderBy('created_at', 'desc');
     }
 
     public function scopeApproved($query)

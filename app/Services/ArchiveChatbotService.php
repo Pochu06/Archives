@@ -194,33 +194,31 @@ class ArchiveChatbotService
 
     private function findRelevantResearch(string $message): Collection
     {
-        $terms = $this->extractSearchTerms($message);
+        $sentence = $this->normalizeSearchSentence($message);
 
-        if ($terms === []) {
+        if ($sentence === null) {
             return collect();
         }
 
         return Research::with(['college', 'category'])
             ->approved()
-            ->where(function ($builder) use ($terms) {
-                foreach (array_slice($terms, 0, 8) as $term) {
-                    $builder->orWhere('title', 'like', '%'.$term.'%')
-                        ->orWhere('keywords', 'like', '%'.$term.'%')
-                        ->orWhere('abstract', 'like', '%'.$term.'%')
-                        ->orWhereHas('college', function ($collegeQuery) use ($term) {
-                            $collegeQuery->where('name', 'like', '%'.$term.'%')
-                                ->orWhere('code', 'like', '%'.$term.'%')
-                                ->orWhere('description', 'like', '%'.$term.'%');
-                        })
-                        ->orWhereHas('category', function ($categoryQuery) use ($term) {
-                            $categoryQuery->where('name', 'like', '%'.$term.'%')
-                                ->orWhere('description', 'like', '%'.$term.'%');
-                        });
-                }
+            ->where(function ($builder) use ($sentence) {
+                $builder->orWhereRaw('LOWER(title) like ?', ['%'.$sentence.'%'])
+                    ->orWhereRaw('LOWER(keywords) like ?', ['%'.$sentence.'%'])
+                    ->orWhereRaw('LOWER(abstract) like ?', ['%'.$sentence.'%'])
+                    ->orWhereHas('college', function ($collegeQuery) use ($sentence) {
+                        $collegeQuery->whereRaw('LOWER(name) like ?', ['%'.$sentence.'%'])
+                            ->orWhereRaw('LOWER(code) like ?', ['%'.$sentence.'%'])
+                            ->orWhereRaw('LOWER(description) like ?', ['%'.$sentence.'%']);
+                    })
+                    ->orWhereHas('category', function ($categoryQuery) use ($sentence) {
+                        $categoryQuery->whereRaw('LOWER(name) like ?', ['%'.$sentence.'%'])
+                            ->orWhereRaw('LOWER(description) like ?', ['%'.$sentence.'%']);
+                    });
             })
             ->limit(20)
             ->get()
-            ->map(function (Research $research) use ($terms) {
+            ->map(function (Research $research) use ($sentence) {
                 $score = 0;
                 $title = Str::lower((string) $research->title);
                 $keywords = Str::lower((string) $research->keywords);
@@ -233,12 +231,10 @@ class ArchiveChatbotService
                     (string) $research->category?->description,
                 ]));
 
-                foreach ($terms as $term) {
-                    $score += $this->scoreMatch($title, $term, 5);
-                    $score += $this->scoreMatch($keywords, $term, 4);
-                    $score += $this->scoreMatch($abstract, $term, 2);
-                    $score += $this->scoreMatch($metadata, $term, 1);
-                }
+                $score += $this->scoreExactSentenceMatch($title, $sentence, 8);
+                $score += $this->scoreExactSentenceMatch($keywords, $sentence, 6);
+                $score += $this->scoreExactSentenceMatch($abstract, $sentence, 4);
+                $score += $this->scoreExactSentenceMatch($metadata, $sentence, 2);
 
                 $research->chatbot_match_score = $score;
 
@@ -248,6 +244,32 @@ class ArchiveChatbotService
             ->sortByDesc('chatbot_match_score')
             ->take(self::MAX_CONTEXT_ITEMS)
             ->values();
+    }
+
+    private function normalizeSearchSentence(string $message): ?string
+    {
+        $normalized = preg_replace('/[^a-z0-9\s-]/i', ' ', Str::lower($message));
+
+        if (! is_string($normalized)) {
+            return null;
+        }
+
+        $normalized = preg_replace('/\s+/', ' ', trim($normalized)) ?? '';
+
+        if ($normalized === '' || strlen($normalized) < 3) {
+            return null;
+        }
+
+        return $normalized;
+    }
+
+    private function scoreExactSentenceMatch(string $haystack, string $sentence, int $weight): int
+    {
+        if ($haystack === '' || $sentence === '' || ! str_contains($haystack, $sentence)) {
+            return 0;
+        }
+
+        return $weight + (substr_count($haystack, $sentence) * $weight);
     }
 
     private function extractSearchTerms(string $message): array

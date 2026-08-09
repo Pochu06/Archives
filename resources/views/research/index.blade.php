@@ -6,7 +6,15 @@
 <div class="space-y-6">
     <!-- Filters -->
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-        <form method="GET" action="{{ route('research.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div class="flex flex-wrap gap-2 mb-4">
+            @foreach($smartPresets as $preset)
+            <a href="{{ route('research.index', $preset['query']) }}" class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-orange-50 text-orange-700 hover:bg-orange-100 transition">
+                <i class="fas fa-bolt mr-1"></i> {{ $preset['label'] }}
+            </a>
+            @endforeach
+        </div>
+
+        <form method="GET" action="{{ route('research.index') }}" class="grid grid-cols-1 md:grid-cols-6 gap-4">
             <div class="md:col-span-2">
                 <div class="relative">
                     <i class="fas fa-search absolute left-3 top-3.5 text-gray-400"></i>
@@ -26,6 +34,14 @@
                 <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
                 @endforeach
             </select>
+            <input type="number" name="year" min="2000" max="{{ date('Y') + 1 }}" value="{{ request('year') }}" placeholder="Year"
+                class="border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:border-orange-500">
+            <select name="status" class="border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:border-orange-500">
+                <option value="">All Statuses</option>
+                @foreach($statuses as $statusKey => $statusLabel)
+                <option value="{{ $statusKey }}" {{ request('status') === $statusKey ? 'selected' : '' }}>{{ $statusLabel }}</option>
+                @endforeach
+            </select>
             <div class="flex gap-2">
                 <button type="submit" class="flex-1 bg-orange-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-orange-700 transition">
                     <i class="fas fa-filter mr-1"></i> Filter
@@ -35,6 +51,41 @@
                 </a>
             </div>
         </form>
+
+        <div class="mt-4 pt-4 border-t border-gray-100 grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <form method="POST" action="{{ route('research.saved-searches.store') }}" class="flex flex-col sm:flex-row gap-2 sm:items-center">
+                @csrf
+                <input type="text" name="name" required maxlength="100" placeholder="Save current filters as..."
+                    class="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-orange-500">
+                <input type="hidden" name="search" value="{{ request('search') }}">
+                <input type="hidden" name="college_id" value="{{ request('college_id') }}">
+                <input type="hidden" name="category_id" value="{{ request('category_id') }}">
+                <input type="hidden" name="year" value="{{ request('year') }}">
+                <input type="hidden" name="status" value="{{ request('status') }}">
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 transition">
+                    <i class="fas fa-save mr-1"></i> Save Preset
+                </button>
+            </form>
+
+            <div class="flex flex-wrap gap-2 lg:justify-end">
+                @forelse($savedSearches as $saved)
+                <div class="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-1">
+                    <a href="{{ route('research.saved-searches.apply', $saved->id) }}" class="text-xs font-semibold text-gray-700 hover:text-orange-700 px-2">
+                        <i class="fas fa-bookmark mr-1 text-orange-500"></i>{{ $saved->name }}
+                    </a>
+                    <form method="POST" action="{{ route('research.saved-searches.destroy', $saved->id) }}" onsubmit="return confirm('Delete this saved search?')">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="text-gray-400 hover:text-red-600 px-2" title="Delete preset">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </form>
+                </div>
+                @empty
+                <p class="text-xs text-gray-500">No saved presets yet.</p>
+                @endforelse
+            </div>
+        </div>
     </div>
 
     <div class="flex justify-between items-center">

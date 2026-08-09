@@ -6,9 +6,24 @@ use App\Models\Research;
 use App\Models\User;
 use App\Models\College;
 use App\Models\Category;
+use App\Services\FeatureToggleService;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
+    private function requireSuperAdmin()
+    {
+        if (! session('user_id')) {
+            return redirect()->route('login');
+        }
+
+        if (session('user_role') !== 'super_admin') {
+            return redirect()->route('dashboard')->with('error', 'Unauthorized.');
+        }
+
+        return null;
+    }
+
     public function index()
     {
         if (!session('user_id')) {
@@ -68,5 +83,18 @@ class DashboardController extends Controller
         return view('dashboards.student', compact(
             'myResearch', 'recentResearch', 'browseResearch'
         ));
+    }
+
+    public function updateAiFeatures(Request $request, FeatureToggleService $featureToggleService)
+    {
+        if ($r = $this->requireSuperAdmin()) return $r;
+
+        $validated = $request->validate([
+            'enabled' => 'required|boolean',
+        ]);
+
+        $featureToggleService->setAiFeaturesEnabled((bool) $validated['enabled'], (int) session('user_id'));
+
+        return redirect()->route('dashboard')->with('success', 'AI features setting updated.');
     }
 }
