@@ -142,6 +142,9 @@
             <a href="{{ route('colleges.index') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('colleges.*') ? 'active' : '' }}">
                 <i class="fas fa-university w-5"></i><span>Colleges</span>
             </a>
+            <a href="{{ route('super-admin.admin-action-logs.index') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('super-admin.admin-action-logs.*') ? 'active' : '' }}">
+                <i class="fas fa-clipboard-list w-5"></i><span>Admin Logs</span>
+            </a>
             @endif
             @endif
         </nav>

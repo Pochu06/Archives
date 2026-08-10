@@ -9,6 +9,7 @@ use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 
 class NotificationCenterService
 {
@@ -20,7 +21,7 @@ class NotificationCenterService
     {
         $userId = session('user_id');
 
-        if (! $userId) {
+        if (! $userId || ! Schema::hasTable('users')) {
             return null;
         }
 
@@ -33,8 +34,8 @@ class NotificationCenterService
     public function getSharedData(): array
     {
         $user = $this->getCurrentUser();
-        $draftNotification = $user ? $this->getDraftAlert($user) : null;
-        $databaseNotifications = $user
+        $draftNotification = $user && Schema::hasTable('research_drafts') ? $this->getDraftAlert($user) : null;
+        $databaseNotifications = $user && Schema::hasTable('notifications')
             ? $this->mapDatabaseNotifications($user->notifications()->latest()->limit(self::HEADER_LIMIT)->get())
             : collect();
 
@@ -90,7 +91,9 @@ class NotificationCenterService
             return;
         }
 
-        $user->unreadNotifications->markAsRead();
+        if (Schema::hasTable('notifications')) {
+            $user->unreadNotifications->markAsRead();
+        }
 
         $draft = ResearchDraft::where('user_id', $user->id)->first();
 
@@ -175,7 +178,7 @@ class NotificationCenterService
 
     private function getCollegeApprovalCount(): int
     {
-        if (!(session('user_role') === 'admin' && session('user_college_id'))) {
+        if (!(session('user_role') === 'admin' && session('user_college_id')) || ! Schema::hasTable('research')) {
             return 0;
         }
 
@@ -186,7 +189,7 @@ class NotificationCenterService
 
     private function getRdeApprovalCount(): int
     {
-        if (!(session('user_role') === 'super_admin' || (session('user_role') === 'admin' && ! session('user_college_id')))) {
+        if (!(session('user_role') === 'super_admin' || (session('user_role') === 'admin' && ! session('user_college_id'))) || ! Schema::hasTable('research')) {
             return 0;
         }
 

@@ -12,6 +12,7 @@ use App\Http\Controllers\ThrustController;
 use App\Http\Controllers\DownloadRequestController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SubmissionController;
+use App\Http\Controllers\AdminActionLogController;
 
 // Welcome / Landing
 Route::get('/', function () { return view('welcome'); });
@@ -88,6 +89,8 @@ Route::post('/notifications/{id}/read', [NotificationController::class, 'markRea
 // User Management
 Route::get('/profile/edit', [UserController::class, 'editProfile'])->name('profile.edit');
 Route::put('/profile', [UserController::class, 'updateProfile'])->name('profile.update');
+
+Route::get('/super-admin/admin-action-logs', [AdminActionLogController::class, 'index'])->name('super-admin.admin-action-logs.index');
 
 Route::get('/users', [UserController::class, 'index'])->name('users.index');
 Route::get('/users/create', [UserController::class, 'create'])->name('users.create');

@@ -41,11 +41,11 @@
 - [ ] Versioned submissions with side-by-side comparison
 - [ ] Related research recommendations by keyword, thrust, and category
 
-### Priority 3 - AI-Assisted Features
-- [ ] AI metadata extraction from uploaded PDF (title, authors, abstract, keywords)
+<!-- ### Priority 3 - AI-Assisted Features -->
+<!-- - [ ] AI metadata extraction from uploaded PDF (title, authors, abstract, keywords)
 - [ ] AI abstract quality checker before final submission
 - [ ] AI reviewer assistant for structured rubric suggestions
-- [ ] AI topic suggestion based on archive gaps and trend data
+- [ ] AI topic suggestion based on archive gaps and trend data -->
 
 ### Priority 4 - Admin, Security, and Governance
 - [ ] Action audit trail (approve/reject/edit/delete with actor and timestamp)
