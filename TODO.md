@@ -52,10 +52,5 @@
 - [ ] Soft delete and restore bin for research records
 - [ ] Data export center (CSV/Excel) for reporting and accreditation
 - [ ] Queue and background job monitoring dashboard
-- [ ] Watermarked downloads for traceability
+- [x] Watermarked downloads for traceability
 - [ ] Time-limited access links for restricted documents
-
-### Suggested Build Order (6 Weeks)
-- [ ] Week 1-2: Saved filters, bulk actions, status timeline, notifications center
-- [ ] Week 3-4: Citation export, analytics, duplicate detection, autosave/resumable upload
-- [ ] Week 5-6: AI metadata extraction, related research, audit trail, restore bin

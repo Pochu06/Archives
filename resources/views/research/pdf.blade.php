@@ -37,6 +37,21 @@
             margin: 0;
         }
 
+        .page-watermark {
+            position: fixed;
+            top: 45%;
+            left: 0;
+            right: 0;
+            width: 100%;
+            text-align: center;
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 18pt;
+            font-weight: bold;
+            color: #999;
+            opacity: 0.35;
+            transform: rotate(-45deg);
+        }
+
         /* ── Content wrapper ── */
         .page-content {
             margin-top: 0;
@@ -220,6 +235,8 @@
         <img src="{{ public_path('storage/logo/CSU.png') }}" alt="CSU Logo">
         <div class="page-header-text">CAGAYAN STATE UNIVERSITY</div>
     </div>
+
+    <div class="page-watermark">Intellectual Property of Cagayan State University</div>
 
     {{-- ══ Title ══ --}}
     <div class="page-content">
