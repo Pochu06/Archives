@@ -15,7 +15,7 @@ use App\Http\Controllers\SubmissionController;
 use App\Http\Controllers\AdminActionLogController;
 
 // Welcome / Landing
-Route::get('/', function () { return view('welcome'); });
+Route::get('/', [ResearchController::class, 'landing'])->name('landing');
 
 // Authentication
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');

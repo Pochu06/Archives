@@ -381,6 +381,35 @@ class ResearchController extends Controller
         return redirect()->route('research.index')->with('success', 'Saved search deleted.');
     }
 
+    public function landing()
+    {
+        $baseQuery = fn () => Research::with(['user', 'college', 'category'])->approved();
+
+        $featuredResearch = $baseQuery()
+            ->latest('approved_at')
+            ->latest('created_at')
+            ->take(3)
+            ->get();
+
+        $trendingResearch = $baseQuery()
+            ->where('publication_year', '>=', now()->year - 2)
+            ->latest('publication_year')
+            ->latest('created_at')
+            ->take(3)
+            ->get();
+
+        $topDownloadedResearch = $baseQuery()
+            ->withCount(['downloadRequests as approved_downloads_count' => function ($query) {
+                $query->where('status', 'approved');
+            }])
+            ->orderByDesc('approved_downloads_count')
+            ->latest('created_at')
+            ->take(3)
+            ->get();
+
+        return view('welcome', compact('featuredResearch', 'trendingResearch', 'topDownloadedResearch'));
+    }
+
     public function publicIndex(Request $request)
     {
         $query = Research::with(['user', 'college', 'category'])->approved();

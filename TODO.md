@@ -35,7 +35,7 @@
 - [x] Duplicate detection warning using title and abstract similarity
 
 ### Priority 2 - Product Enhancements
-- [ ] Public research showcase page (featured, trending, top downloaded)
+- [x] Public research showcase page (featured, trending, top downloaded)
 - [ ] Citation export (APA, MLA, IEEE, BibTeX)
 - [ ] Download and view analytics per paper, college, and topic
 - [ ] Versioned submissions with side-by-side comparison

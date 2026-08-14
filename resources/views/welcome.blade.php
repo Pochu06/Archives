@@ -14,7 +14,7 @@
                         orange: {
                             50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe',
                             300: '#93c5fd', 400: '#60a5fa', 500: '#3b82f6',
-                            600: '#2563eb', 700: '#2563eb', 800: '#2563eb', 900: '#2563eb'
+                            600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a'
                         }
                     }
                 }
@@ -23,7 +23,7 @@
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        .hero-bg { background: #3b82f6; }
+        .hero-bg { background: #2563eb; }
         .card-hover { transition: all 0.3s ease; }
         .card-hover:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
     </style>
@@ -113,6 +113,56 @@
                         <i class="fas fa-user-graduate mr-2"></i> Join as Student
                     </a>
                 @endif
+            </div>
+        </div>
+    </section>
+
+    <!-- Public showcase -->
+    <section class="bg-orange-50 text-gray-800 py-16 sm:py-20 px-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-5 mb-10">
+                <div>
+                    <p class="text-orange-400 text-sm font-bold uppercase tracking-[0.2em]">The public shelf</p>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold mt-2">Research worth returning to</h2>
+                    <p class="text-gray-600 mt-3 max-w-2xl">Discover approved work from across Cagayan State University, from newly archived studies to the papers readers request most.</p>
+                </div>
+                <a href="{{ route('research.public') }}" class="inline-flex items-center gap-2 text-orange-700 font-bold hover:text-orange-900 transition">
+                    Explore the full archive <i class="fas fa-arrow-right text-sm"></i>
+                </a>
+            </div>
+
+            @php
+                $showcaseSections = [
+                    ['label' => 'Featured', 'icon' => 'fa-star', 'items' => $featuredResearch, 'metric' => null],
+                    ['label' => 'Trending now', 'icon' => 'fa-fire', 'items' => $trendingResearch, 'metric' => null],
+                    ['label' => 'Most requested', 'icon' => 'fa-download', 'items' => $topDownloadedResearch, 'metric' => 'approved_downloads_count'],
+                ];
+            @endphp
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                @foreach($showcaseSections as $section)
+                <div class="border border-orange-200 bg-white p-5 sm:p-6 rounded-2xl shadow-sm">
+                    <div class="flex items-center gap-3 mb-5">
+                        <span class="w-10 h-10 rounded-xl bg-orange-100 text-orange-700 inline-flex items-center justify-center"><i class="fas {{ $section['icon'] }}"></i></span>
+                        <h3 class="text-xl font-bold">{{ $section['label'] }}</h3>
+                    </div>
+                    <div class="space-y-4">
+                        @forelse($section['items'] as $item)
+                        <a href="{{ route('research.public-show', $item->id) }}" class="block border-b border-orange-100 pb-4 last:border-0 last:pb-0 group">
+                            <div class="flex items-start justify-between gap-3">
+                                <h4 class="font-bold leading-snug group-hover:text-orange-700 transition">{{ $item->title }}</h4>
+                                @if($section['metric'])
+                                <span class="shrink-0 text-xs text-orange-700">{{ $item->{$section['metric']} }} requests</span>
+                                @endif
+                            </div>
+                            <p class="text-sm text-gray-500 mt-1">{{ $item->college->code ?? 'CSU' }} · {{ $item->publication_year ?: 'Year unavailable' }}</p>
+                        </a>
+                        @empty
+                        <p class="text-sm text-gray-500">Approved research will appear here as the archive grows.</p>
+                        @endforelse
+                    </div>
+                </div>
+                @endforeach
             </div>
         </div>
     </section>

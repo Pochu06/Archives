@@ -85,6 +85,11 @@ class Research extends Model
         return $this->hasMany(SubmissionStatusEvent::class)->orderBy('created_at', 'desc');
     }
 
+    public function downloadRequests()
+    {
+        return $this->hasMany(DownloadRequest::class);
+    }
+
     public function scopeApproved($query)
     {
         return $query->where('status', self::STATUS_APPROVED);
