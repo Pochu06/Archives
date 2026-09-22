@@ -14,8 +14,16 @@
 - [x] `php artisan storage:link`
 - [x] Full workflow test
 
+### Priority 1 - Quality of Life (High ROI)
+- [x] Saved searches and smart filter presets (college, year, category, status)
+- [x] Bulk actions for admins (approve, reject, assign college, tag category)
+- [x] Submission status timeline with timestamps and actors
+- [x] In-app notifications center with optional daily/weekly email digest
+- [x] Draft autosave and resumable uploads for large research files
+- [x] Duplicate detection warning using title and abstract similarity
+
 ## 🔄 IN PROGRESS
-- [ ] Step 1: Update seeder
+- [x] Step 1: Update seeder
 
 ## ⏳ PENDING
 (Original TODO items tracked as completed)
@@ -25,14 +33,6 @@
 ---
 
 ## QoL and Extra Features Backlog
-
-### Priority 1 - Quality of Life (High ROI)
-- [x] Saved searches and smart filter presets (college, year, category, status)
-- [x] Bulk actions for admins (approve, reject, assign college, tag category)
-- [x] Submission status timeline with timestamps and actors
-- [x] In-app notifications center with optional daily/weekly email digest
-- [x] Draft autosave and resumable uploads for large research files
-- [x] Duplicate detection warning using title and abstract similarity
 
 ### Priority 2 - Product Enhancements
 - [x] Public research showcase page (featured, trending, top downloaded)

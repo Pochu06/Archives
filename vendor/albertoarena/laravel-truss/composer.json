@@ -1,0 +1,83 @@
+{
+    "name": "albertoarena/laravel-truss",
+    "description": "A live database structure viewer for Laravel. Renders your schema (never data) as a scrollable, zoomable ER diagram.",
+    "keywords": [
+        "laravel",
+        "database",
+        "schema",
+        "er-diagram",
+        "erd",
+        "database-diagram",
+        "dbml",
+        "data-dictionary",
+        "migrations",
+        "mermaid",
+        "introspection"
+    ],
+    "homepage": "https://trussphp.com",
+    "support": {
+        "issues": "https://github.com/albertoarena/laravel-truss/issues",
+        "source": "https://github.com/albertoarena/laravel-truss",
+        "docs": "https://trussphp.com"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Alberto Arena",
+            "email": "arena.alberto@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "funding": [
+        {
+            "type": "ko-fi",
+            "url": "https://ko-fi.com/albertoarena"
+        }
+    ],
+    "require": {
+        "php": "^8.3",
+        "illuminate/contracts": "^12.0 || ^13.0",
+        "illuminate/support": "^12.0 || ^13.0",
+        "spatie/laravel-package-tools": "^1.16"
+    },
+    "require-dev": {
+        "laravel/mcp": "^0.9",
+        "laravel/pint": "^1.18",
+        "orchestra/testbench": "^10.0 || ^11.0",
+        "pestphp/pest": "^3.5"
+    },
+    "suggest": {
+        "laravel/mcp": "Enables the optional read-only, structure-only Truss MCP server (Truss as AI context). Opt in with `composer require laravel/mcp`. Needs Laravel >= 12.41.1 or 13."
+    },
+    "autoload": {
+        "psr-4": {
+            "AlbertoArena\\Truss\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "AlbertoArena\\Truss\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/pest",
+        "test:coverage": "vendor/bin/pest --coverage",
+        "lint": "vendor/bin/pint --test",
+        "lint:fix": "vendor/bin/pint"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "AlbertoArena\\Truss\\TrussServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
