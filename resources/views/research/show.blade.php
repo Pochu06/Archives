@@ -387,7 +387,7 @@
             </div>
 
             {{-- Keywords Card --}}
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            {{-- <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
                 <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-3">Submission Timeline</p>
                 <div class="space-y-3">
                     @forelse(($statusTimeline ?? collect()) as $event)
@@ -407,7 +407,7 @@
                     <p class="text-xs text-gray-500">No timeline events yet.</p>
                     @endforelse
                 </div>
-            </div>
+            </div> --}}
 
             @if($research->keywords)
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
