@@ -35,6 +35,7 @@
                     <label class="block text-gray-700 font-semibold mb-2">College <span class="text-red-500">*</span></label>
                     <select name="college_id" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-500">
                         <option value="">Select College</option>
+                        <option value="" {{ old('college_id') === '' ? 'selected' : '' }}>Not Applicable</option>
                         @foreach($colleges as $college)
                         <option value="{{ $college->id }}" {{ old('college_id') == $college->id ? 'selected' : '' }}>{{ $college->code }}</option>
                         @endforeach

@@ -116,7 +116,7 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:8|confirmed',
             'role' => 'required|in:super_admin,admin,student',
-            'college_id' => 'required|exists:colleges,id',
+            'college_id' => 'nullable|exists:colleges,id',
             'student_id' => 'nullable|string|max:50',
         ];
 
@@ -156,7 +156,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $id,
             'role' => 'required|in:super_admin,admin,student',
-            'college_id' => 'required|exists:colleges,id',
+            'college_id' => 'nullable|exists:colleges,id',
             'student_id' => 'nullable|string|max:50',
             'status' => 'required|in:active,inactive',
             'password' => 'nullable|min:8|confirmed',
