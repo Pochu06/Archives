@@ -47,17 +47,6 @@
                 <p class="text-gray-500 mt-1">Sign in to your account</p>
             </div>
 
-            <!-- Demo Credentials -->
-            <div class="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-6">
-                <p class="text-orange-800 font-semibold text-sm mb-2"><i class="fas fa-info-circle mr-1"></i> Demo Credentials</p>
-                <div class="space-y-1 text-xs text-orange-700">
-                    <p><strong>Super Admin:</strong> superadmin@university.edu.ph / password123</p>
-                    <p><strong>Admin:</strong> cics.admin@university.edu.ph / password123</p>
-                    <p><strong>Adviser:</strong> dr.lornareyes@university.edu.ph / password123</p>
-                    <p><strong>Student:</strong> juan.delacruz@student.university.edu.ph / password123</p>
-                </div>
-            </div>
-
             <form action="{{ route('login.post') }}" method="POST">
                 @csrf
                 <div class="mb-5">
