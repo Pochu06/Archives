@@ -42,6 +42,28 @@
             padding: 8px 22px 150px;
         }
 
+        .watermark {
+            position: absolute;
+            top: 210px;
+            left: 0;
+            right: 0;
+            z-index: 1;
+            text-align: center;
+            font-size: 54px;
+            font-weight: 800;
+            letter-spacing: 3px;
+            color: #d1d5db;
+            opacity: 0.28;
+            transform: rotate(-25deg);
+        }
+
+        .logo {
+            width: 62px;
+            height: 62px;
+            object-fit: contain;
+            margin-bottom: 4px;
+        }
+
         .org {
             font-size: 13px;
             letter-spacing: 1px;
@@ -96,36 +118,16 @@
             color: #4b5563;
         }
 
-        .signatures {
+        .system-generated {
             position: absolute;
             left: 0;
             right: 0;
-            bottom: 54px;
-            width: 100%;
-        }
-
-        .signature-box {
-            width: 40%;
-            display: inline-block;
+            bottom: 56px;
             text-align: center;
-            vertical-align: top;
-        }
-
-        .line {
-            border-top: 1px solid #374151;
-            margin: 0 auto 6px;
-            width: 100%;
-        }
-
-        .sign-name {
-            font-size: 12px;
             font-weight: 700;
-            color: #111827;
-        }
-
-        .sign-role {
             font-size: 10px;
-            color: #6b7280;
+            color: #92400e;
+            letter-spacing: 0.4px;
         }
 
         .footer {
@@ -151,6 +153,24 @@
             text-transform: uppercase;
             background: #fffbeb;
         }
+
+        .qr-code {
+            position: absolute;
+            right: 28px;
+            bottom: 20px;
+            z-index: 3;
+            width: 68px;
+            height: 68px;
+        }
+
+        .qr-label {
+            position: absolute;
+            right: 20px;
+            bottom: 2px;
+            z-index: 3;
+            font-size: 7px;
+            color: #6b7280;
+        }
     </style>
 </head>
 <body>
@@ -169,13 +189,25 @@
         $displayTitle = \Illuminate\Support\Str::limit((string) $research->title, 170, '...');
 
         $approvedAt = $research->approved_at ? $research->approved_at->format('F d, Y') : now()->format('F d, Y');
+        $logoPath = public_path('storage/logo/CSU.png');
+        $logoData = file_exists($logoPath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath)) : null;
+        $qrCode = (new \Endroid\QrCode\Builder\Builder(
+            writer: new \Endroid\QrCode\Writer\PngWriter(),
+            data: route('research.certificate.verify', $research->id),
+            size: 180,
+            margin: 8,
+        ))->build()->getDataUri();
     @endphp
 
     <div class="certificate">
+        <div class="watermark">ARCHIVES</div>
         <div class="content">
+            @if($logoData)
+            <img class="logo" src="{{ $logoData }}" alt="Cagayan State University logo">
+            @endif
             <p class="org">Cagayan State University - ARCHIVES</p>
             <h1 class="title">Certificate of Approval</h1>
-            <p class="subtitle">Research and Development Extension Office</p>
+            <p class="subtitle">Research, Development, and Extension Office</p>
 
             <p class="statement">This certifies that the research paper authored by</p>
             <p class="recipient">{{ $displayAuthors }}</p>
@@ -193,21 +225,11 @@
 
             <span class="badge">RDE Approved on {{ $approvedAt }}</span>
 
-            <div class="signatures">
-                <div class="signature-box" style="margin-right: 8%;">
-                    <div class="line"></div>
-                    <p class="sign-name">{{ $research->approver->name ?? 'RDE Approving Officer' }}</p>
-                    <p class="sign-role">RDE Approving Officer</p>
-                </div>
-                <div class="signature-box">
-                    <div class="line"></div>
-                    <p class="sign-name">{{ $research->user->name ?? 'Research Author' }}</p>
-                    <p class="sign-role">Research Author</p>
-                </div>
-            </div>
+            <p class="system-generated">* This is a system-generated certificate. No physical signature is required. Scan the QR code to verify authenticity.</p>
 
             <p class="footer">Generated on {{ now()->format('F d, Y h:i A') }} | ARCHIVES Research Repository</p>
         </div>
+        <img class="qr-code" src="{{ $qrCode }}" alt="QR code for this research paper">
     </div>
 </body>
 </html>

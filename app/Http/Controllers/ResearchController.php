@@ -36,9 +36,7 @@ class ResearchController extends Controller
             Research::STATUS_PENDING_RDE => 'Pending RDE Approval',
             Research::STATUS_REVISION_COLLEGE => 'For College Revision',
             Research::STATUS_REVISION_RDE => 'For RDE Revision',
-            Research::STATUS_APPROVED => 'Approved',
-            Research::STATUS_REJECTED_COLLEGE => 'Rejected by College',
-            Research::STATUS_REJECTED_RDE => 'Rejected by RDE',
+            Research::STATUS_APPROVED => 'Approved'
         ];
     }
 
@@ -95,6 +93,17 @@ class ResearchController extends Controller
 
         if (! $userId) {
             return false;
+        }
+
+        if ((int) $research->user_id === (int) $userId) {
+            return true;
+        }
+
+        if ($role === 'admin'
+            && $collegeId
+            && (int) $research->college_id === (int) $collegeId
+            && $research->status === Research::STATUS_PENDING_COLLEGE) {
+            return true;
         }
 
         if ($role === 'super_admin' || ($role === 'admin' && ! $collegeId)) {
@@ -259,10 +268,14 @@ class ResearchController extends Controller
         $query = Research::with(['user', 'college', 'category']);
 
         $role = session('user_role');
+        $userId = session('user_id');
         $collegeId = session('user_college_id');
 
         if ($role === 'student') {
-            $query->approved();
+            $query->where(function ($query) use ($userId) {
+                $query->approved()
+                    ->orWhere('user_id', $userId);
+            });
         } elseif ($role === 'admin' && $collegeId) {
             $query->where('college_id', $collegeId);
         }
@@ -293,7 +306,22 @@ class ResearchController extends Controller
             $query->where('status', $request->status);
         }
 
-        $research = $query->orderBy('created_at', 'desc')->paginate(12);
+        $sort = $request->input('sort', 'latest');
+        if ($sort === 'views') {
+            $query->orderByDesc('view_count')->orderByDesc('created_at');
+        } elseif ($sort === 'downloads') {
+            $query->orderByDesc('download_count')->orderByDesc('created_at');
+        } else {
+            if ($collegeId && ! $request->filled('college_id')) {
+                $query->orderByRaw(
+                    'CASE WHEN college_id = ? THEN 0 ELSE 1 END',
+                    [$collegeId]
+                );
+            }
+            $query->orderByDesc('created_at');
+        }
+
+        $research = $query->paginate(12);
         $colleges = College::where('active', true)->get();
         $categories = Category::all();
         $statuses = $this->researchStatusOptions();
@@ -325,7 +353,7 @@ class ResearchController extends Controller
             'search' => 'nullable|string|max:255',
             'college_id' => 'nullable|exists:colleges,id',
             'category_id' => 'nullable|exists:categories,id',
-            'year' => 'nullable|integer|min:2000|max:' . (date('Y') + 1),
+            'year' => 'nullable|integer|min:2000|max:' . date('Y'),
             'status' => ['nullable', Rule::in($statuses)],
         ]);
 
@@ -436,7 +464,15 @@ class ResearchController extends Controller
             $query->where('publication_year', $request->year);
         }
 
-        $research = $query->orderBy('created_at', 'desc')->paginate(12)->withQueryString();
+        if ($request->input('sort') === 'views') {
+            $query->orderByDesc('view_count')->orderByDesc('created_at');
+        } elseif ($request->input('sort') === 'downloads') {
+            $query->orderByDesc('download_count')->orderByDesc('created_at');
+        } else {
+            $query->orderByDesc('created_at');
+        }
+
+        $research = $query->paginate(12)->withQueryString();
         $colleges = College::where('active', true)->get();
         $categories = Category::all();
 
@@ -635,7 +671,7 @@ class ResearchController extends Controller
             'thrusts.*' => ['string', Rule::in(ResearchThrustService::options())],
             'college_id' => 'required|exists:colleges,id',
             'category_id' => 'required|exists:categories,id',
-            'publication_year' => 'required|integer|min:2000|max:' . (date('Y') + 1),
+            'publication_year' => 'required|integer|min:2000|max:' . date('Y'),
             'table_design' => 'nullable|in:classic,striped,minimal',
             'file_path' => 'nullable|string|max:255',
             'file_name' => 'nullable|string|max:255',
@@ -698,6 +734,9 @@ class ResearchController extends Controller
             return redirect()->route('dashboard')->with('error', 'Unauthorized action.');
         }
 
+        $research->increment('view_count');
+        $research->refresh();
+
         extract($this->buildShowViewData($research));
         extract($this->buildAiInsightViewData($research, $researchSummaryService, $relatedResearchService));
         $statusTimeline = $research->statusEvents()->with('actor:id,name')->orderBy('created_at', 'desc')->limit(20)->get();
@@ -708,6 +747,9 @@ class ResearchController extends Controller
     public function publicShow($id, ResearchSummaryService $researchSummaryService, RelatedResearchService $relatedResearchService)
     {
         $research = Research::with(['user', 'college', 'category'])->approved()->findOrFail($id);
+
+        $research->increment('view_count');
+        $research->refresh();
 
         extract($this->buildShowViewData($research));
         extract($this->buildAiInsightViewData($research, $researchSummaryService, $relatedResearchService));
@@ -774,7 +816,7 @@ class ResearchController extends Controller
             'thrusts.*' => ['string', Rule::in(ResearchThrustService::options())],
             'college_id' => 'required|exists:colleges,id',
             'category_id' => 'required|exists:categories,id',
-            'publication_year' => 'required|integer|min:2000|max:' . (date('Y') + 1),
+            'publication_year' => 'required|integer|min:2000|max:' . date('Y'),
             'table_design' => 'nullable|in:classic,striped,minimal',
             'file_path' => 'nullable|string|max:255',
             'file_name' => 'nullable|string|max:255',
@@ -1080,6 +1122,8 @@ class ResearchController extends Controller
             return redirect()->back()->with('error', 'You need an approved download request to download this paper.');
         }
 
+        $research->increment('download_count');
+
         $filename = $research->title . '.pdf';
 
         return $this->buildResearchPdf($research)->download($filename);
@@ -1119,6 +1163,15 @@ class ResearchController extends Controller
         }
 
         return $pdf->stream($filename);
+    }
+
+    public function verifyCertificate($id)
+    {
+        $research = Research::with(['user', 'college', 'category', 'approver'])->findOrFail($id);
+        $isLegitimate = $research->status === Research::STATUS_APPROVED && $research->approved_at !== null;
+        $certificateReference = 'CERT-'.$research->id.'-'.strtoupper(substr(hash('sha256', 'research-certificate:'.$research->id.':'.$research->approved_at), 0, 10));
+
+        return view('research.certificate-verify', compact('research', 'isLegitimate', 'certificateReference'));
     }
 
     public function uploadImage(Request $request)

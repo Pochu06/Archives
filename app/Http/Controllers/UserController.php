@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use App\Models\College;
+use App\Models\User;
+use App\Rules\StrongPassword;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -11,36 +12,49 @@ class UserController extends Controller
 {
     private function requireAuth()
     {
-        if (!session('user_id')) return redirect()->route('login');
+        if (! session('user_id')) {
+            return redirect()->route('login');
+        }
+
         return null;
     }
 
     private function requireRole(array $roles)
     {
-        if (!session('user_id')) return redirect()->route('login');
-        if (!in_array(session('user_role'), $roles)) return redirect()->route('dashboard')->with('error', 'Unauthorized.');
+        if (! session('user_id')) {
+            return redirect()->route('login');
+        }
+        if (! in_array(session('user_role'), $roles)) {
+            return redirect()->route('dashboard')->with('error', 'Unauthorized.');
+        }
+
         return null;
     }
 
     public function editProfile()
     {
-        if ($r = $this->requireAuth()) return $r;
+        if ($r = $this->requireAuth()) {
+            return $r;
+        }
 
         $user = User::with('college')->findOrFail(session('user_id'));
+
         return view('users.profile', compact('user'));
     }
 
     public function updateProfile(Request $request)
     {
-        if ($r = $this->requireAuth()) return $r;
+        if ($r = $this->requireAuth()) {
+            return $r;
+        }
 
         $user = User::findOrFail(session('user_id'));
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
+            'email' => 'required|email|unique:users,email,'.$user->id,
             'student_id' => 'nullable|string|max:50',
-            'password' => 'nullable|min:8|confirmed',
+            'password' => StrongPassword::optionalRules(),
             'notification_digest_frequency' => 'nullable|in:none,daily,weekly',
         ]);
 
@@ -51,7 +65,7 @@ class UserController extends Controller
             'notification_digest_frequency' => $validated['notification_digest_frequency'] ?? 'none',
         ];
 
-        if (!empty($validated['password'])) {
+        if (! empty($validated['password'])) {
             $updateData['password'] = Hash::make($validated['password']);
         }
 
@@ -68,7 +82,9 @@ class UserController extends Controller
 
     public function index(Request $request)
     {
-        if ($r = $this->requireRole(['super_admin', 'admin'])) return $r;
+        if ($r = $this->requireRole(['super_admin', 'admin'])) {
+            return $r;
+        }
 
         $role = session('user_role');
         $collegeId = session('user_college_id');
@@ -81,7 +97,7 @@ class UserController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%$search%")->orWhere('email', 'like', "%$search%");
             });
         }
@@ -102,19 +118,24 @@ class UserController extends Controller
 
     public function create()
     {
-        if ($r = $this->requireRole(['super_admin', 'admin'])) return $r;
+        if ($r = $this->requireRole(['super_admin', 'admin'])) {
+            return $r;
+        }
         $colleges = College::where('active', true)->get();
+
         return view('users.create', compact('colleges'));
     }
 
     public function store(Request $request)
     {
-        if ($r = $this->requireRole(['super_admin', 'admin'])) return $r;
+        if ($r = $this->requireRole(['super_admin', 'admin'])) {
+            return $r;
+        }
 
         $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:8|confirmed',
+            'password' => StrongPassword::rules(),
             'role' => 'required|in:super_admin,admin,student',
             'college_id' => 'nullable|exists:colleges,id',
             'student_id' => 'nullable|string|max:50',
@@ -141,25 +162,30 @@ class UserController extends Controller
 
     public function edit($id)
     {
-        if ($r = $this->requireRole(['super_admin', 'admin'])) return $r;
+        if ($r = $this->requireRole(['super_admin', 'admin'])) {
+            return $r;
+        }
         $user = User::findOrFail($id);
         $colleges = College::where('active', true)->get();
+
         return view('users.edit', compact('user', 'colleges'));
     }
 
     public function update(Request $request, $id)
     {
-        if ($r = $this->requireRole(['super_admin', 'admin'])) return $r;
+        if ($r = $this->requireRole(['super_admin', 'admin'])) {
+            return $r;
+        }
         $user = User::findOrFail($id);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $id,
+            'email' => 'required|email|unique:users,email,'.$id,
             'role' => 'required|in:super_admin,admin,student',
             'college_id' => 'nullable|exists:colleges,id',
             'student_id' => 'nullable|string|max:50',
             'status' => 'required|in:active,inactive',
-            'password' => 'nullable|min:8|confirmed',
+            'password' => StrongPassword::optionalRules(),
         ]);
 
         $updateData = [
@@ -171,22 +197,26 @@ class UserController extends Controller
             'status' => $validated['status'],
         ];
 
-        if (!empty($validated['password'])) {
+        if (! empty($validated['password'])) {
             $updateData['password'] = Hash::make($validated['password']);
         }
 
         $user->update($updateData);
+
         return redirect()->route('users.index')->with('success', 'User updated successfully!');
     }
 
     public function destroy($id)
     {
-        if ($r = $this->requireRole(['super_admin', 'admin'])) return $r;
+        if ($r = $this->requireRole(['super_admin', 'admin'])) {
+            return $r;
+        }
         $user = User::findOrFail($id);
         if ($user->id === session('user_id')) {
             return redirect()->route('users.index')->with('error', 'You cannot delete your own account.');
         }
         $user->delete();
+
         return redirect()->route('users.index')->with('success', 'User deleted successfully.');
     }
 }

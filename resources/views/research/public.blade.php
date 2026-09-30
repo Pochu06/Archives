@@ -86,6 +86,19 @@
                     @endforeach
                 </select>
 
+                    <select name="year" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:border-orange-500">
+                        <option value="">All Years</option>
+                        @for($filterYear = date('Y'); $filterYear >= 2020; $filterYear--)
+                        <option value="{{ $filterYear }}" {{ (string) request('year') === (string) $filterYear ? 'selected' : '' }}>{{ $filterYear }}</option>
+                        @endfor
+                    </select>
+
+                <select name="sort" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:border-orange-500">
+                    <option value="latest" {{ request('sort', 'latest') === 'latest' ? 'selected' : '' }}>Newest First</option>
+                    <option value="views" {{ request('sort') === 'views' ? 'selected' : '' }}>Most Viewed</option>
+                    <option value="downloads" {{ request('sort') === 'downloads' ? 'selected' : '' }}>Most Downloaded</option>
+                </select>
+
                 <div class="flex flex-col sm:flex-row gap-2">
                     <button type="submit" class="w-full bg-orange-600 text-white px-4 py-2.5 rounded-xl font-semibold hover:bg-orange-700">Filter</button>
                     <a href="{{ route('research.public') }}" class="w-full text-center bg-gray-100 text-gray-700 px-4 py-2.5 rounded-xl font-semibold hover:bg-gray-200">Reset</a>
@@ -98,7 +111,7 @@
             @foreach($research as $item)
             <article class="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col">
                 <div class="flex items-center justify-between gap-2 mb-3">
-                    <span class="text-xs font-bold bg-orange-100 text-orange-700 px-2.5 py-1 rounded">{{ $item->category->name ?? 'Uncategorized' }}</span>
+                    <span class="text-xs font-bold {{ $item->category->badge_classes ?? 'bg-gray-100 text-gray-700' }} px-2.5 py-1 rounded">{{ $item->category->name ?? 'Uncategorized' }}</span>
                     <span class="text-xs text-gray-500">{{ $item->publication_year }}</span>
                 </div>
 
@@ -115,6 +128,10 @@
                         @else
                         N/A
                         @endif
+                    </p>
+                    <p class="flex items-center gap-3 pt-1">
+                        <span><i class="fas fa-eye mr-1 text-blue-400"></i>{{ number_format($item->view_count) }} views</span>
+                        <span><i class="fas fa-download mr-1 text-green-500"></i>{{ number_format($item->download_count) }} downloads</span>
                     </p>
                 </div>
 

@@ -64,7 +64,7 @@
         @forelse($research as $item)
         <article class="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col">
             <div class="flex items-center justify-between gap-2 mb-3">
-                <span class="text-xs font-bold bg-orange-100 text-orange-700 px-2.5 py-1 rounded">{{ $item->category->name ?? 'Uncategorized' }}</span>
+                <span class="text-xs font-bold {{ $item->category->badge_classes ?? 'bg-gray-100 text-gray-700' }} px-2.5 py-1 rounded">{{ $item->category->name ?? 'Uncategorized' }}</span>
                 <span class="text-xs text-gray-500">{{ $item->publication_year }}</span>
             </div>
 

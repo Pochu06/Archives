@@ -20,6 +20,10 @@ Route::get('/', [ResearchController::class, 'landing'])->name('landing');
 // Authentication
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.request');
+Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('password.email');
+Route::get('/reset-password/{token}', [AuthController::class, 'showResetPassword'])->name('password.reset');
+Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
 Route::post('/register', [AuthController::class, 'register'])->name('register.post');
@@ -60,6 +64,7 @@ Route::delete('/research/{id}', [ResearchController::class, 'destroy'])->name('r
 Route::get('/research/{id}/preview', [ResearchController::class, 'preview'])->name('research.preview');
 Route::get('/research/{id}/download', [ResearchController::class, 'download'])->name('research.download');
 Route::get('/research/{id}/certificate', [ResearchController::class, 'certificate'])->name('research.certificate');
+Route::get('/certificates/{id}/verify', [ResearchController::class, 'verifyCertificate'])->name('research.certificate.verify');
 Route::post('/research/upload-image', [ResearchController::class, 'uploadImage'])->name('research.upload-image');
 Route::post('/research/delete-image', [ResearchController::class, 'deleteImage'])->name('research.delete-image');
 

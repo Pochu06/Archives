@@ -263,7 +263,7 @@
                     <label class="block text-gray-700 font-semibold mb-2">Publication Year <span class="text-red-500">*</span></label>
                     <select name="publication_year" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 @error('publication_year') border-red-400 @enderror">
                         <option value="">Select Year</option>
-                        @for($y = date('Y') + 1; $y >= 2000; $y--)
+                        @for($y = date('Y'); $y >= 2000; $y--)
                         <option value="{{ $y }}" {{ old('publication_year') == $y ? 'selected' : '' }}>{{ $y }}</option>
                         @endfor
                     </select>
@@ -369,6 +369,27 @@ function insertFigure(fieldId) {
     insertAtCursor(fieldId, template);
 }
 
+function resolveFigureSource(value) {
+    const source = value.trim();
+
+    try {
+        const url = new URL(source);
+        if (url.hostname === 'drive.google.com') {
+            const pathMatch = url.pathname.match(/\/file\/d\/([^/]+)/);
+            const fileId = pathMatch ? pathMatch[1] : url.searchParams.get('id');
+            if (fileId) {
+                return `https://drive.google.com/thumbnail?id=${encodeURIComponent(fileId)}&sz=w2000`;
+            }
+        }
+    } catch (error) {
+        // Treat invalid URLs as local uploaded filenames.
+    }
+
+    return /^https?:\/\//i.test(source)
+        ? source
+        : `/storage/research_images/${encodeURIComponent(source)}`;
+}
+
 function getTableDesign() {
     const allowed = ['classic', 'striped', 'minimal'];
     const hiddenInput = document.getElementById('tableDesignInput');
@@ -450,7 +471,8 @@ function renderPreview(text, container) {
             if (inTable && tableRows.length) { html += buildTableHtml(tableRows); tableRows = []; inTable = false; }
             const parts = trimmed.split(/\[figure:\s*.+?\s*\|\s*.+?\s*\]/);
             if (parts[0] && parts[0].trim()) html += buildParagraphHtml(parts[0].trim(), indentLevel);
-            html += `<div class="figure-container"><img src="/storage/research_images/${escHtml(figMatch[1])}" class="figure-image" onerror="this.outerHTML='<p style=\\'text-align:center;color:#9ca3af;font-style:italic\\'>[Image: ${escHtml(figMatch[1])}]</p>'"><p class="figure-caption">${escHtml(figMatch[2])}</p></div>`;
+            const figureSource = resolveFigureSource(figMatch[1]);
+            html += `<div class="figure-container"><img src="${escHtml(figureSource)}" class="figure-image" onerror="this.outerHTML='<p style=\\'text-align:center;color:#9ca3af;font-style:italic\\'>[Image: ${escHtml(figMatch[1])}]</p>'"><p class="figure-caption">${escHtml(figMatch[2])}</p></div>`;
             if (parts[1] && parts[1].trim()) html += buildParagraphHtml(parts[1].trim(), indentLevel);
             continue;
         }

@@ -3,6 +3,7 @@
 namespace App\Helpers;
 
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
 
 class ContentHelper
 {
@@ -167,22 +168,37 @@ class ContentHelper
 
     private static function buildFigure(string $filename, string $caption, string $context): string
     {
-        // Sanitize filename
-        $filename = basename($filename);
+        $remoteUrl = filter_var($filename, FILTER_VALIDATE_URL)
+            && in_array(strtolower((string) parse_url($filename, PHP_URL_SCHEME)), ['http', 'https'], true);
 
-        if ($context === 'pdf') {
-            // For DomPDF, use absolute file path
-            $filePath = storage_path('app/public/research_images/' . $filename);
-            if (!file_exists($filePath)) {
-                return '<p class="section-content" style="text-align: center; font-style: italic; color: #666;">[Image not available: ' . e($caption) . ']</p>';
+        if ($remoteUrl) {
+            $filename = self::resolveRemoteImageUrl($filename);
+
+            if ($context === 'pdf') {
+                $src = self::fetchRemoteImageForPdf($filename);
+                if ($src === null) {
+                    return '<p class="section-content" style="text-align: center; font-style: italic; color: #666;">[Image not available: ' . e($caption) . ']</p>';
+                }
+            } else {
+                $src = $filename;
             }
-            $src = $filePath;
         } else {
-            // For web, use storage URL
-            if (!Storage::disk('public')->exists('research_images/' . $filename)) {
-                return '<div style="text-align: center; padding: 20px; margin: 15px 0; background: #f9fafb; border: 1px dashed #d1d5db; border-radius: 8px;"><p style="color: #9ca3af; font-style: italic;">[Image not available: ' . e($caption) . ']</p></div>';
+            $filename = basename($filename);
+
+            if ($context === 'pdf') {
+                // For DomPDF, use absolute file path
+                $filePath = storage_path('app/public/research_images/' . $filename);
+                if (!file_exists($filePath)) {
+                    return '<p class="section-content" style="text-align: center; font-style: italic; color: #666;">[Image not available: ' . e($caption) . ']</p>';
+                }
+                $src = $filePath;
+            } else {
+                // For web, use storage URL
+                if (!Storage::disk('public')->exists('research_images/' . $filename)) {
+                    return '<div style="text-align: center; padding: 20px; margin: 15px 0; background: #f9fafb; border: 1px dashed #d1d5db; border-radius: 8px;"><p style="color: #9ca3af; font-style: italic;">[Image not available: ' . e($caption) . ']</p></div>';
+                }
+                $src = Storage::url('research_images/' . $filename);
             }
-            $src = Storage::url('research_images/' . $filename);
         }
 
         $figureHtml = '<div class="figure-container">';
@@ -191,6 +207,81 @@ class ContentHelper
         $figureHtml .= '</div>';
 
         return $figureHtml;
+    }
+
+    private static function resolveRemoteImageUrl(string $url): string
+    {
+        $parts = parse_url($url);
+        $host = strtolower((string) ($parts['host'] ?? ''));
+
+        if ($host !== 'drive.google.com' && ! str_ends_with($host, '.drive.google.com')) {
+            return $url;
+        }
+
+        parse_str((string) ($parts['query'] ?? ''), $query);
+        $fileId = $query['id'] ?? null;
+
+        if (preg_match('#/file/d/([^/]+)#', (string) ($parts['path'] ?? ''), $matches)) {
+            $fileId = $matches[1];
+        }
+
+        return $fileId
+            ? 'https://drive.google.com/thumbnail?id=' . rawurlencode($fileId) . '&sz=w2000'
+            : $url;
+    }
+
+    private static function fetchRemoteImageForPdf(string $url): ?string
+    {
+        $response = Http::timeout(8)
+            ->connectTimeout(3)
+            ->withHeaders(['User-Agent' => 'Archives Research Repository'])
+            ->get($url);
+
+        if (! $response->successful()) {
+            return null;
+        }
+
+        $contentType = strtolower((string) $response->header('Content-Type'));
+        $mimeType = trim(explode(';', $contentType, 2)[0]);
+        $body = $response->body();
+
+        if (! str_starts_with($mimeType, 'image/') || strlen($body) > 5 * 1024 * 1024) {
+            return null;
+        }
+
+        $extension = match ($mimeType) {
+            'image/jpeg', 'image/jpg' => '.jpg',
+            'image/png' => '.png',
+            'image/gif' => '.gif',
+            'image/webp' => '.webp',
+            'image/svg+xml' => '.svg',
+            default => null,
+        };
+
+        if ($extension === null) {
+            return null;
+        }
+
+        $directory = storage_path('app/public/research_images');
+        if (! is_dir($directory) && ! mkdir($directory, 0755, true) && ! is_dir($directory)) {
+            return null;
+        }
+
+        $temporaryPath = tempnam($directory, 'archives_figure_');
+        if ($temporaryPath === false || file_put_contents($temporaryPath . $extension, $body) === false) {
+            return null;
+        }
+
+        unlink($temporaryPath);
+
+        $imagePath = $temporaryPath . $extension;
+        register_shutdown_function(static function () use ($imagePath): void {
+            if (file_exists($imagePath)) {
+                unlink($imagePath);
+            }
+        });
+
+        return $imagePath;
     }
 
     private static function buildTable(array $rows, string $tableClass): string

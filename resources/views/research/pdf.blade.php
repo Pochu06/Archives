@@ -101,6 +101,12 @@
             line-height: 1.5;
             margin-top: 4px;
         }
+        .workflow-dates {
+            text-align: center;
+            font-size: 10pt;
+            color: #4b5563;
+            margin: 10px 0 16px;
+        }
         .keywords {
             font-size: 12pt;
             margin-top: 8px;
@@ -230,6 +236,11 @@
 </head>
 <body>
 
+    @php
+        $submittedAt = $research->created_at?->format('F d, Y h:i A');
+        $approvedAt = $research->approved_at?->format('F d, Y h:i A');
+    @endphp
+
     {{-- ══ Fixed Header (repeats on all pages) ══ --}}
     <div class="page-header">
         <img src="{{ public_path('storage/logo/CSU.png') }}" alt="CSU Logo">
@@ -253,6 +264,12 @@
         @foreach($authors as $i => $author)
             <div class="author-affiliation"><sup>{{ $i + 1 }}</sup>{{ $research->college->name ?? '' }}</div>
         @endforeach
+    </div>
+
+    <div class="workflow-dates">
+        Submitted: {{ $submittedAt ?? 'N/A' }}
+        &nbsp;|&nbsp;
+        Approved: {{ $approvedAt ?? 'Not yet approved' }}
     </div>
 
     {{-- ══ Abstract Box ══ --}}

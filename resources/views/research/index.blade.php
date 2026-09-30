@@ -34,13 +34,22 @@
                 <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
                 @endforeach
             </select>
-            <input type="number" name="year" min="2000" max="{{ date('Y') + 1 }}" value="{{ request('year') }}" placeholder="Year"
-                class="border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:border-orange-500">
+                <select name="year" class="border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:border-orange-500">
+                    <option value="">All Years</option>
+                    @for($filterYear = date('Y'); $filterYear >= 2020; $filterYear--)
+                    <option value="{{ $filterYear }}" {{ (string) request('year') === (string) $filterYear ? 'selected' : '' }}>{{ $filterYear }}</option>
+                    @endfor
+                </select>
             <select name="status" class="border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:border-orange-500">
                 <option value="">All Statuses</option>
                 @foreach($statuses as $statusKey => $statusLabel)
                 <option value="{{ $statusKey }}" {{ request('status') === $statusKey ? 'selected' : '' }}>{{ $statusLabel }}</option>
                 @endforeach
+            </select>
+            <select name="sort" class="border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:border-orange-500">
+                <option value="latest" {{ request('sort', 'latest') === 'latest' ? 'selected' : '' }}>Newest First</option>
+                <option value="views" {{ request('sort') === 'views' ? 'selected' : '' }}>Most Viewed</option>
+                <option value="downloads" {{ request('sort') === 'downloads' ? 'selected' : '' }}>Most Downloaded</option>
             </select>
             <div class="flex gap-2">
                 <button type="submit" class="flex-1 bg-orange-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-orange-700 transition">
@@ -119,7 +128,7 @@
                 </div>
                 <div class="text-xs text-gray-500 space-y-1">
                     <p><i class="fas fa-user mr-1 text-orange-400"></i> {{ $r->authors }}</p>
-                    <p><i class="fas fa-tag mr-1 text-orange-400"></i> {{ $r->category->name ?? 'N/A' }}</p>
+                    <p><i class="fas fa-tag mr-1 text-orange-400"></i> <span class="inline-flex {{ $r->category->badge_classes ?? 'bg-gray-100 text-gray-700' }} px-2 py-0.5 rounded-full font-semibold">{{ $r->category->name ?? 'N/A' }}</span></p>
                     <p>
                         <i class="fas fa-user-circle mr-1 text-orange-400"></i>
                         @if($r->user)
@@ -127,6 +136,10 @@
                         @else
                         N/A
                         @endif
+                    </p>
+                    <p class="flex items-center gap-3 pt-1">
+                        <span><i class="fas fa-eye mr-1 text-blue-400"></i>{{ number_format($r->view_count) }} views</span>
+                        <span><i class="fas fa-download mr-1 text-green-500"></i>{{ number_format($r->download_count) }} downloads</span>
                     </p>
                 </div>
             </div>

@@ -33,7 +33,7 @@ class Research extends Model
         'results', 'discussion', 'references', 'conclusion',
         'recommendations', 'keywords', 'authors',
         'thrust', 'thrusts', 'college_id', 'category_id', 'user_id',
-        'publication_year', 'table_design', 'status', 'adviser_id', 'file_path', 'file_name', 'approved_by', 'approved_at', 'rejection_reason', 'revision_notes', 'revision_fields', 'revision_field_notes',
+        'publication_year', 'table_design', 'status', 'adviser_id', 'file_path', 'file_name', 'approved_by', 'approved_at', 'rejection_reason', 'revision_notes', 'revision_fields', 'revision_field_notes', 'view_count', 'download_count',
     ];
 
     protected $casts = [
@@ -42,6 +42,8 @@ class Research extends Model
         'thrusts' => 'array',
         'revision_fields' => 'array',
         'revision_field_notes' => 'array',
+        'view_count' => 'integer',
+        'download_count' => 'integer',
     ];
 
     public static function revisionFieldOptions(): array

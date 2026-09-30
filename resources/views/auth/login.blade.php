@@ -67,10 +67,14 @@
                     </div>
                     @error('password')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
+                @if (session('status'))
+                    <p class="text-green-600 text-sm mb-4">{{ session('status') }}</p>
+                @endif
                 <button type="submit" class="w-full bg-orange-600 text-white py-3.5 rounded-xl font-bold text-lg hover:bg-orange-700 transition shadow-lg">
                     <i class="fas fa-sign-in-alt mr-2"></i> Sign In
                 </button>
             </form>
+            <p class="text-center text-sm mt-4"><a href="{{ route('password.request') }}" class="text-orange-600 font-semibold hover:underline">Forgot your password?</a></p>
             <p class="text-center text-gray-600 mt-6 text-sm">
                 Don't have an account? <a href="{{ route('register') }}" class="text-orange-600 font-semibold hover:underline">Register here</a>
             </p>

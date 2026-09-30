@@ -89,7 +89,7 @@
                 {{-- Header --}}
                 <div class="p-8 pb-0">
                     <div class="flex flex-wrap items-center gap-2 mb-4">
-                        <span class="bg-orange-600 text-white text-xs font-bold px-3 py-1 rounded">{{ $research->category->name ?? 'Uncategorized' }}</span>
+                        <span class="{{ $research->category->badge_classes ?? 'bg-gray-100 text-gray-700' }} text-xs font-bold px-3 py-1 rounded">{{ $research->category->name ?? 'Uncategorized' }}</span>
                         <span class="border border-green-500 text-green-700 text-xs font-semibold px-3 py-1 rounded">PDF Available</span>
                     </div>
 
@@ -151,6 +151,11 @@
                                 <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">PDF Access</p>
                                 <p class="mt-2 text-sm font-bold {{ $canDownload ? 'text-green-700' : 'text-amber-700' }}">{{ $canDownload ? 'Preview unlocked' : 'Request required' }}</p>
                                 <p class="text-xs text-gray-500 mt-1">{{ $canDownload ? 'Inline preview and full download available' : 'Request approval to unlock the full PDF preview' }}</p>
+                            </div>
+                            <div class="rounded-2xl border border-gray-200 bg-white p-4">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Engagement</p>
+                                <p class="mt-2 text-sm font-bold text-gray-800"><i class="fas fa-eye mr-1 text-blue-500"></i>{{ number_format($research->view_count) }} views</p>
+                                <p class="text-xs text-gray-500 mt-1"><i class="fas fa-download mr-1 text-green-500"></i>{{ number_format($research->download_count) }} downloads</p>
                             </div>
                         </div>
                     </div>
