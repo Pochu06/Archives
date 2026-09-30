@@ -59,9 +59,11 @@ class AuthController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:8|confirmed',
+            'password' => ['required', 'min:8', 'confirmed', 'regex:/^(?=.*[A-Z])(?=.*[0-9])(?=.*[[:punct:]]).+$/'],
             'college_id' => 'required|exists:colleges,id',
             'student_id' => 'nullable|string|max:50',
+        ], [
+            'password.regex' => 'The password must contain at least one uppercase letter, one number, and one symbol.',
         ]);
 
         $user = User::create([

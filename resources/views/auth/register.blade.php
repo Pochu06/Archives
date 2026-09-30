@@ -44,7 +44,7 @@
             <div class="grid grid-cols-2 gap-4 mb-6">
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2 text-sm">Password</label>
-                    <input type="password" name="password" placeholder="Min. 8 characters"
+                    <input type="password" name="password" placeholder="Password"
                         class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 @error('password') border-red-400 @enderror">
                     @error('password')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
