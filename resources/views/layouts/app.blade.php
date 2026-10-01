@@ -256,6 +256,7 @@
 @include('chatbot.widget')
 @endif
 
+<script>
 (() => {
     const sidebar = document.getElementById('appSidebar');
     const overlay = document.getElementById('sidebarOverlay');
