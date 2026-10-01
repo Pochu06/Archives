@@ -8,7 +8,7 @@
         <div class="hidden lg:flex items-center justify-center bg-orange-600 p-12 xl:p-16">
             <div class="text-white text-center max-w-lg">
                 <div class="bg-white/15 border border-white/20 p-8 rounded-3xl mb-8">
-                    <i class="fas fa-book-open text-6xl text-white mb-4"></i>
+                    <x-archives-logo class="mx-auto mb-4 h-24 w-24 object-contain brightness-0 invert" />
                     <h1 class="text-4xl font-extrabold mb-2">Research Archive</h1>
                     <p class="text-lg text-orange-100">Repository System</p>
                 </div>
@@ -33,9 +33,7 @@
         <div class="flex items-center justify-center p-5 sm:p-8 lg:p-12 bg-white">
             <div class="bg-white border border-gray-200 rounded-3xl shadow-xl p-8 sm:p-10 w-full max-w-md">
                 <div class="lg:hidden text-center mb-6">
-                    <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-orange-600 text-white mb-3">
-                        <i class="fas fa-book-open text-2xl"></i>
-                    </div>
+                    <x-archives-logo class="mx-auto mb-3 h-14 w-14 object-contain" />
                     <p class="text-sm text-gray-500">Research Archive System</p>
                 </div>
 

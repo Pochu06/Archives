@@ -48,9 +48,7 @@
         <div class="p-5 border-b border-orange-700">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-3">
-                <div class="bg-white p-2 rounded-lg">
-                    <i class="fas fa-book-open text-orange-600 text-xl"></i>
-                </div>
+                <x-archives-logo class="h-10 w-10 object-contain brightness-0 invert" />
                 <div>
                     <h1 class="font-bold text-sm leading-tight">ARCHIVES</h1>
                 </div>
@@ -228,9 +226,7 @@
         <nav class="bg-white border-b border-gray-200 sticky top-0 z-40">
             <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
                 <a href="{{ url('/') }}" class="flex items-center space-x-3">
-                    <div class="bg-orange-600 p-2 rounded-lg">
-                        <i class="fas fa-book-open text-white"></i>
-                    </div>
+                    <x-archives-logo class="h-10 w-10 object-contain" />
                     <span class="font-bold text-gray-900">ARCHIVES</span>
                 </a>
                 <div class="flex items-center gap-2">

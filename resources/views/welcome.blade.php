@@ -34,11 +34,9 @@
     <nav class="bg-white shadow-md sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 py-3 sm:py-4 flex flex-wrap justify-between items-center gap-3">
             <div class="flex items-center space-x-3">
-                <div class="bg-orange-600 p-2.5 rounded-lg">
-                    <i class="fas fa-book-open text-white text-xl"></i>
-                </div>
+                <img src="{{ asset('storage/logo/archives_logo.png') }}" alt="ARCHIVES" class="h-12 w-12 shrink-0 object-contain">
                 <div>
-                    <h1 class="font-bold text-gray-800 text-lg leading-tight">ARCHIVES</h1>
+                    {{-- <h1 class="font-bold text-gray-800 text-lg leading-tight">ARCHIVES</h1> --}}
                 </div>
             </div>
             @if(session('user_id'))
@@ -73,9 +71,10 @@
     <!-- Hero -->
     <section class="hero-bg text-white py-16 sm:py-20 lg:py-24 px-4 min-h-[72vh]">
         <div class="max-w-5xl mx-auto text-center">
-            <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-tight">
-                ARCHIVES
-            </h1>
+            <div class="mb-6 flex items-center justify-center gap-4">
+                <img src="{{ asset('storage/logo/archives_logo.png') }}" alt="ARCHIVES logo" class="h-20 w-20 object-contain brightness-0 invert">
+                <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight">ARCHIVES</h1>
+            </div>
             <p class="text-base sm:text-lg md:text-xl text-orange-100 mb-8 sm:mb-10 max-w-3xl mx-auto leading-relaxed">
                 Explore a comprehensive repository of academic research papers from Cagayan State University. Browse publicly available research.
             </p>
@@ -292,7 +291,7 @@
         <div class="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
                 <div class="flex items-center space-x-3 mb-4">
-                    <div class="bg-orange-600 p-2 rounded-lg"><i class="fas fa-book-open"></i></div>
+                    <x-archives-logo class="h-10 w-10 object-contain brightness-0 invert" />
                     <h3 class="font-bold">ARCHIVES</h3>
                 </div>
                 <p class="text-orange-200 text-sm">A centralized research management platform serving multiple colleges.</p>
