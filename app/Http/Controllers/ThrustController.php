@@ -8,16 +8,18 @@ use Illuminate\Validation\Rule;
 
 class ThrustController extends Controller
 {
-    private function requireSuperAdmin()
+    private function requireRdeOrSuperAdmin()
     {
         if (!session('user_id')) return redirect()->route('login');
-        if (session('user_role') !== 'super_admin') return redirect()->route('dashboard')->with('error', 'Unauthorized.');
+        $isRdeAdmin = session('user_role') === 'admin' && ! session('user_college_id');
+
+        if (session('user_role') !== 'super_admin' && ! $isRdeAdmin) return redirect()->route('dashboard')->with('error', 'Unauthorized.');
         return null;
     }
 
     public function index()
     {
-        if ($r = $this->requireSuperAdmin()) return $r;
+        if ($r = $this->requireRdeOrSuperAdmin()) return $r;
 
         $thrusts = Thrust::orderBy('active', 'desc')->orderBy('name')->paginate(10);
 
@@ -26,14 +28,14 @@ class ThrustController extends Controller
 
     public function create()
     {
-        if ($r = $this->requireSuperAdmin()) return $r;
+        if ($r = $this->requireRdeOrSuperAdmin()) return $r;
 
         return view('thrusts.create');
     }
 
     public function store(Request $request)
     {
-        if ($r = $this->requireSuperAdmin()) return $r;
+        if ($r = $this->requireRdeOrSuperAdmin()) return $r;
 
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:thrusts,name',
@@ -51,7 +53,7 @@ class ThrustController extends Controller
 
     public function edit($id)
     {
-        if ($r = $this->requireSuperAdmin()) return $r;
+        if ($r = $this->requireRdeOrSuperAdmin()) return $r;
 
         $thrust = Thrust::findOrFail($id);
 
@@ -60,7 +62,7 @@ class ThrustController extends Controller
 
     public function update(Request $request, $id)
     {
-        if ($r = $this->requireSuperAdmin()) return $r;
+        if ($r = $this->requireRdeOrSuperAdmin()) return $r;
 
         $thrust = Thrust::findOrFail($id);
 
@@ -80,7 +82,7 @@ class ThrustController extends Controller
 
     public function toggle($id)
     {
-        if ($r = $this->requireSuperAdmin()) return $r;
+        if ($r = $this->requireRdeOrSuperAdmin()) return $r;
 
         $thrust = Thrust::findOrFail($id);
         $thrust->active = ! $thrust->active;
@@ -93,7 +95,7 @@ class ThrustController extends Controller
 
     public function destroy($id)
     {
-        if ($r = $this->requireSuperAdmin()) return $r;
+        if ($r = $this->requireRdeOrSuperAdmin()) return $r;
 
         $thrust = Thrust::findOrFail($id);
         $thrust->delete();
