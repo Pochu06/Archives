@@ -64,6 +64,7 @@
     html.dark .bg-orange-500, html.dark .bg-orange-600, html.dark .bg-orange-700,
     html.dark .bg-orange-800, html.dark .bg-orange-900, html.dark .bg-blue-500,
     html.dark .bg-blue-600, html.dark .bg-blue-700 { background-color: #326b73 !important; }
+    html.dark .student-archive-stat { background: linear-gradient(135deg, #1f4f56, #326b73) !important; }
     html.dark .hero-bg { background-color: #326b73 !important; }
     html.dark #appSidebar { background-color: #17383e !important; }
     html.dark #appSidebar .sidebar-link:hover { background-color: #285159; }

@@ -5,7 +5,7 @@
 @section('content')
 <div class="space-y-6">
     <div class="grid grid-cols-1 md:grid-cols-1 gap-4">
-        <div class="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl p-5 text-white shadow-lg">
+        <div class="student-archive-stat bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl p-5 text-white shadow-lg">
             <i class="fas fa-archive text-2xl mb-3 opacity-80"></i>
             <p class="text-3xl font-extrabold">{{ $myResearch }}</p>
             <p class="text-orange-100 text-sm">My Archived Papers</p>
