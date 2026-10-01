@@ -84,15 +84,6 @@
             </form>
             <script src="https://www.google.com/recaptcha/api.js" async defer></script>
             <p class="text-center text-sm mt-4"><a href="{{ route('password.request') }}" class="text-orange-600 font-semibold hover:underline">Forgot your password?</a></p>
-            <form action="{{ route('verification.send') }}" method="POST" class="mt-5 border-t border-gray-200 pt-5">
-                @csrf
-                <label for="verification-email" class="block text-gray-700 font-semibold mb-2 text-sm">Need a new verification link?</label>
-                <div class="flex gap-2">
-                    <input id="verification-email" type="email" name="email" value="{{ session('verification_email', old('email')) }}" required placeholder="your@email.com"
-                        class="min-w-0 flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500">
-                    <button type="submit" class="shrink-0 text-orange-700 font-semibold hover:underline">Resend</button>
-                </div>
-            </form>
             <p class="text-center text-gray-600 mt-6 text-sm">
                 Don't have an account? <a href="{{ route('register') }}" class="text-orange-600 font-semibold hover:underline">Register here</a>
             </p>
