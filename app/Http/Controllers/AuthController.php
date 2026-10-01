@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\College;
 use App\Models\User;
 use App\Rules\StrongPassword;
+use App\Services\RecaptchaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
@@ -71,12 +72,17 @@ class AuthController extends Controller
         return redirect()->route('login')->with('status', __($status));
     }
 
-    public function login(Request $request)
+    public function login(Request $request, RecaptchaService $recaptcha)
     {
         $request->validate([
             'email' => 'required|email',
             'password' => 'required',
+            'g-recaptcha-response' => 'required|string',
         ]);
+
+        if (! $recaptcha->verify($request->input('g-recaptcha-response'), $request->ip())) {
+            return back()->withErrors(['g-recaptcha-response' => 'Please complete the CAPTCHA challenge.'])->withInput();
+        }
 
         $user = User::where('email', $request->email)->first();
 
@@ -86,6 +92,12 @@ class AuthController extends Controller
 
         if ($user->status !== 'active') {
             return back()->withErrors(['email' => 'Your account is inactive. Please contact the administrator.'])->withInput();
+        }
+
+        if (! $user->hasVerifiedEmail()) {
+            return back()->withErrors(['email' => 'Please verify your email address before signing in.'])
+                ->withInput(['email' => $user->email])
+                ->with('verification_email', $user->email);
         }
 
         session([
@@ -131,15 +143,38 @@ class AuthController extends Controller
             'status' => 'active',
         ]);
 
-        session([
-            'user_id' => $user->id,
-            'user_name' => $user->name,
-            'user_email' => $user->email,
-            'user_role' => $user->role,
-            'user_college_id' => $user->college_id,
-        ]);
+        $user->sendEmailVerificationNotification();
 
-        return redirect()->route('dashboard')->with('success', 'Welcome to ARCHIVES!');
+        return redirect()->route('login')
+            ->with('status', 'Account created. Check your email for a verification link before signing in.')
+            ->with('verification_email', $user->email);
+    }
+
+    public function verifyEmail(int $id, string $hash)
+    {
+        $user = User::findOrFail($id);
+
+        abort_unless(hash_equals(sha1($user->getEmailForVerification()), $hash), 403);
+
+        if (! $user->hasVerifiedEmail()) {
+            $user->markEmailAsVerified();
+        }
+
+        return redirect()->route('login')->with('status', 'Your email has been verified. You can now sign in.');
+    }
+
+    public function resendVerification(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+
+        $user = User::where('email', $request->email)->first();
+
+        if ($user && ! $user->hasVerifiedEmail()) {
+            $user->sendEmailVerificationNotification();
+        }
+
+        return back()->with('status', 'If that address needs verification, a new link has been sent.')
+            ->with('verification_email', $request->email);
     }
 
     public function logout()

@@ -35,6 +35,11 @@ return [
         ],
     ],
 
+    'recaptcha' => [
+        'site_key' => env('RECAPTCHA_SITE_KEY'),
+        'secret_key' => env('RECAPTCHA_SECRET_KEY'),
+    ],
+
     'ollama' => [
         'enabled' => env('OLLAMA_ENABLED', false),
         'base_url' => env('OLLAMA_BASE_URL', 'http://localhost:11434'),

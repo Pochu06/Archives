@@ -53,7 +53,7 @@
                     <label class="block text-gray-700 font-semibold mb-2 text-sm">Email Address</label>
                     <div class="relative">
                         <i class="fas fa-envelope absolute left-4 top-3.5 text-gray-400"></i>
-                        <input type="email" name="email" value="{{ old('email') }}" placeholder="your@email.com"
+                        <input type="email" name="email" value="{{ old('email', session('verification_email')) }}" placeholder="your@email.com"
                             class="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 transition @error('email') border-red-400 @enderror">
                     </div>
                     @error('email')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
@@ -67,6 +67,14 @@
                     </div>
                     @error('password')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
+                <div class="mb-5">
+                    @if (config('services.recaptcha.site_key'))
+                        <div class="g-recaptcha" data-sitekey="{{ config('services.recaptcha.site_key') }}"></div>
+                    @else
+                        <p class="text-red-600 text-sm">CAPTCHA is not configured. Please contact the administrator.</p>
+                    @endif
+                    @error('g-recaptcha-response')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                </div>
                 @if (session('status'))
                     <p class="text-green-600 text-sm mb-4">{{ session('status') }}</p>
                 @endif
@@ -74,7 +82,17 @@
                     <i class="fas fa-sign-in-alt mr-2"></i> Sign In
                 </button>
             </form>
+            <script src="https://www.google.com/recaptcha/api.js" async defer></script>
             <p class="text-center text-sm mt-4"><a href="{{ route('password.request') }}" class="text-orange-600 font-semibold hover:underline">Forgot your password?</a></p>
+            <form action="{{ route('verification.send') }}" method="POST" class="mt-5 border-t border-gray-200 pt-5">
+                @csrf
+                <label for="verification-email" class="block text-gray-700 font-semibold mb-2 text-sm">Need a new verification link?</label>
+                <div class="flex gap-2">
+                    <input id="verification-email" type="email" name="email" value="{{ session('verification_email', old('email')) }}" required placeholder="your@email.com"
+                        class="min-w-0 flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500">
+                    <button type="submit" class="shrink-0 text-orange-700 font-semibold hover:underline">Resend</button>
+                </div>
+            </form>
             <p class="text-center text-gray-600 mt-6 text-sm">
                 Don't have an account? <a href="{{ route('register') }}" class="text-orange-600 font-semibold hover:underline">Register here</a>
             </p>
