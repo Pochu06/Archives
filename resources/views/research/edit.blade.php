@@ -210,7 +210,7 @@
                 <h3 class="text-lg font-bold text-gray-800 mb-4"><i class="fas fa-info-circle text-orange-500 mr-2"></i>Classification</h3>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">College</label>
                     <select name="college_id" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-500">
