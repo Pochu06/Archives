@@ -37,14 +37,14 @@
                         <p class="text-xs text-gray-500">Browse papers</p>
                     </div>
                 </a>
-                <a href="{{ route('users.index') }}"
+                {{-- <a href="{{ route('users.index') }}"
                     class="flex items-center bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md hover:border-orange-200 transition">
                     <div class="bg-blue-100 p-3 rounded-xl mr-4"><i class="fas fa-users text-blue-600 text-xl"></i></div>
                     <div>
                         <p class="font-bold text-gray-800">Users</p>
                         <p class="text-xs text-gray-500">Manage college users</p>
                     </div>
-                </a>
+                </a> --}}
                 <a href="{{ route('categories.index') }}"
                     class="flex items-center bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md hover:border-orange-200 transition">
                     <div class="bg-green-100 p-3 rounded-xl mr-4"><i class="fas fa-tags text-green-600 text-xl"></i></div>
