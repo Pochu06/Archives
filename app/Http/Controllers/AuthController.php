@@ -94,12 +94,6 @@ class AuthController extends Controller
             return back()->withErrors(['email' => 'Your account is inactive. Please contact the administrator.'])->withInput();
         }
 
-        if (! $user->hasVerifiedEmail()) {
-            return back()->withErrors(['email' => 'Please verify your email address before signing in.'])
-                ->withInput(['email' => $user->email])
-                ->with('verification_email', $user->email);
-        }
-
         session([
             'user_id' => $user->id,
             'user_name' => $user->name,
@@ -146,7 +140,7 @@ class AuthController extends Controller
         $user->sendEmailVerificationNotification();
 
         return redirect()->route('login')
-            ->with('status', 'Account created. Check your email for a verification link before signing in.')
+            ->with('status', 'Account created. A verification link has been sent to your email.')
             ->with('verification_email', $user->email);
     }
 
