@@ -68,7 +68,7 @@
                     @error('password')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div class="mb-5 flex justify-center">
-                    <div class="w-full max-w-[300px] text-center">
+                    <div class="w-full max-w-[300px] flex flex-col items-center text-center">
                         @if (config('services.recaptcha.site_key'))
                             <div class="g-recaptcha mx-auto" data-sitekey="{{ config('services.recaptcha.site_key') }}" data-callback="enableLoginButton" data-expired-callback="disableLoginButton" data-error-callback="disableLoginButton"></div>
                         @else
