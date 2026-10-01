@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="{{ asset('storage/logo/archives_logo.png') }}">
     <title>CSU Research Archive | Public Research Repository</title>
     <meta name="description" content="CSU Research Archive is a public research repository where you can browse academic papers by college, category, and year. Login is required only to request PDF downloads.">
     @include('layouts.partials.theme-head')
