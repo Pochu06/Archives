@@ -15,4 +15,14 @@ class AuthPasswordTest extends TestCase
     {
         $this->get('/reset-password/test-token?email=test@example.com')->assertOk();
     }
+
+    public function test_login_submit_starts_disabled_until_recaptcha_completes(): void
+    {
+        $this->get('/login')
+            ->assertOk()
+            ->assertSee('<button id="loginSubmitButton" type="submit" disabled', false)
+            ->assertSee('data-callback="enableLoginButton"', false)
+            ->assertSee('data-expired-callback="disableLoginButton"', false)
+            ->assertSee('data-error-callback="disableLoginButton"', false);
+    }
 }

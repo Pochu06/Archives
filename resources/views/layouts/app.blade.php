@@ -4,9 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'ARCHIVES')</title>
+    <script>
+        (() => {
+            let preference = 'system';
+
+            try {
+                preference = localStorage.getItem('archives-theme') || 'system';
+            } catch (error) {
+            }
+
+            const isDark = preference === 'dark'
+                || (preference === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+            document.documentElement.classList.toggle('dark', isDark);
+            document.documentElement.dataset.theme = preference;
+        })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
@@ -25,10 +42,41 @@
         .sidebar-link { transition: all 0.2s ease; }
         .sidebar-link:hover { background: rgba(59,130,246,0.18); padding-left: 1.25rem; }
         .sidebar-link.active { background: rgba(59,130,246,0.25); border-right: 3px solid #3b82f6; }
+
+        html.dark { color-scheme: dark; }
+        html.dark body { background-color: #10191d; color: #e5ecee; }
+        html.dark .bg-white { background-color: #19262b !important; color: #e5ecee; }
+        html.dark .bg-gray-50 { background-color: #121d21 !important; }
+        html.dark .bg-gray-100 { background-color: #202d32 !important; }
+        html.dark .bg-gray-200 { background-color: #2b3a3f !important; }
+        html.dark .bg-green-50, html.dark .bg-red-50, html.dark .bg-blue-50,
+        html.dark .bg-amber-50, html.dark .bg-yellow-50, html.dark .bg-orange-50 {
+            background-color: #202d32 !important;
+        }
+        html.dark .text-gray-900, html.dark .text-gray-800, html.dark .text-gray-700,
+        html.dark .text-gray-600 { color: #e5ecee !important; }
+        html.dark .text-gray-500, html.dark .text-gray-400 { color: #a8b7bc !important; }
+        html.dark .text-green-700 { color: #86efac !important; }
+        html.dark .text-red-700 { color: #fca5a5 !important; }
+        html.dark .text-blue-700 { color: #93c5fd !important; }
+        html.dark .border-gray-100, html.dark .border-gray-200, html.dark .border-gray-300,
+        html.dark .border-green-200, html.dark .border-red-200, html.dark .border-blue-200 {
+            border-color: #34464c !important;
+        }
+        html.dark input:not([type="checkbox"]):not([type="radio"]), html.dark select, html.dark textarea {
+            background-color: #121d21;
+            border-color: #40545a;
+            color: #e5ecee;
+        }
+        html.dark input::placeholder, html.dark textarea::placeholder { color: #92a3a8; }
     </style>
     @yield('styles')
 </head>
 <body class="bg-gray-50 font-sans">
+
+@if(View::hasSection('auth-content'))
+    @include('layouts.partials.theme-selector', ['containerClass' => 'fixed right-4 top-4 z-50'])
+@endif
 
 @if(session('user_id'))
 <div class="flex min-h-screen">
@@ -177,10 +225,12 @@
                     </div>
                 </div>
                 <div class="hidden sm:flex items-center space-x-3">
+                    @include('layouts.partials.theme-selector', ['containerClass' => ''])
                     @include('layouts.partials.notification-center')
                     <span class="text-sm text-gray-600 text-right">{{ date('l, F j, Y') }}</span>
                 </div>
                 <div class="flex items-center gap-3 sm:hidden">
+                    @include('layouts.partials.theme-selector', ['containerClass' => ''])
                     @include('layouts.partials.notification-center')
                 </div>
             </div>
@@ -216,6 +266,7 @@
                     <span class="font-bold text-gray-900">ARCHIVES</span>
                 </a>
                 <div class="flex items-center gap-2">
+                    @include('layouts.partials.theme-selector', ['containerClass' => ''])
                     <a href="{{ route('research.public') }}" class="px-3 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">Browse Research</a>
                     <a href="{{ route('login') }}" class="px-3 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">Login</a>
                     <a href="{{ route('register') }}" class="px-3 py-2 rounded-lg text-sm font-semibold text-white bg-orange-600 hover:bg-orange-700">Register</a>
@@ -248,6 +299,48 @@
 @endif
 
 <script>
+(() => {
+    const preferenceKey = 'archives-theme';
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const selectors = document.querySelectorAll('[data-theme-selector]');
+
+    const readPreference = () => {
+        try {
+            return localStorage.getItem(preferenceKey) || 'system';
+        } catch (error) {
+            return 'system';
+        }
+    };
+
+    const applyPreference = (preference) => {
+        const isDark = preference === 'dark' || (preference === 'system' && mediaQuery.matches);
+        document.documentElement.classList.toggle('dark', isDark);
+        document.documentElement.dataset.theme = preference;
+    };
+
+    const preference = readPreference();
+    applyPreference(preference);
+
+    selectors.forEach((selector) => {
+        selector.value = preference;
+        selector.addEventListener('change', () => {
+            try {
+                localStorage.setItem(preferenceKey, selector.value);
+            } catch (error) {
+            }
+
+            selectors.forEach((item) => { item.value = selector.value; });
+            applyPreference(selector.value);
+        });
+    });
+
+    mediaQuery.addEventListener('change', () => {
+        if (readPreference() === 'system') {
+            applyPreference('system');
+        }
+    });
+})();
+
 (() => {
     const sidebar = document.getElementById('appSidebar');
     const overlay = document.getElementById('sidebarOverlay');

@@ -69,7 +69,7 @@
                 </div>
                 <div class="mb-5">
                     @if (config('services.recaptcha.site_key'))
-                        <div class="g-recaptcha" data-sitekey="{{ config('services.recaptcha.site_key') }}"></div>
+                        <div class="g-recaptcha" data-sitekey="{{ config('services.recaptcha.site_key') }}" data-callback="enableLoginButton" data-expired-callback="disableLoginButton" data-error-callback="disableLoginButton"></div>
                     @else
                         <p class="text-red-600 text-sm">CAPTCHA is not configured. Please contact the administrator.</p>
                     @endif
@@ -78,10 +78,18 @@
                 @if (session('status'))
                     <p class="text-green-600 text-sm mb-4">{{ session('status') }}</p>
                 @endif
-                <button type="submit" class="w-full bg-orange-600 text-white py-3.5 rounded-xl font-bold text-lg hover:bg-orange-700 transition shadow-lg">
+                <button id="loginSubmitButton" type="submit" disabled class="w-full bg-orange-600 text-white py-3.5 rounded-xl font-bold text-lg hover:bg-orange-700 transition shadow-lg disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-orange-600">
                     <i class="fas fa-sign-in-alt mr-2"></i> Sign In
                 </button>
             </form>
+            <script>
+                window.enableLoginButton = (token) => {
+                    document.getElementById('loginSubmitButton').disabled = !token;
+                };
+                window.disableLoginButton = () => {
+                    document.getElementById('loginSubmitButton').disabled = true;
+                };
+            </script>
             <script src="https://www.google.com/recaptcha/api.js" async defer></script>
             <p class="text-center text-sm mt-4"><a href="{{ route('password.request') }}" class="text-orange-600 font-semibold hover:underline">Forgot your password?</a></p>
             <p class="text-center text-gray-600 mt-6 text-sm">
