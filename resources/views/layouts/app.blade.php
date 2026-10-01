@@ -33,7 +33,10 @@
 <body class="bg-gray-50 font-sans">
 
 @if(View::hasSection('auth-content'))
-    @include('layouts.partials.theme-selector', ['containerClass' => 'fixed right-4 top-4 z-50'])
+    <div class="fixed right-4 top-4 z-50 flex items-center gap-2">
+        @include('layouts.partials.language-selector', ['containerClass' => ''])
+        @include('layouts.partials.theme-selector', ['containerClass' => ''])
+    </div>
 @endif
 
 @if(session('user_id'))
@@ -183,11 +186,13 @@
                     </div>
                 </div>
                 <div class="hidden sm:flex items-center space-x-3">
+                    @include('layouts.partials.language-selector', ['containerClass' => ''])
                     @include('layouts.partials.theme-selector', ['containerClass' => ''])
                     @include('layouts.partials.notification-center')
                     <span class="text-sm text-gray-600 text-right">{{ date('l, F j, Y') }}</span>
                 </div>
                 <div class="flex items-center gap-3 sm:hidden">
+                    @include('layouts.partials.language-selector', ['containerClass' => ''])
                     @include('layouts.partials.theme-selector', ['containerClass' => ''])
                     @include('layouts.partials.notification-center')
                 </div>
@@ -224,6 +229,7 @@
                     <span class="font-bold text-gray-900">ARCHIVES</span>
                 </a>
                 <div class="flex items-center gap-2">
+                    @include('layouts.partials.language-selector', ['containerClass' => ''])
                     @include('layouts.partials.theme-selector', ['containerClass' => ''])
                     <a href="{{ route('research.public') }}" class="px-3 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">Browse Research</a>
                     <a href="{{ route('login') }}" class="px-3 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">Login</a>
@@ -255,6 +261,8 @@
 @if(session('user_id') && ($aiFeaturesEnabled ?? true))
 @include('chatbot.widget')
 @endif
+
+@include('layouts.partials.page-translator')
 
 <script>
 (() => {

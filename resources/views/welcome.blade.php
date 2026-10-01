@@ -57,7 +57,8 @@
                     </a>
                 </div>
             @endif
-            @include('layouts.partials.theme-selector', ['containerClass' => 'ml-auto sm:ml-0'])
+            @include('layouts.partials.language-selector', ['containerClass' => 'ml-auto sm:ml-0'])
+            @include('layouts.partials.theme-selector', ['containerClass' => 'sm:ml-0'])
             {{-- <div class="flex items-center space-x-3">
                 <a href="{{ route('login') }}" class="text-gray-700 hover:text-orange-600 font-medium px-4 py-2 rounded-lg hover:bg-orange-50 transition">
                     <i class="fas fa-sign-in-alt mr-1"></i> Login
@@ -327,5 +328,6 @@
 @if(session('user_id') && ($aiFeaturesEnabled ?? true))
 @include('chatbot.widget')
 @endif
+@include('layouts.partials.page-translator')
 </body>
 </html>

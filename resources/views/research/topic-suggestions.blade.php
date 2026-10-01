@@ -34,6 +34,7 @@
                 <span class="font-bold text-gray-900">ARCHIVES</span>
             </a>
             <div class="flex items-center gap-2 ml-auto">
+                @include('layouts.partials.language-selector', ['containerClass' => ''])
                 @include('layouts.partials.theme-selector', ['containerClass' => ''])
                 <a href="{{ route('research.public') }}" class="px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">Browse Research</a>
                 @if(session('user_id'))
@@ -207,5 +208,6 @@
 @if(session('user_id') && ($aiFeaturesEnabled ?? true))
 @include('chatbot.widget')
 @endif
+@include('layouts.partials.page-translator')
 </body>
 </html>

@@ -8,7 +8,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body class="bg-orange-50 flex items-center justify-center min-h-screen">
-    @include('layouts.partials.theme-selector', ['containerClass' => 'fixed right-4 top-4 z-50'])
+    <div class="fixed right-4 top-4 z-50 flex items-center gap-2">
+        @include('layouts.partials.language-selector', ['containerClass' => ''])
+        @include('layouts.partials.theme-selector', ['containerClass' => ''])
+    </div>
     <div class="text-center">
         <div class="text-9xl font-extrabold text-orange-500 mb-4">404</div>
         <h1 class="text-3xl font-bold text-gray-800 mb-3">Page Not Found</h1>
@@ -17,5 +20,6 @@
             <i class="fas fa-home mr-2"></i> Go Home
         </a>
     </div>
+    @include('layouts.partials.page-translator')
 </body>
 </html>
