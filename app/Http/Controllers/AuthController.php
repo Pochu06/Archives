@@ -94,6 +94,10 @@ class AuthController extends Controller
             return back()->withErrors(['email' => 'Your account is inactive. Please contact the administrator.'])->withInput();
         }
 
+        if (! $user->hasVerifiedEmail()) {
+            return back()->withErrors(['email' => 'Please verify your email address before signing in.'])->withInput();
+        }
+
         session([
             'user_id' => $user->id,
             'user_name' => $user->name,

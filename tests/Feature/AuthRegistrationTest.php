@@ -66,7 +66,7 @@ class AuthRegistrationTest extends TestCase
         Notification::assertSentTo(User::where('email', 'student@example.com')->first(), VerifyEmail::class);
     }
 
-    public function test_login_allows_unverified_users_after_captcha_validation(): void
+    public function test_login_requires_email_verification_and_successful_captcha(): void
     {
         config(['services.recaptcha.site_key' => 'test-site-key', 'services.recaptcha.secret_key' => 'test-secret']);
 
@@ -82,22 +82,29 @@ class AuthRegistrationTest extends TestCase
         Http::fake([
             'www.google.com/recaptcha/api/siteverify' => Http::sequence()
                 ->push(['success' => true])
-                ->push(['success' => false]),
+                ->push(['success' => false])
+                ->push(['success' => true]),
         ]);
 
         $this->post(route('login.post'), [
             'email' => $user->email,
             'password' => 'Pass123!',
             'g-recaptcha-response' => 'valid-token',
-        ])->assertRedirect(route('dashboard'))->assertSessionHas('user_id', $user->id);
+        ])->assertSessionHasErrors('email')->assertSessionMissing('user_id');
 
-        $this->post(route('logout'))->assertRedirect(route('login'));
+        $user->markEmailAsVerified();
 
         $this->post(route('login.post'), [
             'email' => $user->email,
             'password' => 'Pass123!',
             'g-recaptcha-response' => 'invalid-token',
         ])->assertSessionHasErrors('g-recaptcha-response')->assertSessionMissing('user_id');
+
+        $this->post(route('login.post'), [
+            'email' => $user->email,
+            'password' => 'Pass123!',
+            'g-recaptcha-response' => 'valid-token',
+        ])->assertRedirect(route('dashboard'))->assertSessionHas('user_id', $user->id);
     }
 
     public function test_email_verification_requires_a_valid_signed_link(): void
