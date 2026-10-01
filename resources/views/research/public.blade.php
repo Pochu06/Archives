@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Public Research Papers | ARCHIVES</title>
     <meta name="description" content="Browse public research papers from Cagayan State University. Login is required only when requesting a PDF download.">
+    @include('layouts.partials.theme-head')
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -33,6 +34,7 @@
                 <span class="font-bold text-gray-900">ARCHIVES</span>
             </a>
             <div class="flex items-center gap-2 ml-auto">
+                @include('layouts.partials.theme-selector', ['containerClass' => ''])
                 @if(session('user_id') && ($aiFeaturesEnabled ?? true))
                 <a href="{{ route('research.topic-suggestions') }}" class="px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">AI Research Locator</a>
                 @endif

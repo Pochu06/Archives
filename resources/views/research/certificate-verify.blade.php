@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Certificate Verification - ARCHIVES</title>
+    @include('layouts.partials.theme-head')
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="min-h-screen bg-slate-100 text-slate-800">
+    @include('layouts.partials.theme-selector', ['containerClass' => 'fixed right-4 top-4 z-50'])
     <main class="mx-auto max-w-3xl px-4 py-10 sm:py-16">
         <div class="overflow-hidden rounded-3xl bg-white shadow-xl ring-1 ring-slate-200">
             <div class="bg-blue-700 px-6 py-8 text-center text-white sm:px-10">

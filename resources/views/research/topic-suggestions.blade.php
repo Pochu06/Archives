@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Archived Research Finder | ARCHIVES</title>
     <meta name="description" content="Find actual archived research papers using plain-language AI-assisted search.">
+    @include('layouts.partials.theme-head')
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -33,6 +34,7 @@
                 <span class="font-bold text-gray-900">ARCHIVES</span>
             </a>
             <div class="flex items-center gap-2 ml-auto">
+                @include('layouts.partials.theme-selector', ['containerClass' => ''])
                 <a href="{{ route('research.public') }}" class="px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">Browse Research</a>
                 @if(session('user_id'))
                 <a href="{{ route('dashboard') }}" class="px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">Dashboard</a>

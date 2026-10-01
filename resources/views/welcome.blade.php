@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CSU Research Archive | Public Research Repository</title>
     <meta name="description" content="CSU Research Archive is a public research repository where you can browse academic papers by college, category, and year. Login is required only to request PDF downloads.">
+    @include('layouts.partials.theme-head')
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -56,6 +57,7 @@
                     </a>
                 </div>
             @endif
+            @include('layouts.partials.theme-selector', ['containerClass' => 'ml-auto sm:ml-0'])
             {{-- <div class="flex items-center space-x-3">
                 <a href="{{ route('login') }}" class="text-gray-700 hover:text-orange-600 font-medium px-4 py-2 rounded-lg hover:bg-orange-50 transition">
                     <i class="fas fa-sign-in-alt mr-1"></i> Login
