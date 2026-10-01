@@ -67,13 +67,15 @@
                     </div>
                     @error('password')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
-                <div class="mb-5">
-                    @if (config('services.recaptcha.site_key'))
-                        <div class="g-recaptcha" data-sitekey="{{ config('services.recaptcha.site_key') }}" data-callback="enableLoginButton" data-expired-callback="disableLoginButton" data-error-callback="disableLoginButton"></div>
-                    @else
-                        <p class="text-red-600 text-sm">CAPTCHA is not configured. Please contact the administrator.</p>
-                    @endif
-                    @error('g-recaptcha-response')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                <div class="mb-5 flex justify-center">
+                    <div class="w-full max-w-[300px] text-center">
+                        @if (config('services.recaptcha.site_key'))
+                            <div class="g-recaptcha mx-auto" data-sitekey="{{ config('services.recaptcha.site_key') }}" data-callback="enableLoginButton" data-expired-callback="disableLoginButton" data-error-callback="disableLoginButton"></div>
+                        @else
+                            <p class="text-red-600 text-sm">CAPTCHA is not configured. Please contact the administrator.</p>
+                        @endif
+                        @error('g-recaptcha-response')<p class="text-red-500 text-xs mt-1 text-center">{{ $message }}</p>@enderror
+                    </div>
                 </div>
                 @if (session('status'))
                     <p class="text-green-600 text-sm mb-4">{{ session('status') }}</p>
