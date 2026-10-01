@@ -54,7 +54,7 @@
                     </div>
                 </a>
 
-                <a href="{{ route('thrus.index') }}"
+                <a href="{{ route('thrusts.index') }}"
                     class="flex items-center bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md hover:border-orange-200 transition">
                     <div class="bg-green-100 p-3 rounded-xl mr-4"><i class="fas fa-tags text-green-600 text-xl"></i></div>
                     <div>
