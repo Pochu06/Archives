@@ -53,6 +53,16 @@
                         <p class="text-xs text-gray-500">Manage categories</p>
                     </div>
                 </a>
+
+                <a href="{{ route('thrus.index') }}"
+                    class="flex items-center bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md hover:border-orange-200 transition">
+                    <div class="bg-green-100 p-3 rounded-xl mr-4"><i class="fas fa-tags text-green-600 text-xl"></i></div>
+                    <div>
+                        <p class="font-bold text-gray-800">Theses</p>
+                        <p class="text-xs text-gray-500">Manage theses</p>
+                    </div>
+                </a>
+
                 <a href="{{ session('user_college_id') ? route('submissions.college') : route('submissions.rde') }}"
                     class="flex items-center justify-between bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md hover:border-orange-200 transition">
                     <div class="flex items-center min-w-0">

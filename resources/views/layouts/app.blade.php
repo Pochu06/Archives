@@ -118,6 +118,9 @@
             <a href="{{ route('categories.index') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('categories.*') ? 'active' : '' }}">
                 <i class="fas fa-tags w-5"></i><span>Categories</span>
             </a>
+            <a href="{{ route('thrusts.index') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('thrusts.*') ? 'active' : '' }}">
+                <i class="fas fa-bullseye w-5"></i><span>Thrusts</span>
+            </a>
             @if(session('user_role') === 'admin' && session('user_college_id'))
             <a href="{{ route('submissions.college') }}" class="sidebar-link flex items-center justify-between px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('submissions.college') ? 'active' : '' }}">
                 <span class="flex items-center space-x-3">
