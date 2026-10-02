@@ -90,6 +90,10 @@ class AuthController extends Controller
             return back()->withErrors(['email' => 'Invalid email or password.'])->withInput();
         }
 
+        if ($user->status === 'pending') {
+            return back()->withErrors(['email' => 'Your account is pending administrator approval.'])->withInput();
+        }
+
         if ($user->status !== 'active') {
             return back()->withErrors(['email' => 'Your account is inactive. Please contact the administrator.'])->withInput();
         }
@@ -138,13 +142,13 @@ class AuthController extends Controller
             'role' => 'student',
             'college_id' => $request->college_id,
             'student_id' => $request->student_id,
-            'status' => 'active',
+            'status' => 'pending',
         ]);
 
         $user->sendEmailVerificationNotification();
 
         return redirect()->route('login')
-            ->with('status', 'Account created. A verification link has been sent to your email.')
+            ->with('status', 'Account created. Verify your email and wait for administrator approval before signing in.')
             ->with('verification_email', $user->email);
     }
 
@@ -158,7 +162,11 @@ class AuthController extends Controller
             $user->markEmailAsVerified();
         }
 
-        return redirect()->route('login')->with('status', 'Your email has been verified. You can now sign in.');
+        $message = $user->status === 'pending'
+            ? 'Your email has been verified. Your account is waiting for administrator approval.'
+            : 'Your email has been verified. You can now sign in.';
+
+        return redirect()->route('login')->with('status', $message);
     }
 
     public function resendVerification(Request $request)

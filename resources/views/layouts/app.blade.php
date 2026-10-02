@@ -108,8 +108,13 @@
             <div class="pt-3">
                 <p class="text-orange-400 text-xs font-semibold uppercase tracking-wider px-3 mb-1">Management</p>
             </div>
+            @if(in_array(session('user_role'), ['super_admin', 'admin']))
+            <a href="{{ route('users.pending') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('users.pending') ? 'active' : '' }}">
+                <i class="fas fa-user-clock w-5"></i><span>Pending Registrations</span>
+            </a>
+            @endif
             @if(in_array(session('user_role'), ['super_admin']))
-            <a href="{{ route('users.index') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('users.*') ? 'active' : '' }}">
+            <a href="{{ route('users.index') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('users.index', 'users.create', 'users.edit') ? 'active' : '' }}">
                 <i class="fas fa-users w-5"></i><span>User Management</span>
             </a>
             @endif

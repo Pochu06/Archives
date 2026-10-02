@@ -99,6 +99,8 @@ Route::put('/profile', [UserController::class, 'updateProfile'])->name('profile.
 
 Route::get('/super-admin/admin-action-logs', [AdminActionLogController::class, 'index'])->name('super-admin.admin-action-logs.index');
 
+Route::get('/users/pending', [UserController::class, 'pendingRegistrations'])->name('users.pending');
+Route::post('/users/{id}/approve', [UserController::class, 'approveRegistration'])->name('users.approve');
 Route::get('/users', [UserController::class, 'index'])->name('users.index');
 Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
 Route::post('/users', [UserController::class, 'store'])->name('users.store');

@@ -35,6 +35,22 @@ class AuthRegistrationTest extends TestCase
             $table->timestamps();
         });
 
+        Schema::create('admin_action_logs', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->string('role');
+            $table->string('action');
+            $table->string('method');
+            $table->string('route_name')->nullable();
+            $table->string('path');
+            $table->text('url');
+            $table->string('ip_address')->nullable();
+            $table->text('user_agent')->nullable();
+            $table->json('request_data')->nullable();
+            $table->unsignedSmallInteger('response_status')->nullable();
+            $table->timestamps();
+        });
+
         \DB::table('colleges')->insert(['id' => 1]);
     }
 
@@ -60,10 +76,112 @@ class AuthRegistrationTest extends TestCase
             'password_confirmation' => 'Pass123!',
         ])->assertRedirect(route('login'));
 
-        $this->assertDatabaseHas('users', ['email' => 'student@example.com']);
+        $this->assertDatabaseHas('users', ['email' => 'student@example.com', 'status' => 'pending']);
         $this->assertDatabaseHas('users', ['email' => 'student@example.com', 'email_verified_at' => null]);
         $this->assertGuest();
         Notification::assertSentTo(User::where('email', 'student@example.com')->first(), VerifyEmail::class);
+    }
+
+    public function test_pending_account_cannot_log_in_until_approved(): void
+    {
+        config(['services.recaptcha.site_key' => 'test-site-key', 'services.recaptcha.secret_key' => 'test-secret']);
+
+        $user = User::create([
+            'name' => 'Test Student',
+            'email' => 'student@example.com',
+            'password' => Hash::make('Pass123!'),
+            'role' => 'student',
+            'college_id' => 1,
+            'status' => 'pending',
+            'email_verified_at' => now(),
+        ]);
+
+        Http::fake([
+            'www.google.com/recaptcha/api/siteverify' => ['success' => true],
+        ]);
+
+        $this->post(route('login.post'), [
+            'email' => $user->email,
+            'password' => 'Pass123!',
+            'g-recaptcha-response' => 'valid-token',
+        ])->assertSessionHasErrors('email')->assertSessionMissing('user_id');
+    }
+
+    public function test_admin_can_view_and_approve_pending_registration_for_their_college(): void
+    {
+        $user = User::create([
+            'name' => 'Test Student',
+            'email' => 'student@example.com',
+            'password' => Hash::make('Pass123!'),
+            'role' => 'student',
+            'college_id' => 1,
+            'status' => 'pending',
+        ]);
+
+        $this->withSession([
+            'user_id' => 10,
+            'user_role' => 'admin',
+            'user_college_id' => 1,
+        ])->get(route('users.pending'))
+            ->assertOk()
+            ->assertSee('student@example.com')
+            ->assertSee('Approve');
+
+        $this->post(route('users.approve', $user->id))
+            ->assertRedirect(route('users.pending'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('users', ['id' => $user->id, 'status' => 'active']);
+    }
+
+    public function test_college_admin_cannot_approve_a_registration_from_another_college(): void
+    {
+        $user = User::create([
+            'name' => 'Other College Student',
+            'email' => 'other@example.com',
+            'password' => Hash::make('Pass123!'),
+            'role' => 'student',
+            'college_id' => 2,
+            'status' => 'pending',
+        ]);
+
+        $this->withSession([
+            'user_id' => 10,
+            'user_role' => 'admin',
+            'user_college_id' => 1,
+        ])->post(route('users.approve', $user->id))
+            ->assertRedirect(route('users.pending'))
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('users', ['id' => $user->id, 'status' => 'pending']);
+    }
+
+    public function test_pending_account_cannot_be_activated_from_user_edit(): void
+    {
+        $user = User::create([
+            'name' => 'Test Student',
+            'email' => 'student@example.com',
+            'password' => Hash::make('Pass123!'),
+            'role' => 'student',
+            'college_id' => 1,
+            'status' => 'pending',
+        ]);
+
+        $this->withSession([
+            'user_id' => 10,
+            'user_role' => 'admin',
+            'user_college_id' => 1,
+        ])->put(route('users.update', $user->id), [
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => $user->role,
+            'college_id' => $user->college_id,
+            'student_id' => null,
+            'status' => 'active',
+        ])->assertRedirect(route('users.pending'))
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('users', ['id' => $user->id, 'status' => 'pending']);
     }
 
     public function test_login_requires_email_verification_and_successful_captcha(): void

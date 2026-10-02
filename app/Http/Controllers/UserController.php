@@ -116,6 +116,47 @@ class UserController extends Controller
         return view('users.index', compact('users', 'colleges'));
     }
 
+    public function pendingRegistrations()
+    {
+        if ($r = $this->requireRole(['super_admin', 'admin'])) {
+            return $r;
+        }
+
+        $query = User::with('college')
+            ->where('role', 'student')
+            ->where('status', 'pending');
+
+        if (session('user_role') === 'admin' && session('user_college_id')) {
+            $query->where('college_id', session('user_college_id'));
+        }
+
+        $users = $query->orderBy('created_at')->paginate(15);
+
+        return view('users.pending', compact('users'));
+    }
+
+    public function approveRegistration($id)
+    {
+        if ($r = $this->requireRole(['super_admin', 'admin'])) {
+            return $r;
+        }
+
+        $query = User::whereKey($id)
+            ->where('role', 'student')
+            ->where('status', 'pending');
+
+        if (session('user_role') === 'admin' && session('user_college_id')) {
+            $query->where('college_id', session('user_college_id'));
+        }
+
+        if ($query->update(['status' => 'active']) === 0) {
+            return redirect()->route('users.pending')
+                ->with('error', 'This registration is no longer pending or is outside your college.');
+        }
+
+        return redirect()->route('users.pending')->with('success', 'Registration approved. The user can now sign in after verifying their email.');
+    }
+
     public function create()
     {
         if ($r = $this->requireRole(['super_admin', 'admin'])) {
@@ -187,6 +228,11 @@ class UserController extends Controller
             'status' => 'required|in:active,inactive',
             'password' => StrongPassword::optionalRules(),
         ]);
+
+        if ($user->status === 'pending' && $validated['status'] === 'active') {
+            return redirect()->route('users.pending')
+                ->with('error', 'Pending registrations must be approved from the pending registrations list.');
+        }
 
         $updateData = [
             'name' => $validated['name'],
