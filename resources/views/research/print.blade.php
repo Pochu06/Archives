@@ -22,8 +22,9 @@
         .rpt-head img { width: 80px; height: 80px; object-fit: contain; }
         .rpt-head .l1 { font-size: 14px; }
         .rpt-head .l2 { font-size: 22px; font-weight: bold; text-transform: uppercase; }
-        .rpt-head .l3 { font-size: 16px; font-weight: bold; }
+        .rpt-head .l3 { font-size: 15px; font-weight: bold; }
         .rpt-head .l4 { font-size: 12px; }
+        .rpt-head .l5 { font-size: 16px; margin-top: 6px; }
         .rpt-title { text-align: center; margin-bottom: 14px; }
         .rpt-title h2 { font-size: 18px; font-weight: bold; margin: 0; }
         .rpt-title p { font-size: 13px; margin: 2px 0 0; }
@@ -50,7 +51,7 @@
             <div class="l2">Cagayan State University</div>
             <div class="l3">Aparri Campus</div>
             <div class="l4">Aparri, Cagayan</div>
-            <div class="l3">Research, Development & Extension Office</div>
+            <div class="l5">RESEARCH, DEVELOPMENT AND EXTENSION OFFICE</div>
             </div>
         </div>
 
@@ -99,4 +100,3 @@
     <script>window.addEventListener('load', function () { window.print(); });</script>
 </body>
 </html>
-
