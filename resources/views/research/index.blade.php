@@ -1,11 +1,11 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'Research Archive')
 @section('page-title', 'Research Archive')
 @section('page-subtitle', 'Browse archived IMRAD research papers')
 @section('content')
 <div class="space-y-6">
     <!-- Filters -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+    <div class="filters-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
         <div class="flex flex-wrap gap-2 mb-4">
             @foreach($smartPresets as $preset)
             <a href="{{ route('research.index', $preset['query']) }}" class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-orange-50 text-orange-700 hover:bg-orange-100 transition">
@@ -14,7 +14,7 @@
             @endforeach
         </div>
 
-        <form method="GET" action="{{ route('research.index') }}" class="grid grid-cols-1 md:grid-cols-6 gap-4">
+        <form method="GET" action="{{ route('research.index') }}" class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-8 gap-4">
             <div class="md:col-span-2">
                 <div class="relative">
                     <i class="fas fa-search absolute left-3 top-3.5 text-gray-400"></i>
@@ -34,12 +34,18 @@
                 <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
                 @endforeach
             </select>
-                <select name="year" class="border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:border-orange-500">
-                    <option value="">All Years</option>
+                <select name="year" class="border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:border-orange-500" title="Year from">
+                    <option value="">Year From</option>
                     @for($filterYear = date('Y'); $filterYear >= 2020; $filterYear--)
                     <option value="{{ $filterYear }}" {{ (string) request('year') === (string) $filterYear ? 'selected' : '' }}>{{ $filterYear }}</option>
                     @endfor
                 </select>
+            <select name="year_to" class="border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:border-orange-500" title="Year to">
+                <option value="">Year To</option>
+                @for($filterYear = date('Y'); $filterYear >= 2020; $filterYear--)
+                <option value="{{ $filterYear }}" {{ (string) request('year_to') === (string) $filterYear ? 'selected' : '' }}>{{ $filterYear }}</option>
+                @endfor
+            </select>
             <select name="status" class="border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:border-orange-500">
                 <option value="">All Statuses</option>
                 @foreach($statuses as $statusKey => $statusLabel)
@@ -70,6 +76,7 @@
                 <input type="hidden" name="college_id" value="{{ request('college_id') }}">
                 <input type="hidden" name="category_id" value="{{ request('category_id') }}">
                 <input type="hidden" name="year" value="{{ request('year') }}">
+                <input type="hidden" name="year_to" value="{{ request('year_to') }}">
                 <input type="hidden" name="status" value="{{ request('status') }}">
                 <button type="submit" class="bg-blue-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 transition">
                     <i class="fas fa-save mr-1"></i> Save Preset
@@ -97,87 +104,55 @@
         </div>
     </div>
 
-    <div class="flex justify-between items-center">
+    <div class="no-print flex justify-between items-center">
         <p class="text-gray-600 text-sm">{{ $research->total() }} research paper(s) found</p>
+        <div class="flex gap-2">
+        <a href="{{ route('research.index', array_merge(request()->query(), ['print' => 1])) }}" target="_blank" class="bg-gray-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-gray-800 transition"><i class="fas fa-print mr-1"></i> Print</a>
         @if(in_array(session('user_role'), ['student', 'adviser', 'admin', 'super_admin']))
         <a href="{{ route('research.create') }}" class="bg-gradient-to-r from-orange-600 to-orange-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm hover:from-orange-700 hover:to-orange-800 transition shadow">
             <i class="fas fa-plus mr-1"></i> Archive Paper
         </a>
         @endif
+        </div>
     </div>
 
-    <!-- Research Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        @forelse($research as $r)
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md hover:border-orange-200 transition flex flex-col">
-            <div class="p-5 flex-1">
-                <div class="flex items-start justify-between mb-3">
-                    <span class="text-xs font-semibold bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full">{{ $r->college->code ?? 'N/A' }}</span>
-                    <span class="text-xs font-medium bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">{{ $r->publication_year }}</span>
-                </div>
-                <h3 class="font-bold text-gray-800 text-sm mb-2 line-clamp-2">
-                    <a href="{{ route('research.show', $r->id) }}" class="hover:text-orange-600 transition">{{ $r->title }}</a>
-                </h3>
-                <p class="text-gray-500 text-xs mb-3 line-clamp-2">{{ $r->abstract }}</p>
-                <div class="flex flex-wrap gap-1 mb-3">
-                    @foreach(array_slice(explode(',', $r->keywords), 0, 4) as $keyword)
-                    @if(trim($keyword))
-                    <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{{ trim($keyword) }}</span>
-                    @endif
-                    @endforeach
-                </div>
-                <div class="text-xs text-gray-500 space-y-1">
-                    <p><i class="fas fa-user mr-1 text-orange-400"></i> {{ $r->authors }}</p>
-                    <p><i class="fas fa-tag mr-1 text-orange-400"></i> <span class="inline-flex {{ $r->category->badge_classes ?? 'bg-gray-100 text-gray-700' }} px-2 py-0.5 rounded-full font-semibold">{{ $r->category->name ?? 'N/A' }}</span></p>
-                    <p>
-                        <i class="fas fa-user-circle mr-1 text-orange-400"></i>
-                        @if($r->user)
-                        <a href="{{ route('authors.show', $r->user->id) }}" class="text-orange-700 hover:underline">{{ $r->user->name }}</a>
-                        @else
-                        N/A
-                        @endif
-                    </p>
-                    <p class="flex items-center gap-3 pt-1">
-                        <span><i class="fas fa-eye mr-1 text-blue-400"></i>{{ number_format($r->view_count) }} views</span>
-                        <span><i class="fas fa-download mr-1 text-green-500"></i>{{ number_format($r->download_count) }} downloads</span>
-                    </p>
-                </div>
-            </div>
-            <div class="border-t border-gray-100 p-4 flex gap-2">
-                <a href="{{ route('research.show', $r->id) }}" class="flex-1 text-center text-xs bg-orange-50 text-orange-700 py-2 rounded-lg hover:bg-orange-100 transition font-semibold">
-                    <i class="fas fa-eye mr-1"></i> View
-                </a>
-                @if($r->file_path)
-                <a href="{{ route('research.download', $r->id) }}" class="text-xs bg-green-50 text-green-700 px-3 py-2 rounded-lg hover:bg-green-100 transition">
-                    <i class="fas fa-download"></i>
-                </a>
-                @endif
-                @if(in_array(session('user_role'), ['super_admin', 'admin']) || $r->user_id == session('user_id'))
-                <a href="{{ route('research.edit', $r->id) }}" class="text-xs bg-blue-50 text-blue-700 px-3 py-2 rounded-lg hover:bg-blue-100 transition">
-                    <i class="fas fa-edit"></i>
-                </a>
-                @endif
-                @if(in_array(session('user_role'), ['super_admin', 'admin']))
-                <form action="{{ route('research.destroy', $r->id) }}" method="POST" onsubmit="return confirm('Delete this research paper?')">
-                    @csrf
-                    @method('DELETE')
-                    <button class="text-xs bg-red-50 text-red-700 px-3 py-2 rounded-lg hover:bg-red-100 transition"><i class="fas fa-trash"></i></button>
-                </form>
-                @endif
-            </div>
-        </div>
-        @empty
-        <div class="col-span-3 bg-white rounded-2xl shadow-sm border border-gray-100 p-16 text-center">
-            <i class="fas fa-archive text-6xl text-gray-300 mb-4"></i>
-            <h3 class="text-xl font-bold text-gray-600 mb-2">No Papers Found</h3>
-            <p class="text-gray-500 mb-6">No research papers match your current filters.</p>
-            <a href="{{ route('research.create') }}" class="bg-orange-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-orange-700 transition">
-                <i class="fas fa-plus mr-2"></i> Archive First Paper
-            </a>
-        </div>
-        @endforelse
-    </div>
+    @php
+        $yearFrom = request('year');
+        $yearTo = request('year_to');
+        $isRange = $yearFrom && $yearTo && (string) $yearFrom !== (string) $yearTo;
+        $showYearCol = $isRange;
+        $showCollegeCol = ! request('college_id');
+        $colCount = 4 + ($showYearCol ? 1 : 0) + ($showCollegeCol ? 1 : 0);
+    @endphp
 
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="text-left text-xs uppercase text-gray-500 border-b border-gray-200">
+                    <th class="px-4 py-3 w-14">No.</th>
+                    <th class="px-4 py-3">Title of Research</th>
+                    <th class="px-4 py-3">Researchers / Authors</th>
+                    <th class="px-4 py-3">Category</th>
+                    @if($showYearCol)<th class="px-4 py-3">Year</th>@endif
+                    @if($showCollegeCol)<th class="px-4 py-3">College</th>@endif
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @forelse($research as $r)
+                <tr>
+                    <td class="px-4 py-3">{{ $loop->iteration + ($research->currentPage() - 1) * $research->perPage() }}</td>
+                    <td class="px-4 py-3"><a href="{{ route('research.show', $r->id) }}" class="hover:text-orange-600 transition">{{ $r->title }}</a></td>
+                    <td class="px-4 py-3">{{ $r->authors }}</td>
+                    <td class="px-4 py-3">{{ $r->category->name ?? 'N/A' }}</td>
+                    @if($showYearCol)<td class="px-4 py-3">{{ $r->publication_year }}</td>@endif
+                    @if($showCollegeCol)<td class="px-4 py-3">{{ $r->college->code ?? 'N/A' }}</td>@endif
+                </tr>
+                @empty
+                <tr><td colspan="{{ $colCount }}" class="px-4 py-10 text-center text-gray-500">No research papers match your current filters.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
     <div>{{ $research->withQueryString()->links() }}</div>
 </div>
 @endsection

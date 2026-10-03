@@ -47,6 +47,7 @@ class ResearchController extends Controller
             'college_id' => $request->input('college_id'),
             'category_id' => $request->input('category_id'),
             'year' => $request->input('year'),
+            'year_to' => $request->input('year_to'),
             'status' => $request->input('status'),
         ], static fn ($value) => ! is_null($value) && $value !== '');
     }
@@ -298,8 +299,10 @@ class ResearchController extends Controller
             $query->where('category_id', $request->category_id);
         }
 
-        if ($request->filled('year')) {
-            $query->where('publication_year', $request->year);
+        if ($request->filled('year') && $request->filled('year_to')) {
+            $query->whereBetween('publication_year', [min((int) $request->year, (int) $request->year_to), max((int) $request->year, (int) $request->year_to)]);
+        } elseif ($request->filled('year') || $request->filled('year_to')) {
+            $query->where('publication_year', $request->input('year') ?: $request->input('year_to'));
         }
 
         if ($request->filled('status')) {
@@ -321,8 +324,19 @@ class ResearchController extends Controller
             $query->orderByDesc('created_at');
         }
 
-        $research = $query->paginate(12);
         $colleges = College::where('active', true)->get();
+
+        if ($request->boolean('print')) {
+            $research = $query->with(['category', 'college'])
+                ->reorder()
+                ->orderByDesc('publication_year')
+                ->orderByDesc('created_at')
+                ->get();
+
+            return view('research.print', compact('research', 'colleges'));
+        }
+
+        $research = $query->paginate(12);
         $categories = Category::all();
         $statuses = $this->researchStatusOptions();
         $savedSearches = SavedSearch::where('user_id', session('user_id'))
@@ -354,6 +368,7 @@ class ResearchController extends Controller
             'college_id' => 'nullable|exists:colleges,id',
             'category_id' => 'nullable|exists:categories,id',
             'year' => 'nullable|integer|min:2000|max:' . date('Y'),
+            'year_to' => 'nullable|integer|min:2000|max:' . date('Y'),
             'status' => ['nullable', Rule::in($statuses)],
         ]);
 
@@ -362,6 +377,7 @@ class ResearchController extends Controller
             'college_id' => $validated['college_id'] ?? null,
             'category_id' => $validated['category_id'] ?? null,
             'year' => $validated['year'] ?? null,
+            'year_to' => $validated['year_to'] ?? null,
             'status' => $validated['status'] ?? null,
         ], static fn ($value) => ! is_null($value) && $value !== '');
 

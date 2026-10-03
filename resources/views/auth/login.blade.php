@@ -82,6 +82,15 @@
                     <i class="fas fa-sign-in-alt mr-2"></i> Sign In
                 </button>
             </form>
+            @php($resendEmail = session('verification_email') ?? (str_contains($errors->first('email'), 'verify your email') ? old('email') : null))
+            @if ($resendEmail)
+                <form action="{{ route('verification.send') }}" method="POST" class="mt-4 text-center text-sm text-gray-600">
+                    @csrf
+                    <input type="hidden" name="email" value="{{ $resendEmail }}">
+                    Can't find the verification email (or deleted it)?
+                    <button type="submit" class="text-orange-600 font-semibold hover:underline">Resend verification email</button>
+                </form>
+            @endif
             <script>
                 window.enableLoginButton = (token) => {
                     document.getElementById('loginSubmitButton').disabled = !token;
