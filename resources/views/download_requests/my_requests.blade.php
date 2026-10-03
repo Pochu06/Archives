@@ -19,7 +19,7 @@
                 @forelse($requests as $req)
                 <tr class="hover:bg-orange-50/30">
                     <td class="px-5 py-4">
-                        <a href="{{ route('research.show', $req->research_id) }}" class="text-sm text-orange-600 font-medium hover:underline block max-w-xs truncate">
+                        <a href="{{ route('research.show', \App\Support\ResearchToken::encode($req->research_id)) }}" class="text-sm text-orange-600 font-medium hover:underline block max-w-xs truncate">
                             {{ $req->research->title ?? 'Deleted Paper' }}
                         </a>
                     </td>
@@ -46,7 +46,7 @@
                     </td>
                     <td class="px-5 py-4 text-right">
                         @if($req->status === 'approved')
-                        <a href="{{ route('research.download', $req->research_id) }}" class="bg-orange-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-orange-700 transition">
+                        <a href="{{ route('research.download', \App\Support\ResearchToken::encode($req->research_id)) }}" class="bg-orange-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-orange-700 transition">
                             <i class="fas fa-download mr-1"></i> Download
                         </a>
                         @elseif($req->status === 'pending')

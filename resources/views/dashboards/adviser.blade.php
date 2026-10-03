@@ -27,7 +27,7 @@
             <div class="p-4 flex items-center space-x-4 hover:bg-orange-50/30">
                 <div class="bg-orange-100 p-2.5 rounded-xl"><i class="fas fa-file-alt text-orange-600"></i></div>
                 <div class="flex-1 min-w-0">
-                    <a href="{{ route('research.show', $r->id) }}" class="font-semibold text-gray-800 text-sm hover:text-orange-600 block truncate">{{ $r->title }}</a>
+                    <a href="{{ route('research.show', \App\Support\ResearchToken::encode($r->id)) }}" class="font-semibold text-gray-800 text-sm hover:text-orange-600 block truncate">{{ $r->title }}</a>
                     <p class="text-xs text-gray-500">{{ $r->user->name ?? 'Unknown' }} &bull; {{ $r->created_at->diffForHumans() }}</p>
                 </div>
             </div>

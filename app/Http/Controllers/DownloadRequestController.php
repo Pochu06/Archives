@@ -143,7 +143,7 @@ class DownloadRequestController extends Controller
             'type' => 'download_request_decision',
             'title' => 'Download request approved',
             'message' => 'Your request to download "'.($downloadRequest->research->title ?? 'this research paper').'" was approved by the RDE office.',
-            'action_url' => route('research.show', $downloadRequest->research_id),
+            'action_url' => route('research.show', \App\Support\ResearchToken::encode($downloadRequest->research_id)),
             'action_label' => 'Open Research',
             'icon' => 'fa-file-arrow-down',
             'level' => 'success',

@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Research Archive')
 @section('page-title', 'Research Archive')
 @section('page-subtitle', 'Browse archived IMRAD research papers')
@@ -141,7 +141,7 @@
                 @forelse($research as $r)
                 <tr>
                     <td class="px-4 py-3">{{ $loop->iteration + ($research->currentPage() - 1) * $research->perPage() }}</td>
-                    <td class="px-4 py-3"><a href="{{ route('research.show', $r->id) }}" class="hover:text-orange-600 transition">{{ $r->title }}</a></td>
+                    <td class="px-4 py-3"><a href="{{ route('research.show', \App\Support\ResearchToken::encode($r->id)) }}" class="hover:text-orange-600 transition">{{ $r->title }}</a></td>
                     <td class="px-4 py-3">{{ $r->authors }}</td>
                     <td class="px-4 py-3">{{ $r->category->name ?? 'N/A' }}</td>
                     @if($showYearCol)<td class="px-4 py-3">{{ $r->publication_year }}</td>@endif

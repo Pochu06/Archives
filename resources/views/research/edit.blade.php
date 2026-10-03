@@ -66,7 +66,7 @@
             <h2 class="text-xl font-bold"><i class="fas fa-edit mr-2"></i>Edit Research Paper</h2>
             <p class="text-blue-100 text-sm mt-1">Update the IMRAD sections and metadata.</p>
         </div>
-        <form action="{{ route('research.update', $research->id) }}" method="POST" class="p-8 space-y-6">
+        <form action="{{ route('research.update', \App\Support\ResearchToken::encode($research->id)) }}" method="POST" class="p-8 space-y-6">
             @csrf
             @method('PUT')
             <input type="hidden" name="table_design" id="tableDesignInput" value="{{ old('table_design', $research->table_design ?? 'classic') }}">
@@ -260,7 +260,7 @@
             </div>
 
             <div class="flex justify-end gap-3">
-                <a href="{{ route('research.show', $research->id) }}" class="bg-gray-100 text-gray-700 px-6 py-3 rounded-xl font-semibold hover:bg-gray-200 transition">Cancel</a>
+                <a href="{{ route('research.show', \App\Support\ResearchToken::encode($research->id)) }}" class="bg-gray-100 text-gray-700 px-6 py-3 rounded-xl font-semibold hover:bg-gray-200 transition">Cancel</a>
                 <button type="submit" class="bg-gradient-to-r from-orange-600 to-orange-700 text-white px-8 py-3 rounded-xl font-bold hover:from-orange-700 hover:to-orange-800 transition shadow">
                     <i class="fas fa-save mr-1"></i> Update Paper
                 </button>
@@ -521,7 +521,7 @@ function escHtml(s) {
 }
 
 // ── CSU Thrust Auto-Detection ──
-const form = document.querySelector("form[action='{{ route('research.update', $research->id) }}']");
+const form = document.querySelector("form[action='{{ route('research.update', \App\Support\ResearchToken::encode($research->id)) }}']");
 const thrustInput = document.getElementById('thrustInput');
 const thrustValue = document.getElementById('thrustValue');
 const thrustMeta = document.getElementById('thrustMeta');

@@ -61,7 +61,7 @@
                         <i class="fas fa-file-alt text-orange-600"></i>
                     </div>
                     <div class="flex-1 min-w-0">
-                        <a href="{{ route('research.show', $r->id) }}" class="font-semibold text-gray-800 text-sm hover:text-orange-600 line-clamp-1 block">{{ $r->title }}</a>
+                        <a href="{{ route('research.show', \App\Support\ResearchToken::encode($r->id)) }}" class="font-semibold text-gray-800 text-sm hover:text-orange-600 line-clamp-1 block">{{ $r->title }}</a>
                         <p class="text-xs text-gray-500 mt-0.5">{{ $r->college->code ?? 'N/A' }} &bull; {{ $r->user->name ?? 'Unknown' }} &bull; {{ $r->created_at->diffForHumans() }}</p>
                     </div>
                 </div>

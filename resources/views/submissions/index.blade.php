@@ -38,7 +38,7 @@
                 @forelse($research as $r)
                 <tr class="hover:bg-orange-50/20">
                     <td class="px-5 py-4 max-w-xs">
-                        <a href="{{ route('research.show', $r->id) }}" class="font-semibold text-gray-800 hover:text-orange-600 text-sm line-clamp-2">{{ $r->title }}</a>
+                        <a href="{{ route('research.show', \App\Support\ResearchToken::encode($r->id)) }}" class="font-semibold text-gray-800 hover:text-orange-600 text-sm line-clamp-2">{{ $r->title }}</a>
                     </td>
                     <td class="px-5 py-4 text-sm text-gray-600">{{ $r->category->name ?? 'N/A' }}</td>
                     <td class="px-5 py-4 text-sm text-gray-600">{{ $r->publication_year }}</td>
@@ -58,11 +58,11 @@
                     <td class="px-5 py-4 text-xs text-gray-500">{{ $r->created_at->format('M d, Y') }}</td>
                     <td class="px-5 py-4 text-right">
                         <div class="flex justify-end gap-2">
-                            <a href="{{ route('research.show', $r->id) }}" class="text-xs bg-orange-50 text-orange-700 px-3 py-1.5 rounded-lg hover:bg-orange-100 font-medium">
+                            <a href="{{ route('research.show', \App\Support\ResearchToken::encode($r->id)) }}" class="text-xs bg-orange-50 text-orange-700 px-3 py-1.5 rounded-lg hover:bg-orange-100 font-medium">
                                 <i class="fas fa-eye"></i>
                             </a>
                             @if($r->status !== \App\Models\Research::STATUS_APPROVED)
-                            <a href="{{ route('research.edit', $r->id) }}" class="text-xs bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-100">
+                            <a href="{{ route('research.edit', \App\Support\ResearchToken::encode($r->id)) }}" class="text-xs bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-100">
                                 <i class="fas fa-edit"></i>
                                 @if(in_array($r->status, [\App\Models\Research::STATUS_REVISION_COLLEGE, \App\Models\Research::STATUS_REVISION_RDE]))
                                 Revise

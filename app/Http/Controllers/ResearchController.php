@@ -737,7 +737,7 @@ class ResearchController extends Controller
                 return redirect()->route('login');
             }
 
-            return redirect()->route('research.public-show', $research->id);
+            return redirect()->route('research.public-show', \App\Support\ResearchToken::encode($research->id));
         }
 
         if (!in_array(session('user_role'), ['super_admin', 'admin'])
@@ -762,7 +762,10 @@ class ResearchController extends Controller
 
     public function publicShow($id, ResearchSummaryService $researchSummaryService, RelatedResearchService $relatedResearchService)
     {
-        $research = Research::with(['user', 'college', 'category'])->approved()->findOrFail($id);
+        $researchId = \App\Support\ResearchToken::decode((string) $id);
+        abort_if($researchId === null, 404);
+
+        $research = Research::with(['user', 'college', 'category'])->approved()->findOrFail($researchId);
 
         $research->increment('view_count');
         $research->refresh();
@@ -786,7 +789,7 @@ class ResearchController extends Controller
         }
 
         if ($role === 'student' && $research->status === Research::STATUS_APPROVED) {
-            return redirect()->route('research.show', $research->id)->with('error', 'Approved research can no longer be edited by students.');
+            return redirect()->route('research.show', \App\Support\ResearchToken::encode($research->id))->with('error', 'Approved research can no longer be edited by students.');
         }
 
         $colleges = College::where('active', true)->get();
@@ -810,7 +813,7 @@ class ResearchController extends Controller
         }
 
         if ($role === 'student' && $research->status === Research::STATUS_APPROVED) {
-            return redirect()->route('research.show', $research->id)->with('error', 'Approved research can no longer be edited by students.');
+            return redirect()->route('research.show', \App\Support\ResearchToken::encode($research->id))->with('error', 'Approved research can no longer be edited by students.');
         }
 
         $request->merge([
@@ -894,7 +897,7 @@ class ResearchController extends Controller
             $message = 'Research paper updated and resubmitted for RDE approval.';
         }
 
-        return redirect()->route('research.show', $id)->with('success', $message);
+        return redirect()->route('research.show', \App\Support\ResearchToken::encode($id))->with('success', $message);
     }
 
     public function thrustSuggestion(Request $request)
@@ -991,7 +994,7 @@ class ResearchController extends Controller
                 'score' => $combinedScore,
                 'title_score' => $titleScore,
                 'abstract_score' => $abstractScore,
-                'url' => route('research.show', $candidate->id),
+                'url' => route('research.show', \App\Support\ResearchToken::encode($candidate->id)),
             ];
         })
             ->filter(fn (array $item) => $item['score'] >= 55.0)

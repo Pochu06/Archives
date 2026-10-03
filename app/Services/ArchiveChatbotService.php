@@ -360,6 +360,7 @@ class ArchiveChatbotService
 
             return [
                 'id' => $research->id,
+                'token' => \App\Support\ResearchToken::encode($research->id),
                 'title' => $research->title,
                 'publication_year' => $research->publication_year,
                 'category' => $research->category?->name,

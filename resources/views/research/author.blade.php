@@ -81,7 +81,7 @@
                 @endif
             </div>
 
-            <a href="{{ session('user_id') ? route('research.show', $item->id) : route('research.public-show', $item->id) }}" class="mt-auto w-full text-center bg-orange-600 text-white text-sm font-semibold py-2.5 rounded-lg hover:bg-orange-700">
+            <a href="{{ session('user_id') ? route('research.show', \App\Support\ResearchToken::encode($item->id)) : route('research.public-show', \App\Support\ResearchToken::encode($item->id)) }}" class="mt-auto w-full text-center bg-orange-600 text-white text-sm font-semibold py-2.5 rounded-lg hover:bg-orange-700">
                 View Research
             </a>
         </article>

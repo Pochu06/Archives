@@ -73,7 +73,7 @@
         </a>
         <div class="flex gap-2">
             @if(in_array(session('user_role'), ['super_admin', 'admin']) || ($research->user_id == session('user_id') && $research->status !== \App\Models\Research::STATUS_APPROVED))
-            <a href="{{ route('research.edit', $research->id) }}" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition">
+            <a href="{{ route('research.edit', \App\Support\ResearchToken::encode($research->id)) }}" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition">
                 <i class="fas fa-edit mr-1"></i> Edit
             </a>
             @endif
@@ -197,7 +197,7 @@
 
                         @if($canDownload)
                         <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-                            <iframe src="{{ route('research.preview', $research->id) }}#toolbar=0&navpanes=0&scrollbar=1" class="h-[42rem] w-full" title="PDF Preview"></iframe>
+                            <iframe src="{{ route('research.preview', \App\Support\ResearchToken::encode($research->id)) }}#toolbar=0&navpanes=0&scrollbar=1" class="h-[42rem] w-full" title="PDF Preview"></iframe>
                         </div>
                         @else
                         <div class="rounded-2xl border border-dashed border-amber-300 bg-amber-50 p-6">
@@ -311,7 +311,7 @@
                         </a>
                     </div>
                 @elseif($canDownload)
-                    <a href="{{ route('research.download', $research->id) }}" class="block w-full bg-orange-600 text-white py-3 rounded-xl font-bold hover:bg-orange-700 transition text-sm text-center">
+                    <a href="{{ route('research.download', \App\Support\ResearchToken::encode($research->id)) }}" class="block w-full bg-orange-600 text-white py-3 rounded-xl font-bold hover:bg-orange-700 transition text-sm text-center">
                         <i class="fas fa-download mr-1"></i> Download Full-Text PDF
                     </a>
                     <p class="text-xs text-gray-500 text-center mt-2">Auto-generated from archived data</p>
@@ -344,10 +344,10 @@
                 @endif
 
                 @if(session('user_id') && $research->status === \App\Models\Research::STATUS_APPROVED && (in_array(session('user_role'), ['super_admin', 'admin'], true) || (int) $research->user_id === (int) session('user_id')))
-                <a href="{{ route('research.certificate', $research->id) }}" target="_blank" class="mt-3 block w-full border border-green-600 text-green-700 py-3 rounded-xl font-bold hover:bg-green-50 transition text-sm text-center">
+                <a href="{{ route('research.certificate', \App\Support\ResearchToken::encode($research->id)) }}" target="_blank" class="mt-3 block w-full border border-green-600 text-green-700 py-3 rounded-xl font-bold hover:bg-green-50 transition text-sm text-center">
                     <i class="fas fa-award mr-1"></i> Print Approval Certificate
                 </a>
-                <a href="{{ route('research.certificate', ['id' => $research->id, 'download' => 1]) }}" class="mt-2 block w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition text-sm text-center">
+                <a href="{{ route('research.certificate', ['id' => \App\Support\ResearchToken::encode($research->id), 'download' => 1]) }}" class="mt-2 block w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition text-sm text-center">
                     <i class="fas fa-file-arrow-down mr-1"></i> Download Certificate PDF
                 </a>
                 <p class="text-xs text-gray-500 text-center mt-2">Certificate of RDE approval for recognition</p>
@@ -440,7 +440,7 @@
                 @if(!empty($relatedResearch['items']))
                 <div class="space-y-3">
                     @foreach($relatedResearch['items'] as $item)
-                    <a href="{{ session('user_id') ? route('research.show', $item['research']->id) : route('research.public-show', $item['research']->id) }}" class="block rounded-xl border border-gray-200 p-4 hover:border-orange-300 hover:bg-orange-50 transition">
+                    <a href="{{ session('user_id') ? route('research.show', \App\Support\ResearchToken::encode($item['research']->id)) : route('research.public-show', \App\Support\ResearchToken::encode($item['research']->id)) }}" class="block rounded-xl border border-gray-200 p-4 hover:border-orange-300 hover:bg-orange-50 transition">
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0">
                                 <p class="text-sm font-bold text-gray-900 leading-snug">{{ $item['research']->title }}</p>
@@ -493,7 +493,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
             <h3 class="font-bold text-lg"><i class="fas fa-paper-plane mr-2"></i>Request Download</h3>
             <p class="text-orange-100 text-sm mt-1">Your request will be reviewed by the RDE Office</p>
         </div>
-        <form action="{{ route('download-request.store', $research->id) }}" method="POST" class="p-6 space-y-4">
+        <form action="{{ route('download-request.store', \App\Support\ResearchToken::encode($research->id)) }}" method="POST" class="p-6 space-y-4">
             @csrf
             <div>
                 <label class="block text-gray-700 font-semibold mb-2 text-sm">Purpose of Download <span class="text-red-500">*</span></label>

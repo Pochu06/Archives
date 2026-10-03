@@ -187,7 +187,7 @@
                     @endif
 
                     <div class="mt-5 pt-4 border-t border-gray-100">
-                        <a href="{{ session('user_id') ? route('research.show', $item['research']->id) : route('research.public-show', $item['research']->id) }}" class="inline-flex items-center text-orange-700 font-semibold hover:text-orange-800">
+                        <a href="{{ session('user_id') ? route('research.show', \App\Support\ResearchToken::encode($item['research']->id)) : route('research.public-show', \App\Support\ResearchToken::encode($item['research']->id)) }}" class="inline-flex items-center text-orange-700 font-semibold hover:text-orange-800">
                             View Archived Paper <i class="fas fa-arrow-right ml-2"></i>
                         </a>
                     </div>

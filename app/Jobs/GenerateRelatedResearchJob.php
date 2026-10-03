@@ -41,7 +41,7 @@ class GenerateRelatedResearchJob
             'type' => 'ai_processing_complete',
             'title' => 'Related research ready',
             'message' => 'Similar papers for "'.$research->title.'" are ready to review.',
-            'action_url' => route('research.show', $research->id),
+            'action_url' => route('research.show', \App\Support\ResearchToken::encode($research->id)),
             'action_label' => 'View Matches',
             'icon' => 'fa-diagram-project',
             'level' => 'success',

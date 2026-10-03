@@ -12,6 +12,18 @@
         ->values()
         ->all();
 
+    $chatbotMessages = collect($chatbotMessages)->map(function ($message) {
+        $message['references'] = collect($message['references'])->map(function ($reference) {
+            if (is_array($reference) && isset($reference['id'])) {
+                $reference['token'] = \App\Support\ResearchToken::encode($reference['id']);
+            }
+
+            return $reference;
+        })->all();
+
+        return $message;
+    })->all();
+
     $detailUrlTemplate = session('user_id')
         ? route('research.show', ['id' => '__CHATBOT_ID__'])
         : route('research.public-show', ['id' => '__CHATBOT_ID__']);
@@ -57,6 +69,7 @@
     data-store-url="{{ route('chatbot.store') }}"
     data-reset-url="{{ route('chatbot.reset') }}"
     data-detail-url-template="{{ $detailUrlTemplate }}"
+    data-use-token="{{ session('user_id') ? '0' : '1' }}"
     data-auto-open="{{ request()->routeIs('chatbot.index') ? '1' : '0' }}"
 >
     <button
@@ -126,7 +139,7 @@
                                 <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Related Archive Records</p>
                                 <div class="mt-3 space-y-3">
                                     @foreach($message['references'] as $reference)
-                                    <a href="{{ session('user_id') ? route('research.show', $reference['id']) : route('research.public-show', $reference['id']) }}" class="block rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 transition hover:border-orange-200 hover:bg-orange-50">
+                                    <a href="{{ session('user_id') ? route('research.show', \App\Support\ResearchToken::encode($reference['id'])) : route('research.public-show', \App\Support\ResearchToken::encode($reference['id'])) }}" class="block rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 transition hover:border-orange-200 hover:bg-orange-50">
                                         <p class="text-sm font-semibold leading-6 text-gray-900">{{ $reference['title'] }}</p>
                                         <p class="mt-1 text-xs text-gray-500">{{ $reference['publication_year'] ?: 'N/A' }} &middot; {{ $reference['category'] ?: 'Uncategorized' }} &middot; {{ ($reference['college_code'] ?? $reference['college'] ?? 'N/A') }}</p>
                                         <p class="mt-2 text-sm leading-6 text-gray-600">{{ $reference['abstract_excerpt'] }}</p>
@@ -218,7 +231,7 @@
         messageList.insertAdjacentHTML('beforebegin', emptyStateMarkup);
     };
 
-    const buildDetailUrl = (referenceId) => detailUrlTemplate.replace('__CHATBOT_ID__', String(referenceId));
+    const buildDetailUrl = (reference) => detailUrlTemplate.replace('__CHATBOT_ID__', String(reference.token || reference.id));
 
     const renderReferences = (references) => {
         if (!Array.isArray(references) || references.length === 0) {
@@ -230,7 +243,7 @@
                 <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">Related Archive Records</p>
                 <div class="mt-3 space-y-3">
                     ${references.map((reference) => `
-                        <a href="${escapeHtml(buildDetailUrl(reference.id))}" class="block rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 transition hover:border-orange-200 hover:bg-orange-50">
+                        <a href="${escapeHtml(buildDetailUrl(reference))}" class="block rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 transition hover:border-orange-200 hover:bg-orange-50">
                             <p class="text-sm font-semibold leading-6 text-gray-900">${escapeHtml(reference.title)}</p>
                             <p class="mt-1 text-xs text-gray-500">${escapeHtml(reference.publication_year ?? 'N/A')} &middot; ${escapeHtml(reference.category ?? 'Uncategorized')} &middot; ${escapeHtml(reference.college_code ?? reference.college ?? 'N/A')}</p>
                             <p class="mt-2 text-sm leading-6 text-gray-600">${escapeHtml(reference.abstract_excerpt ?? '')}</p>

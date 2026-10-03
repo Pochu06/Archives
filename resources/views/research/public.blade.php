@@ -137,7 +137,7 @@
                 </div>
 
                 <div class="mt-auto flex gap-2">
-                    <a href="{{ route('research.public-show', $item->id) }}" class="w-full text-center bg-orange-600 text-white text-sm font-semibold py-2.5 rounded-lg hover:bg-orange-700">View Research</a>
+                    <a href="{{ route('research.public-show', \App\Support\ResearchToken::encode($item->id)) }}" class="w-full text-center bg-orange-600 text-white text-sm font-semibold py-2.5 rounded-lg hover:bg-orange-700">View Research</a>
                 </div>
             </article>
             @endforeach

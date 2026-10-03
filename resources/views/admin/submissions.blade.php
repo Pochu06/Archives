@@ -84,7 +84,7 @@
                         <input type="checkbox" class="bulk-row-checkbox h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500" value="{{ $r->id }}">
                     </td>
                     <td class="px-5 py-4 max-w-md">
-                        <a href="{{ route('research.show', $r->id) }}" class="font-semibold text-gray-800 hover:text-orange-600 text-sm line-clamp-2">{{ $r->title }}</a>
+                        <a href="{{ route('research.show', \App\Support\ResearchToken::encode($r->id)) }}" class="font-semibold text-gray-800 hover:text-orange-600 text-sm line-clamp-2">{{ $r->title }}</a>
                     </td>
                     <td class="px-5 py-4 text-sm text-gray-600">{{ $r->user->name ?? 'Unknown' }}</td>
                     <td class="px-5 py-4 text-sm text-gray-600">{{ $r->category->name ?? 'N/A' }}</td>
@@ -105,7 +105,7 @@
                     </td>
                     <td class="px-5 py-4 text-right">
                         <div class="flex justify-end gap-2">
-                            <a href="{{ route('research.show', $r->id) }}" class="text-xs bg-orange-50 text-orange-700 px-3 py-1.5 rounded-lg hover:bg-orange-100 font-medium">View</a>
+                            <a href="{{ route('research.show', \App\Support\ResearchToken::encode($r->id)) }}" class="text-xs bg-orange-50 text-orange-700 px-3 py-1.5 rounded-lg hover:bg-orange-100 font-medium">View</a>
                             @if($r->status === $defaultPendingStatus)
                             <form action="{{ route($approveRouteName, $r->id) }}" method="POST">
                                 @csrf

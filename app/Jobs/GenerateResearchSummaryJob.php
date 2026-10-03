@@ -41,7 +41,7 @@ class GenerateResearchSummaryJob
             'type' => 'ai_processing_complete',
             'title' => 'AI summary ready',
             'message' => 'The AI summary for "'.$research->title.'" has finished processing.',
-            'action_url' => route('research.show', $research->id),
+            'action_url' => route('research.show', \App\Support\ResearchToken::encode($research->id)),
             'action_label' => 'View Research',
             'icon' => 'fa-wand-magic-sparkles',
             'level' => 'success',

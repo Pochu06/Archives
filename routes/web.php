@@ -59,13 +59,13 @@ Route::post('/research/duplicate-check', [ResearchController::class, 'checkDupli
 Route::post('/research/uploads/chunk', [ResearchController::class, 'uploadFileChunk'])->name('research.uploads.chunk');
 Route::get('/research/uploads/status', [ResearchController::class, 'uploadFileStatus'])->name('research.uploads.status');
 Route::post('/research/uploads/complete', [ResearchController::class, 'completeFileUpload'])->name('research.uploads.complete');
-Route::get('/research/{id}', [ResearchController::class, 'show'])->name('research.show');
-Route::get('/research/{id}/edit', [ResearchController::class, 'edit'])->name('research.edit');
-Route::put('/research/{id}', [ResearchController::class, 'update'])->name('research.update');
-Route::delete('/research/{id}', [ResearchController::class, 'destroy'])->name('research.destroy');
-Route::get('/research/{id}/preview', [ResearchController::class, 'preview'])->name('research.preview');
-Route::get('/research/{id}/download', [ResearchController::class, 'download'])->name('research.download');
-Route::get('/research/{id}/certificate', [ResearchController::class, 'certificate'])->name('research.certificate');
+Route::get('/research/{id}', [ResearchController::class, 'show'])->middleware(\App\Http\Middleware\DecodeResearchToken::class)->name('research.show');
+Route::get('/research/{id}/edit', [ResearchController::class, 'edit'])->middleware(\App\Http\Middleware\DecodeResearchToken::class)->name('research.edit');
+Route::put('/research/{id}', [ResearchController::class, 'update'])->middleware(\App\Http\Middleware\DecodeResearchToken::class)->name('research.update');
+Route::delete('/research/{id}', [ResearchController::class, 'destroy'])->middleware(\App\Http\Middleware\DecodeResearchToken::class)->name('research.destroy');
+Route::get('/research/{id}/preview', [ResearchController::class, 'preview'])->middleware(\App\Http\Middleware\DecodeResearchToken::class)->name('research.preview');
+Route::get('/research/{id}/download', [ResearchController::class, 'download'])->middleware(\App\Http\Middleware\DecodeResearchToken::class)->name('research.download');
+Route::get('/research/{id}/certificate', [ResearchController::class, 'certificate'])->middleware(\App\Http\Middleware\DecodeResearchToken::class)->name('research.certificate');
 Route::get('/certificates/{id}/verify', [ResearchController::class, 'verifyCertificate'])->name('research.certificate.verify');
 Route::post('/research/upload-image', [ResearchController::class, 'uploadImage'])->name('research.upload-image');
 Route::post('/research/delete-image', [ResearchController::class, 'deleteImage'])->name('research.delete-image');
@@ -83,7 +83,7 @@ Route::post('/submissions/{id}/rde-revision', [SubmissionController::class, 'req
 Route::post('/submissions/{id}/rde-reject', [SubmissionController::class, 'rejectByRde'])->name('submissions.rde-reject');
 
 // Download Requests
-Route::post('/research/{id}/request-download', [DownloadRequestController::class, 'store'])->name('download-request.store');
+Route::post('/research/{id}/request-download', [DownloadRequestController::class, 'store'])->middleware(\App\Http\Middleware\DecodeResearchToken::class)->name('download-request.store');
 Route::get('/my-requests', [DownloadRequestController::class, 'myRequests'])->name('download-request.my');
 Route::get('/download-requests', [DownloadRequestController::class, 'index'])->name('download-request.index');
 Route::post('/download-requests/{id}/approve', [DownloadRequestController::class, 'approve'])->name('download-request.approve');

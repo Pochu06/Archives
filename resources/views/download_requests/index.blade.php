@@ -49,7 +49,7 @@
                         </div>
                     </td>
                     <td class="px-5 py-4">
-                        <a href="{{ route('research.show', $req->research_id) }}" class="text-sm text-orange-600 font-medium hover:underline block max-w-xs truncate">
+                        <a href="{{ route('research.show', \App\Support\ResearchToken::encode($req->research_id)) }}" class="text-sm text-orange-600 font-medium hover:underline block max-w-xs truncate">
                             {{ $req->research->title ?? 'Deleted Paper' }}
                         </a>
                     </td>

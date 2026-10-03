@@ -21,7 +21,7 @@
             <div class="divide-y">
                 @forelse($recentResearch as $r)
                 <div class="p-4 hover:bg-orange-50/30">
-                    <a href="{{ route('research.show', $r->id) }}" class="font-semibold text-gray-800 text-sm hover:text-orange-600 block truncate">{{ $r->title }}</a>
+                    <a href="{{ route('research.show', \App\Support\ResearchToken::encode($r->id)) }}" class="font-semibold text-gray-800 text-sm hover:text-orange-600 block truncate">{{ $r->title }}</a>
                     <p class="text-xs text-gray-500 mt-1">{{ $r->category->name ?? 'Uncategorized' }} &bull; {{ $r->publication_year }}</p>
                 </div>
                 @empty
@@ -38,7 +38,7 @@
             <div class="divide-y">
                 @forelse($browseResearch as $r)
                 <div class="p-4 hover:bg-orange-50/30">
-                    <a href="{{ route('research.show', $r->id) }}" class="font-semibold text-gray-800 text-sm hover:text-orange-600 block truncate">{{ $r->title }}</a>
+                    <a href="{{ route('research.show', \App\Support\ResearchToken::encode($r->id)) }}" class="font-semibold text-gray-800 text-sm hover:text-orange-600 block truncate">{{ $r->title }}</a>
                     <p class="text-xs text-gray-500 mt-1">{{ $r->college->code ?? 'N/A' }} &bull; {{ $r->authors }}</p>
                 </div>
                 @empty

@@ -57,7 +57,7 @@
                 </section>
 
                 <div class="mt-8 text-center">
-                    <a href="{{ route('research.public-show', $research->id) }}" class="font-semibold text-blue-700 hover:underline">View public research record</a>
+                    <a href="{{ route('research.public-show', \App\Support\ResearchToken::encode($research->id)) }}" class="font-semibold text-blue-700 hover:underline">View public research record</a>
                 </div>
             </div>
         </div>

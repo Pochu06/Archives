@@ -151,7 +151,7 @@
                     </div>
                     <div class="space-y-4">
                         @forelse($section['items'] as $item)
-                        <a href="{{ route('research.public-show', $item->id) }}" class="block border-b border-orange-100 pb-4 last:border-0 last:pb-0 group">
+                        <a href="{{ route('research.public-show', \App\Support\ResearchToken::encode($item->id)) }}" class="block border-b border-orange-100 pb-4 last:border-0 last:pb-0 group">
                             <div class="flex items-start justify-between gap-3">
                                 <h4 class="font-bold leading-snug group-hover:text-orange-700 transition">{{ $item->title }}</h4>
                                 @if($section['metric'])
