@@ -36,7 +36,7 @@
         table.rpt-table tr { page-break-inside: avoid; }
         .rpt-foot { text-align: center; font-size: 11px; margin-top: 30px; }
         @media print {
-            @page { size: A4; margin: 15mm; }
+            @page { size: 8.5in 13in; margin: 15mm; }
             body { padding: 0; }
         }
     </style>
@@ -50,6 +50,7 @@
             <div class="l2">Cagayan State University</div>
             <div class="l3">Aparri Campus</div>
             <div class="l4">Aparri, Cagayan</div>
+            <div class="l2">Research, Development and Extension Office</div>
             </div>
         </div>
 
