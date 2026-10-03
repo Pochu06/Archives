@@ -50,7 +50,7 @@
             <div class="l2">Cagayan State University</div>
             <div class="l3">Aparri Campus</div>
             <div class="l4">Aparri, Cagayan</div>
-            <div class="l3">Research, Development and Extension Office</div>
+            <div class="l3">Research, Development & Extension Office</div>
             </div>
         </div>
 
