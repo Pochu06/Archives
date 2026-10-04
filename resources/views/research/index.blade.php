@@ -46,14 +46,17 @@
                 <option value="{{ $filterYear }}" {{ (string) request('year_to') === (string) $filterYear ? 'selected' : '' }}>{{ $filterYear }}</option>
                 @endfor
             </select>
+            @if(session('user_role') !== 'student')
             <select name="status" class="border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:border-orange-500">
                 <option value="">All Statuses</option>
                 @foreach($statuses as $statusKey => $statusLabel)
                 <option value="{{ $statusKey }}" {{ request('status') === $statusKey ? 'selected' : '' }}>{{ $statusLabel }}</option>
                 @endforeach
             </select>
+            @endif
             <select name="sort" class="border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:border-orange-500">
-                <option value="latest" {{ request('sort', 'latest') === 'latest' ? 'selected' : '' }}>Newest First</option>
+                <option value="engagement" {{ request('sort', 'engagement') === 'engagement' ? 'selected' : '' }}>Most Viewed &amp; Downloaded</option>
+                <option value="latest" {{ request('sort') === 'latest' ? 'selected' : '' }}>Newest First</option>
                 <option value="views" {{ request('sort') === 'views' ? 'selected' : '' }}>Most Viewed</option>
                 <option value="downloads" {{ request('sort') === 'downloads' ? 'selected' : '' }}>Most Downloaded</option>
             </select>

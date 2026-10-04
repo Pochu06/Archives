@@ -97,6 +97,36 @@ class Research extends Model
         return $query->where('status', self::STATUS_APPROVED);
     }
 
+    public function scopeArchiveRelevance($query, $collegeId = null, string $sort = 'engagement')
+    {
+        if ($collegeId) {
+            $query->orderByRaw(
+                'CASE WHEN college_id = ? THEN 0 ELSE 1 END',
+                [$collegeId]
+            );
+        }
+
+        if ($sort === 'views') {
+            return $query->orderByDesc('view_count')
+                ->orderByDesc('download_count')
+                ->orderByDesc('created_at');
+        }
+
+        if ($sort === 'downloads') {
+            return $query->orderByDesc('download_count')
+                ->orderByDesc('view_count')
+                ->orderByDesc('created_at');
+        }
+
+        if ($sort === 'latest') {
+            return $query->orderByDesc('created_at');
+        }
+
+        return $query->orderByRaw(
+            'COALESCE(view_count, 0) + COALESCE(download_count, 0) DESC'
+        )->orderByDesc('created_at');
+    }
+
     public function getStatusLabelAttribute(): string
     {
         return match ($this->status) {

@@ -95,7 +95,8 @@
                     </select>
 
                 <select name="sort" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:border-orange-500">
-                    <option value="latest" {{ request('sort', 'latest') === 'latest' ? 'selected' : '' }}>Newest First</option>
+                    <option value="engagement" {{ request('sort', 'engagement') === 'engagement' ? 'selected' : '' }}>Most Viewed &amp; Downloaded</option>
+                    <option value="latest" {{ request('sort') === 'latest' ? 'selected' : '' }}>Newest First</option>
                     <option value="views" {{ request('sort') === 'views' ? 'selected' : '' }}>Most Viewed</option>
                     <option value="downloads" {{ request('sort') === 'downloads' ? 'selected' : '' }}>Most Downloaded</option>
                 </select>

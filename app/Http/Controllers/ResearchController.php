@@ -62,19 +62,23 @@ class ResearchController extends Controller
                 'label' => 'This Year',
                 'query' => ['year' => $year],
             ],
-            [
+        ];
+
+        if (session('user_role') === 'student') {
+            $presets[] = [
                 'label' => 'Approved This Year',
                 'query' => ['year' => $year, 'status' => Research::STATUS_APPROVED],
-            ],
-            [
-                'label' => 'Pending Review',
-                'query' => ['status' => Research::STATUS_PENDING_COLLEGE],
-            ],
-            [
+            ];
+        } else {
+            $presets[] = [
                 'label' => 'Needs Revision',
                 'query' => ['status' => Research::STATUS_REVISION_RDE],
-            ],
-        ];
+            ];
+            $presets[] = [
+                'label' => 'Pending Review',
+                'query' => ['status' => Research::STATUS_PENDING_COLLEGE],
+            ];
+        }
 
         if ($collegeId) {
             $presets[] = [
@@ -277,10 +281,7 @@ class ResearchController extends Controller
         $collegeId = session('user_college_id');
 
         if ($role === 'student') {
-            $query->where(function ($query) use ($userId) {
-                $query->approved()
-                    ->orWhere('user_id', $userId);
-            });
+            $query->approved();
         } elseif ($role === 'admin' && $collegeId) {
             $query->where('college_id', $collegeId);
         }
@@ -313,20 +314,8 @@ class ResearchController extends Controller
             $query->where('status', $request->status);
         }
 
-        $sort = $request->input('sort', 'latest');
-        if ($sort === 'views') {
-            $query->orderByDesc('view_count')->orderByDesc('created_at');
-        } elseif ($sort === 'downloads') {
-            $query->orderByDesc('download_count')->orderByDesc('created_at');
-        } else {
-            if ($collegeId && ! $request->filled('college_id')) {
-                $query->orderByRaw(
-                    'CASE WHEN college_id = ? THEN 0 ELSE 1 END',
-                    [$collegeId]
-                );
-            }
-            $query->orderByDesc('created_at');
-        }
+        $collegePriority = $request->filled('college_id') ? null : $collegeId;
+        $query->archiveRelevance($collegePriority, $request->input('sort', 'engagement'));
 
         $colleges = College::where('active', true)->get();
 
@@ -484,13 +473,9 @@ class ResearchController extends Controller
             $query->where('publication_year', $request->year);
         }
 
-        if ($request->input('sort') === 'views') {
-            $query->orderByDesc('view_count')->orderByDesc('created_at');
-        } elseif ($request->input('sort') === 'downloads') {
-            $query->orderByDesc('download_count')->orderByDesc('created_at');
-        } else {
-            $query->orderByDesc('created_at');
-        }
+        $collegeId = session('user_college_id');
+        $collegePriority = $request->filled('college_id') ? null : $collegeId;
+        $query->archiveRelevance($collegePriority, $request->input('sort', 'engagement'));
 
         $research = $query->paginate(12)->withQueryString();
         $colleges = College::where('active', true)->get();

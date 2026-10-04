@@ -76,9 +76,20 @@ class DashboardController extends Controller
         }
 
         // Student
-        $myResearch = Research::where('user_id', $userId)->count();
-        $recentResearch = Research::with(['category'])->where('user_id', $userId)->orderBy('created_at', 'desc')->take(5)->get();
-        $browseResearch = Research::with(['user', 'college', 'category'])->approved()->orderBy('created_at', 'desc')->take(6)->get();
+        $myResearch = Research::where('user_id', $userId)
+            ->approved()
+            ->count();
+        $recentResearch = Research::with(['category'])
+            ->where('user_id', $userId)
+            ->approved()
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+        $browseResearch = Research::with(['user', 'college', 'category'])
+            ->approved()
+            ->archiveRelevance($collegeId)
+            ->take(6)
+            ->get();
 
         return view('dashboards.student', compact(
             'myResearch', 'recentResearch', 'browseResearch'
