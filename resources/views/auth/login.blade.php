@@ -61,7 +61,11 @@
                     <div class="relative">
                         <i class="fas fa-lock absolute left-4 top-3.5 text-gray-400"></i>
                         <input type="password" name="password" placeholder="••••••••"
-                            class="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 transition @error('password') border-red-400 @enderror">
+                            class="w-full pl-11 pr-12 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 transition @error('password') border-red-400 @enderror">
+                        <button type="button" data-password-toggle aria-label="Show password" aria-pressed="false"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 rounded p-2 text-gray-500 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">
+                            <i class="fas fa-eye" aria-hidden="true"></i>
+                        </button>
                     </div>
                     @error('password')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>

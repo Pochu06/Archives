@@ -68,11 +68,23 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">New Password <span class="text-gray-400 font-normal text-xs">(leave blank to keep current)</span></label>
-                    <input type="password" name="password" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 @error('password') border-red-400 @enderror">
+                    <div class="relative">
+                        <input type="password" name="password" class="w-full pl-4 pr-12 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 @error('password') border-red-400 @enderror">
+                        <button type="button" data-password-toggle aria-label="Show password" aria-pressed="false"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 rounded p-2 text-gray-500 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">
+                            <i class="fas fa-eye" aria-hidden="true"></i>
+                        </button>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">Confirm New Password</label>
-                    <input type="password" name="password_confirmation" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-500">
+                    <div class="relative">
+                        <input type="password" name="password_confirmation" class="w-full pl-4 pr-12 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-500">
+                        <button type="button" data-password-toggle aria-label="Show password" aria-pressed="false"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 rounded p-2 text-gray-500 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">
+                            <i class="fas fa-eye" aria-hidden="true"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 

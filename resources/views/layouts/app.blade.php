@@ -308,6 +308,39 @@
 
 (() => {
     document.addEventListener('click', (event) => {
+        if (!(event.target instanceof Element)) {
+            return;
+        }
+
+        const toggle = event.target.closest('[data-password-toggle]');
+
+        if (!toggle) {
+            return;
+        }
+
+        const field = toggle.parentElement;
+        const input = field && field.querySelector('input[type="password"], input[type="text"]');
+
+        if (!input) {
+            return;
+        }
+
+        const isVisible = input.type === 'password';
+        input.type = isVisible ? 'text' : 'password';
+        toggle.setAttribute('aria-label', isVisible ? 'Hide password' : 'Show password');
+        toggle.setAttribute('aria-pressed', String(isVisible));
+
+        const icon = toggle.querySelector('i');
+
+        if (icon) {
+            icon.classList.toggle('fa-eye', !isVisible);
+            icon.classList.toggle('fa-eye-slash', isVisible);
+        }
+    });
+})();
+
+(() => {
+    document.addEventListener('click', (event) => {
         document.querySelectorAll('[data-notification-center]').forEach((container) => {
             const panel = container.querySelector('[data-notification-panel]');
 
