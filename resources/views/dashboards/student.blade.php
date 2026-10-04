@@ -18,14 +18,14 @@
                 <h3 class="font-bold text-gray-800">My Papers</h3>
                 <a href="{{ route('submissions.index') }}" class="text-orange-600 text-sm font-semibold hover:underline">View All</a>
             </div>
-            <div class="divide-y">
+            <div class="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2">
                 @forelse($recentResearch as $r)
-                <div class="p-4 hover:bg-orange-50/30">
-                    <a href="{{ route('research.show', \App\Support\ResearchToken::encode($r->id)) }}" class="font-semibold text-gray-800 text-sm hover:text-orange-600 block truncate">{{ $r->title }}</a>
-                    <p class="text-xs text-gray-500 mt-1">{{ $r->category->name ?? 'Uncategorized' }} &bull; {{ $r->publication_year }}</p>
+                <div class="rounded-xl border border-gray-100 bg-gray-50 p-4 transition hover:border-orange-200 hover:bg-orange-50/50">
+                    <a href="{{ route('research.show', \App\Support\ResearchToken::encode($r->id)) }}" class="block font-semibold text-gray-800 text-sm hover:text-orange-600">{{ $r->title }}</a>
+                    <p class="mt-2 text-xs text-gray-500">{{ $r->category->name ?? 'Uncategorized' }} &bull; {{ $r->publication_year }}</p>
                 </div>
                 @empty
-                <p class="p-6 text-center text-gray-500">No papers archived yet. <a href="{{ route('research.create') }}" class="text-orange-600 font-semibold">Archive your first paper!</a></p>
+                <p class="rounded-xl border border-dashed border-gray-200 p-6 text-center text-gray-500 sm:col-span-2">No papers archived yet. <a href="{{ route('research.create') }}" class="text-orange-600 font-semibold">Archive your first paper!</a></p>
                 @endforelse
             </div>
         </div>
@@ -35,14 +35,14 @@
                 <h3 class="font-bold text-gray-800">Browse Archive</h3>
                 <a href="{{ route('research.index') }}" class="text-orange-600 text-sm font-semibold hover:underline">View All</a>
             </div>
-            <div class="divide-y">
+            <div class="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2">
                 @forelse($browseResearch as $r)
-                <div class="p-4 hover:bg-orange-50/30">
-                    <a href="{{ route('research.show', \App\Support\ResearchToken::encode($r->id)) }}" class="font-semibold text-gray-800 text-sm hover:text-orange-600 block truncate">{{ $r->title }}</a>
-                    <p class="text-xs text-gray-500 mt-1">{{ $r->college->code ?? 'N/A' }} &bull; {{ $r->authors }}</p>
+                <div class="rounded-xl border border-gray-100 bg-gray-50 p-4 transition hover:border-orange-200 hover:bg-orange-50/50">
+                    <a href="{{ route('research.show', \App\Support\ResearchToken::encode($r->id)) }}" class="block font-semibold text-gray-800 text-sm hover:text-orange-600">{{ $r->title }}</a>
+                    <p class="mt-2 text-xs text-gray-500">{{ $r->college->code ?? 'N/A' }} &bull; {{ $r->authors }}</p>
                 </div>
                 @empty
-                <p class="p-6 text-center text-gray-500">No papers in the archive yet.</p>
+                <p class="rounded-xl border border-dashed border-gray-200 p-6 text-center text-gray-500 sm:col-span-2">No papers in the archive yet.</p>
                 @endforelse
             </div>
         </div>

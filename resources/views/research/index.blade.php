@@ -107,7 +107,9 @@
     <div class="no-print flex justify-between items-center">
         <p class="text-gray-600 text-sm">{{ $research->total() }} research paper(s) found</p>
         <div class="flex gap-2">
+        @if(in_array(session('user_role'), ['admin', 'super_admin'], true))
         <a href="{{ route('research.index', array_merge(request()->query(), ['print' => 1])) }}" target="_blank" class="bg-gray-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-gray-800 transition"><i class="fas fa-print mr-1"></i> Print</a>
+        @endif
         @if(in_array(session('user_role'), ['student', 'adviser', 'admin', 'super_admin']))
         <a href="{{ route('research.create') }}" class="bg-gradient-to-r from-orange-600 to-orange-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm hover:from-orange-700 hover:to-orange-800 transition shadow">
             <i class="fas fa-plus mr-1"></i> Archive Paper
@@ -116,6 +118,48 @@
         </div>
     </div>
 
+    @if(session('user_role') === 'student')
+    @if($research->count())
+    <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+        @foreach($research as $r)
+        <article class="flex flex-col rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
+            <div class="mb-3 flex items-center justify-between gap-2">
+                <span class="rounded px-2.5 py-1 text-xs font-bold {{ $r->category->badge_classes ?? 'bg-gray-100 text-gray-700' }}">{{ $r->category->name ?? 'Uncategorized' }}</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">{{ $r->publication_year }}</span>
+            </div>
+
+            <h2 class="mb-2 line-clamp-2 text-lg font-bold leading-snug text-gray-900 dark:text-white">{{ $r->title }}</h2>
+            <p class="mb-3 line-clamp-3 text-sm text-gray-600 dark:text-gray-300">{{ $r->abstract }}</p>
+
+            <div class="mb-4 space-y-1 text-xs text-gray-500 dark:text-gray-400">
+                <p><span class="font-semibold text-gray-700 dark:text-gray-200">College:</span> {{ $r->college->code ?? 'N/A' }}</p>
+                <p><span class="font-semibold text-gray-700 dark:text-gray-200">Authors:</span> {{ $r->authors }}</p>
+                <p>
+                    <span class="font-semibold text-gray-700 dark:text-gray-200">Archived by:</span>
+                    @if($r->user)
+                    <a href="{{ route('authors.show', $r->user->id) }}" class="text-orange-700 hover:underline dark:text-orange-400">{{ $r->user->name }}</a>
+                    @else
+                    N/A
+                    @endif
+                </p>
+                <p class="flex items-center gap-3 pt-1">
+                    <span><i class="fas fa-eye mr-1 text-blue-400"></i>{{ number_format($r->view_count) }} views</span>
+                    <span><i class="fas fa-download mr-1 text-green-500"></i>{{ number_format($r->download_count) }} downloads</span>
+                </p>
+            </div>
+
+            <a href="{{ route('research.show', \App\Support\ResearchToken::encode($r->id)) }}" class="mt-auto w-full rounded-lg bg-orange-600 py-2.5 text-center text-sm font-semibold text-white hover:bg-orange-700">
+                View Research
+            </a>
+        </article>
+        @endforeach
+    </div>
+    @else
+    <div class="rounded-2xl border border-gray-100 bg-white px-4 py-10 text-center text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+        No research papers match your current filters.
+    </div>
+    @endif
+    @else
     @php
         $yearFrom = request('year');
         $yearTo = request('year_to');
@@ -124,7 +168,6 @@
         $showCollegeCol = ! request('college_id');
         $colCount = 4 + ($showYearCol ? 1 : 0) + ($showCollegeCol ? 1 : 0);
     @endphp
-
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-auto">
         <table class="w-full text-sm">
             <thead>
@@ -153,6 +196,7 @@
             </tbody>
         </table>
     </div>
+    @endif
     <div>{{ $research->withQueryString()->links() }}</div>
 </div>
 @endsection

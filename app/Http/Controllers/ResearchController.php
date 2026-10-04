@@ -266,6 +266,10 @@ class ResearchController extends Controller
     {
         if ($r = $this->authCheck()) return $r;
 
+        if ($request->boolean('print') && ! in_array(session('user_role'), ['admin', 'super_admin'], true)) {
+            abort(403);
+        }
+
         $query = Research::with(['user', 'college', 'category']);
 
         $role = session('user_role');
