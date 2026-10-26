@@ -16,7 +16,7 @@ class CollegeSeeder extends Seeder
             ['name' => 'College of Fisheries and Aquatic Sciences', 'code' => 'CFAS', 'description' => 'Advancing aquatic science, marine research, and sustainable fisheries.', 'dean' => 'Dr. Pedro Lim', 'contact_email' => 'cfas@university.edu.ph', 'active' => true],
             ['name' => 'College of Industrial Technology', 'code' => 'CIT', 'description' => 'Developing technical skills and advancing industrial technology research.', 'dean' => 'Dr. Ricardo Bautista', 'contact_email' => 'cit@university.edu.ph', 'active' => true],
             ['name' => 'College of Criminal Justice Education', 'code' => 'CCJE', 'description' => 'Advancing criminology, law enforcement, and criminal justice research.', 'dean' => 'Dr. Elena Gomez', 'contact_email' => 'ccje@university.edu.ph', 'active' => true],
-            ['name' => 'College of Health and Medicine', 'code' => 'CHM', 'description' => 'Promoting health sciences, medical research, and community health programs.', 'dean' => 'Dr. Roberto Dela Cruz', 'contact_email' => 'chm@university.edu.ph', 'active' => true],
+            ['name' => 'College of Hospitality Management', 'code' => 'CHM', 'description' => 'Advancing hospitality management, tourism, and service industry research.', 'dean' => 'Dr. Roberto Dela Cruz', 'contact_email' => 'chm@university.edu.ph', 'active' => true],
             ['name' => 'Graduate School', 'code' => 'GS', 'description' => 'Advancing graduate-level research, scholarly inquiry, and post-baccalaureate academic programs.', 'dean' => 'Dr. Carmen Villanueva', 'contact_email' => 'gs@university.edu.ph', 'active' => true],
         ];
 
