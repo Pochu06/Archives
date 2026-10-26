@@ -74,13 +74,19 @@ class AuthController extends Controller
 
     public function login(Request $request, RecaptchaService $recaptcha)
     {
-        $request->validate([
+        $rules = [
             'email' => 'required|email',
             'password' => 'required',
-            'g-recaptcha-response' => 'required|string',
-        ]);
+        ];
 
-        if (! $recaptcha->verify($request->input('g-recaptcha-response'), $request->ip())) {
+        if (config('services.recaptcha.enabled')) {
+            $rules['g-recaptcha-response'] = 'required|string';
+        }
+
+        $request->validate($rules);
+
+        if (config('services.recaptcha.enabled')
+            && ! $recaptcha->verify($request->input('g-recaptcha-response'), $request->ip())) {
             return back()->withErrors(['g-recaptcha-response' => 'Please complete the CAPTCHA challenge.'])->withInput();
         }
 

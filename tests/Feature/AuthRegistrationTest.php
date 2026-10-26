@@ -84,7 +84,11 @@ class AuthRegistrationTest extends TestCase
 
     public function test_pending_account_cannot_log_in_until_approved(): void
     {
-        config(['services.recaptcha.site_key' => 'test-site-key', 'services.recaptcha.secret_key' => 'test-secret']);
+        config([
+            'services.recaptcha.enabled' => true,
+            'services.recaptcha.site_key' => 'test-site-key',
+            'services.recaptcha.secret_key' => 'test-secret',
+        ]);
 
         $user = User::create([
             'name' => 'Test Student',
@@ -186,7 +190,11 @@ class AuthRegistrationTest extends TestCase
 
     public function test_login_requires_email_verification_and_successful_captcha(): void
     {
-        config(['services.recaptcha.site_key' => 'test-site-key', 'services.recaptcha.secret_key' => 'test-secret']);
+        config([
+            'services.recaptcha.enabled' => true,
+            'services.recaptcha.site_key' => 'test-site-key',
+            'services.recaptcha.secret_key' => 'test-secret',
+        ]);
 
         $user = User::create([
             'name' => 'Test Student',
@@ -223,6 +231,31 @@ class AuthRegistrationTest extends TestCase
             'password' => 'Pass123!',
             'g-recaptcha-response' => 'valid-token',
         ])->assertRedirect(route('dashboard'))->assertSessionHas('user_id', $user->id);
+    }
+
+    public function test_login_succeeds_without_captcha_when_recaptcha_is_disabled(): void
+    {
+        config(['services.recaptcha.enabled' => false]);
+
+        $user = User::create([
+            'name' => 'Test Student',
+            'email' => 'student@example.com',
+            'password' => Hash::make('Pass123!'),
+            'role' => 'student',
+            'college_id' => 1,
+            'status' => 'active',
+        ]);
+        $user->markEmailAsVerified();
+
+        Http::fake();
+
+        $this->post(route('login.post'), [
+            'email' => $user->email,
+            'password' => 'Pass123!',
+        ])->assertRedirect(route('dashboard'))
+            ->assertSessionHas('user_id', $user->id);
+
+        Http::assertNothingSent();
     }
 
     public function test_email_verification_requires_a_valid_signed_link(): void

@@ -18,11 +18,30 @@ class AuthPasswordTest extends TestCase
 
     public function test_login_submit_starts_disabled_until_recaptcha_completes(): void
     {
+        config([
+            'services.recaptcha.enabled' => true,
+            'services.recaptcha.site_key' => 'test-site-key',
+        ]);
+
         $this->get('/login')
             ->assertOk()
             ->assertSee('<button id="loginSubmitButton" type="submit" disabled', false)
+            ->assertSee('class="g-recaptcha', false)
             ->assertSee('data-callback="enableLoginButton"', false)
             ->assertSee('data-expired-callback="disableLoginButton"', false)
             ->assertSee('data-error-callback="disableLoginButton"', false);
+    }
+
+    public function test_login_form_hides_recaptcha_and_enables_submit_when_recaptcha_is_disabled(): void
+    {
+        config(['services.recaptcha.enabled' => false]);
+
+        $response = $this->get('/login')->assertOk();
+
+        $this->assertDoesNotMatchRegularExpression(
+            '/<button[^>]*id="loginSubmitButton"[^>]*\sdisabled(?:\s|>)/',
+            $response->getContent()
+        );
+        $response->assertDontSee('g-recaptcha')->assertDontSee('recaptcha/api.js');
     }
 }

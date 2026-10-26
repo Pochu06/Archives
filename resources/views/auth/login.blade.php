@@ -69,20 +69,22 @@
                     </div>
                     @error('password')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
-                <div class="mb-5 flex justify-center">
-                    <div class="w-full max-w-[300px] flex flex-col items-center text-center">
-                        @if (config('services.recaptcha.site_key'))
-                            <div class="g-recaptcha mx-auto" data-sitekey="{{ config('services.recaptcha.site_key') }}" data-callback="enableLoginButton" data-expired-callback="disableLoginButton" data-error-callback="disableLoginButton"></div>
-                        @else
-                            <p class="text-red-600 text-sm">CAPTCHA is not configured. Please contact the administrator.</p>
-                        @endif
-                        @error('g-recaptcha-response')<p class="text-red-500 text-xs mt-1 text-center">{{ $message }}</p>@enderror
+                @if (config('services.recaptcha.enabled'))
+                    <div class="mb-5 flex justify-center">
+                        <div class="w-full max-w-[300px] flex flex-col items-center text-center">
+                            @if (config('services.recaptcha.site_key'))
+                                <div class="g-recaptcha mx-auto" data-sitekey="{{ config('services.recaptcha.site_key') }}" data-callback="enableLoginButton" data-expired-callback="disableLoginButton" data-error-callback="disableLoginButton"></div>
+                            @else
+                                <p class="text-red-600 text-sm">CAPTCHA is not configured. Please contact the administrator.</p>
+                            @endif
+                            @error('g-recaptcha-response')<p class="text-red-500 text-xs mt-1 text-center">{{ $message }}</p>@enderror
+                        </div>
                     </div>
-                </div>
+                @endif
                 @if (session('status'))
                     <p class="text-green-600 text-sm mb-4">{{ session('status') }}</p>
                 @endif
-                <button id="loginSubmitButton" type="submit" disabled class="w-full bg-orange-600 text-white py-3.5 rounded-xl font-bold text-lg hover:bg-orange-700 transition shadow-lg disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-orange-600">
+                <button id="loginSubmitButton" type="submit" @disabled(config('services.recaptcha.enabled')) class="w-full bg-orange-600 text-white py-3.5 rounded-xl font-bold text-lg hover:bg-orange-700 transition shadow-lg disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-orange-600">
                     <i class="fas fa-sign-in-alt mr-2"></i> Sign In
                 </button>
             </form>
@@ -95,15 +97,17 @@
                     <button type="submit" class="text-orange-600 font-semibold hover:underline">Resend verification email</button>
                 </form>
             @endif
-            <script>
-                window.enableLoginButton = (token) => {
-                    document.getElementById('loginSubmitButton').disabled = !token;
-                };
-                window.disableLoginButton = () => {
-                    document.getElementById('loginSubmitButton').disabled = true;
-                };
-            </script>
-            <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+            @if (config('services.recaptcha.enabled'))
+                <script>
+                    window.enableLoginButton = (token) => {
+                        document.getElementById('loginSubmitButton').disabled = !token;
+                    };
+                    window.disableLoginButton = () => {
+                        document.getElementById('loginSubmitButton').disabled = true;
+                    };
+                </script>
+                <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+            @endif
             <p class="text-center text-sm mt-4"><a href="{{ route('password.request') }}" class="text-orange-600 font-semibold hover:underline">Forgot your password?</a></p>
             <p class="text-center text-gray-600 mt-6 text-sm">
                 Don't have an account? <a href="{{ route('register') }}" class="text-orange-600 font-semibold hover:underline">Register here</a>
