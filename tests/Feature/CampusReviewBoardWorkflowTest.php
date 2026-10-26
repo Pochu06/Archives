@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Research;
+use App\Support\ResearchToken;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -39,11 +40,27 @@ class CampusReviewBoardWorkflowTest extends TestCase
         Schema::create('research', function (Blueprint $table) {
             $table->id();
             $table->string('title');
+            $table->longText('abstract')->nullable();
+            $table->longText('introduction')->nullable();
+            $table->longText('methodology')->nullable();
+            $table->longText('results')->nullable();
+            $table->longText('discussion')->nullable();
+            $table->longText('references')->nullable();
+            $table->longText('conclusion')->nullable();
+            $table->longText('recommendations')->nullable();
+            $table->string('keywords')->nullable();
             $table->string('authors')->nullable();
+            $table->string('thrust')->nullable();
+            $table->json('thrusts')->nullable();
             $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('college_id')->nullable();
             $table->unsignedBigInteger('category_id')->nullable();
+            $table->string('academic_level')->nullable();
+            $table->string('academic_program')->nullable();
             $table->unsignedInteger('publication_year')->nullable();
+            $table->string('table_design')->nullable();
+            $table->string('file_path')->nullable();
+            $table->string('file_name')->nullable();
             $table->string('status');
             $table->unsignedBigInteger('approved_by')->nullable();
             $table->timestamp('approved_at')->nullable();
@@ -65,6 +82,14 @@ class CampusReviewBoardWorkflowTest extends TestCase
             $table->text('rejection_reason')->nullable();
             $table->unsignedInteger('view_count')->default(0);
             $table->unsignedInteger('download_count')->default(0);
+            $table->timestamps();
+        });
+        Schema::create('thrusts', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->text('description')->nullable();
+            $table->json('keywords')->nullable();
+            $table->boolean('active')->default(true);
             $table->timestamps();
         });
         Schema::create('submission_status_events', function (Blueprint $table) {
@@ -109,6 +134,7 @@ class CampusReviewBoardWorkflowTest extends TestCase
         Schema::dropIfExists('submission_status_events');
         Schema::dropIfExists('notifications');
         Schema::dropIfExists('research');
+        Schema::dropIfExists('thrusts');
         Schema::dropIfExists('categories');
         Schema::dropIfExists('colleges');
         Schema::dropIfExists('admin_action_logs');
@@ -289,6 +315,82 @@ class CampusReviewBoardWorkflowTest extends TestCase
             ->assertOk()
             ->assertSee('Campus Review Board')
             ->assertSee('Returned for revisions');
+    }
+
+    public function test_rde_revision_resubmission_returns_to_campus_review_board(): void
+    {
+        $collegeId = DB::table('colleges')->insertGetId([
+            'name' => 'College of Arts and Sciences',
+            'code' => 'CAS',
+        ]);
+        $categoryId = DB::table('categories')->insertGetId([
+            'name' => 'Thesis',
+        ]);
+        $submitterId = DB::table('users')->insertGetId([
+            'name' => 'Researcher',
+            'role' => 'student',
+            'status' => 'active',
+        ]);
+        $boardId = DB::table('users')->insertGetId([
+            'name' => 'Board Reviewer',
+            'role' => 'campus_review_board',
+            'status' => 'active',
+        ]);
+        $paperId = DB::table('research')->insertGetId([
+            'title' => 'Research returned by RDE',
+            'authors' => 'A. Researcher',
+            'abstract' => 'Abstract',
+            'introduction' => 'Introduction',
+            'methodology' => 'Methodology',
+            'results' => 'Results',
+            'references' => 'References',
+            'conclusion' => 'Conclusion',
+            'recommendations' => 'Recommendations',
+            'keywords' => 'research',
+            'college_id' => $collegeId,
+            'category_id' => $categoryId,
+            'academic_level' => 'BS',
+            'publication_year' => now()->year,
+            'user_id' => $submitterId,
+            'status' => Research::STATUS_REVISION_RDE,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->withSession(['user_id' => $submitterId, 'user_role' => 'student'])
+            ->put(route('research.update', ResearchToken::encode($paperId)), [
+                'title' => 'Research returned by RDE',
+                'abstract' => 'Updated abstract',
+                'introduction' => 'Introduction',
+                'methodology' => 'Methodology',
+                'results' => 'Results',
+                'references' => 'References',
+                'conclusion' => 'Conclusion',
+                'recommendations' => 'Recommendations',
+                'keywords' => 'research',
+                'authors' => 'A. Researcher',
+                'college_id' => $collegeId,
+                'category_id' => $categoryId,
+                'academic_level' => 'BS',
+                'publication_year' => now()->year,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Research paper updated and resubmitted for Campus Review Board review.');
+
+        $this->assertDatabaseHas('research', [
+            'id' => $paperId,
+            'status' => Research::STATUS_PENDING_CAMPUS_REVIEW,
+            'revision_notes' => null,
+        ]);
+        $this->assertDatabaseHas('submission_status_events', [
+            'research_id' => $paperId,
+            'action' => 'submission_updated_status_transition',
+            'from_status' => Research::STATUS_REVISION_RDE,
+            'to_status' => Research::STATUS_PENDING_CAMPUS_REVIEW,
+        ]);
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_id' => $boardId,
+        ]);
     }
 
     public function test_existing_rde_queue_items_are_routed_to_the_board_and_migration_rollback_is_scoped(): void

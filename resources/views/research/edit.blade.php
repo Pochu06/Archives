@@ -30,7 +30,7 @@
 @section('page-subtitle', 'Update the archived research paper')
 @section('content')
 <div class="max-w-4xl mx-auto">
-    @if(in_array($research->status, [\App\Models\Research::STATUS_REVISION_COLLEGE, \App\Models\Research::STATUS_REVISION_RDE]) && (!empty($research->revision_field_note_entries) || $research->revision_notes))
+    @if(in_array($research->status, [\App\Models\Research::STATUS_REVISION_COLLEGE, \App\Models\Research::STATUS_REVISION_CAMPUS_REVIEW, \App\Models\Research::STATUS_REVISION_RDE]) && (!empty($research->revision_field_note_entries) || $research->revision_notes))
     <div class="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-5">
         <div class="flex items-start gap-3">
             <div class="mt-0.5 text-amber-600"><i class="fas fa-rotate-left"></i></div>
@@ -56,7 +56,7 @@
                 @if($research->revision_notes)
                 <p class="text-sm text-amber-800 mt-1">{{ $research->revision_notes }}</p>
                 @endif
-                <p class="text-xs text-amber-700 mt-2">Saving this form will resubmit the paper for {{ $research->status === \App\Models\Research::STATUS_REVISION_COLLEGE ? 'college' : 'RDE' }} approval.</p>
+                <p class="text-xs text-amber-700 mt-2">Saving this form will resubmit the paper for {{ $research->status === \App\Models\Research::STATUS_REVISION_COLLEGE ? 'college' : 'Campus Review Board' }} review.</p>
             </div>
         </div>
     </div>

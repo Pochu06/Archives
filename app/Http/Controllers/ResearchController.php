@@ -1007,7 +1007,7 @@ class ResearchController extends Controller
                 $validated['revision_field_notes'] = null;
                 $validated['rejection_reason'] = null;
             } elseif ($research->status === Research::STATUS_REVISION_RDE) {
-                $validated['status'] = Research::STATUS_PENDING_RDE;
+                $validated['status'] = Research::STATUS_PENDING_CAMPUS_REVIEW;
                 $validated['revision_notes'] = null;
                 $validated['revision_fields'] = null;
                 $validated['revision_field_notes'] = null;
