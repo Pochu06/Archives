@@ -91,7 +91,7 @@
             <a href="{{ route('research.create') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('research.create') ? 'active' : '' }}">
                 <i class="fas fa-plus-circle w-5"></i><span>Archive Paper</span>
             </a>
-            @if(session('user_role') === 'student')
+            @if(in_array(session('user_role'), ['student', 'faculty']))
             <a href="{{ route('submissions.index') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('submissions.index') ? 'active' : '' }}">
                 <i class="fas fa-paper-plane w-5"></i><span>My Submissions</span>
             </a>
@@ -104,6 +104,9 @@
             <a href="{{ route('profile.edit') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('profile.*') ? 'active' : '' }}">
                 <i class="fas fa-user-cog w-5"></i><span>My Profile</span>
             </a>
+            <a href="{{ route('user-guide') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('user-guide') ? 'active' : '' }}">
+                <i class="fas fa-circle-question w-5"></i><span>User Guide</span>
+            </a>
             
             @if(in_array(session('user_role'), ['admin', 'super_admin']))
             <div class="pt-3">
@@ -113,6 +116,9 @@
             @if(in_array(session('user_role'), ['super_admin', 'admin']))
             <a href="{{ route('users.pending') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('users.pending') ? 'active' : '' }}">
                 <i class="fas fa-user-clock w-5"></i><span>Pending Registrations</span>
+            </a>
+            <a href="{{ route('submissions.category-review') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('submissions.category-review') ? 'active' : '' }}">
+                <i class="fas fa-list-check w-5"></i><span>Classification Review</span>
             </a>
             @endif
             @if(in_array(session('user_role'), ['super_admin']))
@@ -141,6 +147,18 @@
                 @endif
             </a>
             @endif
+            @if(session('user_role') === 'campus_review_board')
+            <a href="{{ route('submissions.campus-review-board') }}" class="sidebar-link flex items-center justify-between px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('submissions.campus-review-board') ? 'active' : '' }}">
+                <span class="flex items-center space-x-3">
+                    <i class="fas fa-users w-5"></i><span>Campus Review Board</span>
+                </span>
+                @if(($campusReviewBoardCount ?? 0) > 0)
+                <span class="ml-3 min-w-[1.5rem] h-6 px-2 inline-flex items-center justify-center rounded-full bg-red-500 text-white text-xs font-bold">
+                    {{ $campusReviewBoardCount }}
+                </span>
+                @endif
+            </a>
+            @endif
             @if(session('user_role') === 'super_admin' || (session('user_role') === 'admin' && !session('user_college_id')))
             <a href="{{ route('submissions.rde') }}" class="sidebar-link flex items-center justify-between px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('submissions.rde') ? 'active' : '' }}">
                 <span class="flex items-center space-x-3">
@@ -151,6 +169,11 @@
                     {{ $rdeApprovalCount }}
                 </span>
                 @endif
+            </a>
+            @endif
+            @if(session('user_role') === 'super_admin' || (session('user_role') === 'admin' && !session('user_college_id')))
+            <a href="{{ route('journal-issues.index') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('journal-issues.*') ? 'active' : '' }}">
+                <i class="fas fa-book-open w-5"></i><span>Journal Issues</span>
             </a>
             @endif
             @if(session('user_role') === 'super_admin' || (session('user_role') === 'admin' && !session('user_college_id')))
@@ -167,6 +190,9 @@
             </a>
             <a href="{{ route('super-admin.admin-action-logs.index') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('super-admin.admin-action-logs.*') ? 'active' : '' }}">
                 <i class="fas fa-clipboard-list w-5"></i><span>Admin Logs</span>
+            </a>
+            <a href="{{ route('admin.backups.index') }}" class="sidebar-link flex items-center space-x-3 px-3 py-2.5 rounded-lg text-orange-100 text-sm {{ request()->routeIs('admin.backups.*') ? 'active' : '' }}">
+                <i class="fas fa-database w-5"></i><span>Backup &amp; Restore</span>
             </a>
             @endif
             @endif
@@ -241,6 +267,7 @@
                     @include('layouts.partials.language-selector', ['containerClass' => ''])
                     @include('layouts.partials.theme-selector', ['containerClass' => ''])
                     <a href="{{ route('research.public') }}" class="px-3 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">Browse Research</a>
+                    <a href="{{ route('user-guide') }}" class="px-3 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">User Guide</a>
                     <a href="{{ route('login') }}" class="px-3 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100">Login</a>
                     <a href="{{ route('register') }}" class="px-3 py-2 rounded-lg text-sm font-semibold text-white bg-orange-600 hover:bg-orange-700">Register</a>
                 </div>

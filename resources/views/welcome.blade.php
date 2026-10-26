@@ -42,12 +42,18 @@
             </div>
             @if(session('user_id'))
                 <div class="flex items-center space-x-2 sm:space-x-3 ml-auto">
+                    <a href="{{ route('user-guide') }}" class="text-gray-700 hover:text-orange-600 font-medium px-3 sm:px-4 py-2 rounded-lg hover:bg-orange-50 transition text-sm sm:text-base">
+                        User Guide
+                    </a>
                     <a href="{{ route('dashboard') }}" class="text-gray-700 hover:text-orange-600 font-medium px-3 sm:px-4 py-2 rounded-lg hover:bg-orange-50 transition text-sm sm:text-base">
                         Dashboard
                     </a>
                 </div>
             @else
                 <div class="flex items-center space-x-2 sm:space-x-3 ml-auto">
+                    <a href="{{ route('user-guide') }}" class="text-gray-700 hover:text-orange-600 font-medium px-3 sm:px-4 py-2 rounded-lg hover:bg-orange-50 transition text-sm sm:text-base">
+                        User Guide
+                    </a>
                     <a href="{{ route('login') }}" class="text-gray-700 hover:text-orange-600 font-medium px-3 sm:px-4 py-2 rounded-lg hover:bg-orange-50 transition text-sm sm:text-base">
                         <i class="fas fa-sign-in-alt mr-1"></i> Login
                     </a>

@@ -4,6 +4,7 @@
 @section('page-subtitle', 'System-wide overview and statistics')
 @section('content')
 <div class="space-y-6">
+    @include('dashboards.partials.analytics', ['analytics' => $analytics])
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
@@ -23,6 +24,25 @@
         <p class="mt-3 text-xs {{ ($aiFeaturesEnabled ?? true) ? 'text-emerald-700' : 'text-amber-700' }}">
             Status: {{ ($aiFeaturesEnabled ?? true) ? 'Enabled' : 'Disabled by super admin' }}
         </p>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div class="mb-4">
+            <h3 class="font-bold text-gray-800 text-lg">Bulk Download Limits</h3>
+            <p class="text-sm text-gray-600 mt-1">Set the maximum number of papers and total generated PDF size per ZIP archive.</p>
+        </div>
+        <form action="{{ route('settings.bulk-download') }}" method="POST" class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+            @csrf
+            <label class="block text-sm font-medium text-gray-700">
+                Maximum papers (1–100)
+                <input type="number" name="max_files" min="1" max="100" required value="{{ old('max_files', $bulkDownloadLimits['max_files']) }}" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2">
+            </label>
+            <label class="block text-sm font-medium text-gray-700">
+                Maximum archive size in MB (1–512)
+                <input type="number" name="max_size_mb" min="1" max="512" required value="{{ old('max_size_mb', $bulkDownloadLimits['max_size_mb']) }}" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2">
+            </label>
+            <button type="submit" class="bg-orange-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-orange-700">Save Limits</button>
+        </form>
     </div>
 
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">

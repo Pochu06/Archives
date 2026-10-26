@@ -29,6 +29,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsTo(College::class);
     }
 
+    public function advisedResearch()
+    {
+        return $this->hasMany(Research::class, 'adviser_id');
+    }
+
     public function research()
     {
         return $this->hasMany(Research::class, 'user_id');
@@ -48,6 +53,9 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return match($this->role) {
             'super_admin' => 'bg-purple-100 text-purple-800',
+            'campus_review_board' => 'bg-violet-100 text-violet-800',
+            'adviser' => 'bg-cyan-100 text-cyan-800',
+            'faculty' => 'bg-blue-100 text-blue-800',
             'admin' => 'bg-orange-100 text-orange-800',
             'student' => 'bg-green-100 text-green-800',
             default => 'bg-gray-100 text-gray-800',

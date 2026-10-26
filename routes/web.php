@@ -13,6 +13,9 @@ use App\Http\Controllers\DownloadRequestController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SubmissionController;
 use App\Http\Controllers\AdminActionLogController;
+use App\Http\Controllers\JournalIssueController;
+use App\Http\Controllers\AdminBackupController;
+use App\Http\Controllers\UserGuideController;
 
 // Welcome / Landing
 Route::get('/', [ResearchController::class, 'landing'])->name('landing');
@@ -32,7 +35,14 @@ Route::post('/email/verification-notification', [AuthController::class, 'resendV
 
 // Dashboard
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+Route::get('/user-guide', [UserGuideController::class, 'index'])->name('user-guide');
+Route::get('/admin/backups', [AdminBackupController::class, 'index'])->name('admin.backups.index');
+Route::post('/admin/backups', [AdminBackupController::class, 'create'])->name('admin.backups.create');
+Route::get('/admin/backups/{name}', [AdminBackupController::class, 'download'])->where('name', 'archives-backup-[0-9]{8}-[0-9]{6}-[0-9a-fA-F-]{36}\.zip')->name('admin.backups.download');
+Route::post('/admin/backups/restore', [AdminBackupController::class, 'restore'])->name('admin.backups.restore');
+Route::get('/dashboard/analytics/export', [DashboardController::class, 'export'])->name('dashboard.analytics.export');
 Route::post('/settings/ai-features', [DashboardController::class, 'updateAiFeatures'])->name('settings.ai-features');
+Route::post('/settings/bulk-download', [DashboardController::class, 'updateBulkDownloadLimits'])->name('settings.bulk-download');
 
 // AI Chatbot
 Route::get('/chatbot', [ChatbotController::class, 'index'])->name('chatbot.index');
@@ -65,6 +75,7 @@ Route::put('/research/{id}', [ResearchController::class, 'update'])->middleware(
 Route::delete('/research/{id}', [ResearchController::class, 'destroy'])->middleware(\App\Http\Middleware\DecodeResearchToken::class)->name('research.destroy');
 Route::get('/research/{id}/preview', [ResearchController::class, 'preview'])->middleware(\App\Http\Middleware\DecodeResearchToken::class)->name('research.preview');
 Route::get('/research/{id}/download', [ResearchController::class, 'download'])->middleware(\App\Http\Middleware\DecodeResearchToken::class)->name('research.download');
+Route::post('/research/bulk-download', [ResearchController::class, 'bulkDownload'])->name('research.bulk-download');
 Route::get('/research/{id}/certificate', [ResearchController::class, 'certificate'])->middleware(\App\Http\Middleware\DecodeResearchToken::class)->name('research.certificate');
 Route::get('/certificates/{id}/verify', [ResearchController::class, 'verifyCertificate'])->name('research.certificate.verify');
 Route::post('/research/upload-image', [ResearchController::class, 'uploadImage'])->name('research.upload-image');
@@ -72,15 +83,34 @@ Route::post('/research/delete-image', [ResearchController::class, 'deleteImage']
 
 // Submission Workflow
 Route::get('/my-submissions', [SubmissionController::class, 'index'])->name('submissions.index');
+Route::get('/submissions/category-review', [SubmissionController::class, 'categoryReview'])->name('submissions.category-review');
+Route::put('/submissions/{id}/category-classification', [SubmissionController::class, 'updateCategoryClassification'])->name('submissions.category-classification.update');
 Route::get('/college-submissions', [SubmissionController::class, 'collegeIndex'])->name('submissions.college');
+Route::get('/campus-review-board', [SubmissionController::class, 'campusReviewBoardIndex'])->name('submissions.campus-review-board');
 Route::get('/rde-submissions', [SubmissionController::class, 'rdeIndex'])->name('submissions.rde');
 Route::post('/submissions/{id}/college-approve', [SubmissionController::class, 'approveByCollege'])->name('submissions.college-approve');
 Route::post('/submissions/bulk-update', [SubmissionController::class, 'bulkUpdate'])->name('submissions.bulk-update');
+Route::post('/submissions/{id}/assign-adviser', [SubmissionController::class, 'assignAdviser'])->name('submissions.assign-adviser');
+Route::post('/adviser/research/{id}/review', [SubmissionController::class, 'recordAdviserReview'])->name('adviser.research.review');
 Route::post('/submissions/{id}/college-revision', [SubmissionController::class, 'requestRevisionByCollege'])->name('submissions.college-revision');
 Route::post('/submissions/{id}/college-reject', [SubmissionController::class, 'rejectByCollege'])->name('submissions.college-reject');
+Route::post('/submissions/{id}/campus-review-board-approve', [SubmissionController::class, 'approveByCampusReviewBoard'])->name('submissions.campus-review-board-approve');
+Route::post('/submissions/{id}/campus-review-board-revision', [SubmissionController::class, 'requestRevisionByCampusReviewBoard'])->name('submissions.campus-review-board-revision');
+Route::post('/submissions/{id}/campus-review-board-reject', [SubmissionController::class, 'rejectByCampusReviewBoard'])->name('submissions.campus-review-board-reject');
 Route::post('/submissions/{id}/rde-approve', [SubmissionController::class, 'approveByRde'])->name('submissions.rde-approve');
 Route::post('/submissions/{id}/rde-revision', [SubmissionController::class, 'requestRevisionByRde'])->name('submissions.rde-revision');
 Route::post('/submissions/{id}/rde-reject', [SubmissionController::class, 'rejectByRde'])->name('submissions.rde-reject');
+
+// Journal Issue Management
+Route::get('/journal-issues', [JournalIssueController::class, 'index'])->name('journal-issues.index');
+Route::get('/journal-issues/create', [JournalIssueController::class, 'create'])->name('journal-issues.create');
+Route::post('/journal-issues', [JournalIssueController::class, 'store'])->name('journal-issues.store');
+Route::get('/journal-issues/{journalIssue}', [JournalIssueController::class, 'show'])->name('journal-issues.show');
+Route::get('/journal-issues/{journalIssue}/edit', [JournalIssueController::class, 'edit'])->name('journal-issues.edit');
+Route::put('/journal-issues/{journalIssue}', [JournalIssueController::class, 'update'])->name('journal-issues.update');
+Route::post('/journal-issues/{journalIssue}/papers', [JournalIssueController::class, 'updatePapers'])->name('journal-issues.papers.update');
+Route::post('/journal-issues/{journalIssue}/finalize', [JournalIssueController::class, 'finalize'])->name('journal-issues.finalize');
+Route::post('/journal-issues/{journalIssue}/reopen', [JournalIssueController::class, 'reopen'])->name('journal-issues.reopen');
 
 // Download Requests
 Route::post('/research/{id}/request-download', [DownloadRequestController::class, 'store'])->middleware(\App\Http\Middleware\DecodeResearchToken::class)->name('download-request.store');

@@ -9,11 +9,14 @@
             <select name="status" class="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-orange-500">
                 <option value="">All Status</option>
                 <option value="pending_college" {{ request('status') === 'pending_college' ? 'selected' : '' }}>Pending College Approval</option>
+                <option value="pending_campus_review" {{ request('status') === 'pending_campus_review' ? 'selected' : '' }}>Pending Campus Review Board</option>
                 <option value="pending_rde" {{ request('status') === 'pending_rde' ? 'selected' : '' }}>Pending RDE Approval</option>
                 <option value="revision_college" {{ request('status') === 'revision_college' ? 'selected' : '' }}>For College Revision</option>
+                <option value="revision_campus_review" {{ request('status') === 'revision_campus_review' ? 'selected' : '' }}>For Campus Review Board Revision</option>
                 <option value="revision_rde" {{ request('status') === 'revision_rde' ? 'selected' : '' }}>For RDE Revision</option>
                 <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>Approved</option>
                 <option value="rejected_college" {{ request('status') === 'rejected_college' ? 'selected' : '' }}>Rejected by College</option>
+                <option value="rejected_campus_review" {{ request('status') === 'rejected_campus_review' ? 'selected' : '' }}>Rejected by Campus Review Board</option>
                 <option value="rejected_rde" {{ request('status') === 'rejected_rde' ? 'selected' : '' }}>Rejected by RDE</option>
             </select>
             <button type="submit" class="bg-orange-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-orange-700">Filter</button>
@@ -64,7 +67,7 @@
                             @if($r->status !== \App\Models\Research::STATUS_APPROVED)
                             <a href="{{ route('research.edit', \App\Support\ResearchToken::encode($r->id)) }}" class="text-xs bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-100">
                                 <i class="fas fa-edit"></i>
-                                @if(in_array($r->status, [\App\Models\Research::STATUS_REVISION_COLLEGE, \App\Models\Research::STATUS_REVISION_RDE]))
+                                @if(in_array($r->status, [\App\Models\Research::STATUS_REVISION_COLLEGE, \App\Models\Research::STATUS_REVISION_CAMPUS_REVIEW, \App\Models\Research::STATUS_REVISION_RDE]))
                                 Revise
                                 @endif
                             </a>

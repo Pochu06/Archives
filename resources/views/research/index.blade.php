@@ -34,6 +34,12 @@
                 <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
                 @endforeach
             </select>
+            <select name="academic_level" class="border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:border-orange-500">
+                <option value="">All Academic Levels</option>
+                @foreach($academicLevels as $level => $label)
+                <option value="{{ $level }}" {{ request('academic_level') === $level ? 'selected' : '' }}>{{ $label }}</option>
+                @endforeach
+            </select>
                 <select name="year" class="border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:border-orange-500" title="Year from">
                     <option value="">Year From</option>
                     @for($filterYear = date('Y'); $filterYear >= 2020; $filterYear--)
@@ -78,6 +84,7 @@
                 <input type="hidden" name="search" value="{{ request('search') }}">
                 <input type="hidden" name="college_id" value="{{ request('college_id') }}">
                 <input type="hidden" name="category_id" value="{{ request('category_id') }}">
+                <input type="hidden" name="academic_level" value="{{ request('academic_level') }}">
                 <input type="hidden" name="year" value="{{ request('year') }}">
                 <input type="hidden" name="year_to" value="{{ request('year_to') }}">
                 <input type="hidden" name="status" value="{{ request('status') }}">
@@ -121,13 +128,34 @@
         </div>
     </div>
 
+    @if(session('user_id'))
+    <form method="POST" action="{{ route('research.bulk-download') }}" id="archiveBulkDownloadForm" class="no-print rounded-xl border border-blue-100 bg-blue-50 p-4">
+        @csrf
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <p class="text-sm text-blue-900">Select papers you are permitted to download and prepare their reports in one ZIP archive.</p>
+            <div class="flex items-center gap-3">
+                <span id="archiveBulkDownloadStatus" class="text-xs text-gray-600" aria-live="polite"></span>
+                <button type="submit" disabled class="archive-bulk-download-button rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">
+                    <i class="fas fa-file-zipper mr-1"></i> Download selected
+                </button>
+            </div>
+        </div>
+    @endif
+
     @if(session('user_role') === 'student')
     @if($research->count())
     <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
         @foreach($research as $r)
         <article class="flex flex-col rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
+            @if(session('user_id'))
+            <label class="no-print mb-3 inline-flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
+                <input type="checkbox" name="research_ids[]" value="{{ $r->id }}" class="archive-bulk-download-checkbox h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                Include in ZIP
+            </label>
+            @endif
             <div class="mb-3 flex items-center justify-between gap-2">
                 <span class="rounded px-2.5 py-1 text-xs font-bold {{ $r->category->badge_classes ?? 'bg-gray-100 text-gray-700' }}">{{ $r->category->name ?? 'Uncategorized' }}</span>
+                <span class="text-xs text-gray-500">{{ ['BS' => 'BS', 'GS' => 'GS'][$r->academic_level] ?? 'Needs classification review' }}</span>
                 <span class="text-xs text-gray-500 dark:text-gray-400">{{ $r->publication_year }}</span>
             </div>
 
@@ -169,13 +197,15 @@
         $isRange = $yearFrom && $yearTo && (string) $yearFrom !== (string) $yearTo;
         $showYearCol = $isRange;
         $showCollegeCol = ! request('college_id');
-        $colCount = 4 + ($showYearCol ? 1 : 0) + ($showCollegeCol ? 1 : 0);
+        $showBulkCheckboxes = (bool) session('user_id');
+        $colCount = 4 + ($showYearCol ? 1 : 0) + ($showCollegeCol ? 1 : 0) + ($showBulkCheckboxes ? 1 : 0);
     @endphp
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-auto">
         <table class="w-full text-sm">
             <thead>
                 <tr class="text-left text-xs uppercase text-gray-500 border-b border-gray-200">
                     <th class="px-4 py-3 w-14">No.</th>
+                    @if($showBulkCheckboxes)<th class="no-print px-4 py-3">ZIP</th>@endif
                     <th class="px-4 py-3">Title of Research</th>
                     <th class="px-4 py-3">Researchers / Authors</th>
                     <th class="px-4 py-3">Category</th>
@@ -187,9 +217,12 @@
                 @forelse($research as $r)
                 <tr>
                     <td class="px-4 py-3">{{ $loop->iteration + ($research->currentPage() - 1) * $research->perPage() }}</td>
+                    @if($showBulkCheckboxes)
+                    <td class="no-print px-4 py-3"><input type="checkbox" name="research_ids[]" value="{{ $r->id }}" aria-label="Include {{ $r->title }} in ZIP" class="archive-bulk-download-checkbox h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"></td>
+                    @endif
                     <td class="px-4 py-3"><a href="{{ route('research.show', \App\Support\ResearchToken::encode($r->id)) }}" class="hover:text-orange-600 transition">{{ $r->title }}</a></td>
                     <td class="px-4 py-3">{{ $r->authors }}</td>
-                    <td class="px-4 py-3">{{ $r->category->name ?? 'N/A' }}</td>
+                    <td class="px-4 py-3">{{ $r->category->name ?? 'N/A' }} · {{ ['BS' => 'BS', 'GS' => 'GS'][$r->academic_level] ?? 'Needs review' }}</td>
                     @if($showYearCol)<td class="px-4 py-3">{{ $r->publication_year }}</td>@endif
                     @if($showCollegeCol)<td class="px-4 py-3">{{ $r->college->code ?? 'N/A' }}</td>@endif
                 </tr>
@@ -199,6 +232,29 @@
             </tbody>
         </table>
     </div>
+    @endif
+    @if(session('user_id'))
+    </form>
+    <script>
+        (() => {
+            const form = document.getElementById('archiveBulkDownloadForm');
+            const checkboxes = form.querySelectorAll('.archive-bulk-download-checkbox');
+            const button = form.querySelector('.archive-bulk-download-button');
+            const status = document.getElementById('archiveBulkDownloadStatus');
+            const updateSelection = () => {
+                const count = form.querySelectorAll('.archive-bulk-download-checkbox:checked').length;
+                button.disabled = count === 0;
+                status.textContent = count ? `${count} paper${count === 1 ? '' : 's'} selected` : 'Select at least one paper.';
+            };
+            checkboxes.forEach((checkbox) => checkbox.addEventListener('change', updateSelection));
+            form.addEventListener('submit', () => {
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Preparing ZIP...';
+                status.textContent = 'This may take a moment for larger selections.';
+            });
+            updateSelection();
+        })();
+    </script>
     @endif
     <div>{{ $research->withQueryString()->links() }}</div>
 </div>

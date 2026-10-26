@@ -72,7 +72,7 @@
             <i class="fas fa-arrow-left mr-1"></i> Back to Archive
         </a>
         <div class="flex gap-2">
-            @if(in_array(session('user_role'), ['super_admin', 'admin']) || ($research->user_id == session('user_id') && $research->status !== \App\Models\Research::STATUS_APPROVED))
+            @if(session('user_role') !== 'campus_review_board' && (in_array(session('user_role'), ['super_admin', 'admin']) || ($research->user_id == session('user_id') && $research->status !== \App\Models\Research::STATUS_APPROVED)))
             <a href="{{ route('research.edit', \App\Support\ResearchToken::encode($research->id)) }}" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition">
                 <i class="fas fa-edit mr-1"></i> Edit
             </a>
@@ -97,7 +97,16 @@
 
                     <div class="text-sm text-gray-500 space-y-1 mb-4">
                         <p>{{ $research->publication_year }} &middot; {{ $research->college->name ?? 'N/A' }}</p>
-                        <p>Archived: {{ $research->created_at->format('F Y') }}</p>
+                        @if($research->academic_program)
+                        <p>Academic program: {{ $research->academic_program }}</p>
+                        @endif
+                        <p>Submitted: {{ ($research->submitted_at ?? $research->created_at)?->format('M d, Y h:i A') }}</p>
+                        @if($research->journalIssue?->status === \App\Models\JournalIssue::STATUS_FINALIZED)
+                        <p class="font-semibold text-orange-700">
+                            {{ $research->journalIssue->journal_title }} · Vol. {{ $research->journalIssue->volume_number }}, Issue {{ $research->journalIssue->issue_number }} ({{ $research->journalIssue->publication_year }})
+                            @if($research->journalIssue->publication_date) · Published {{ $research->journalIssue->publication_date->format('M d, Y') }}@endif
+                        </p>
+                        @endif
                     </div>
 
                     <div class="flex flex-wrap items-center gap-x-1 text-sm mb-6">
@@ -140,7 +149,7 @@
                             <div class="rounded-2xl border border-gray-200 bg-white p-4">
                                 <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Category</p>
                                 <p class="mt-2 text-sm font-bold text-gray-800">{{ $research->category->name ?? 'Uncategorized' }}</p>
-                                <p class="text-xs text-gray-500 mt-1">Research classification</p>
+                                <p class="text-xs text-gray-500 mt-1">{{ ['BS' => "BS (Bachelor's Degree)", 'GS' => 'GS (Graduate Studies)'][$research->academic_level] ?? 'Academic level needs review' }}</p>
                             </div>
                             <div class="rounded-2xl border border-gray-200 bg-white p-4">
                                 <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Publication Year</p>
@@ -269,7 +278,7 @@
                                 </div>
                                 <div class="flex justify-between border-b border-gray-100 pb-2">
                                     <dt class="text-gray-500">Category</dt>
-                                    <dd class="font-semibold text-gray-800">{{ $research->category->name ?? 'N/A' }}</dd>
+                                    <dd class="font-semibold text-gray-800">{{ $research->category->name ?? 'N/A' }} · {{ ['BS' => "BS (Bachelor's Degree)", 'GS' => 'GS (Graduate Studies)'][$research->academic_level] ?? 'Level needs review' }}</dd>
                                 </div>
                                 <div class="flex justify-between border-b border-gray-100 pb-2">
                                     <dt class="text-gray-500">Publication Year</dt>
@@ -363,7 +372,7 @@
                 </div>
                 <div class="border-t border-gray-100 pt-3">
                     <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">Category</p>
-                    <p class="text-sm font-semibold text-gray-800">{{ $research->category->name ?? 'N/A' }}</p>
+                    <p class="text-sm font-semibold text-gray-800">{{ $research->category->name ?? 'N/A' }} · {{ ['BS' => "BS (Bachelor's Degree)", 'GS' => 'GS (Graduate Studies)'][$research->academic_level] ?? 'Level needs review' }}</p>
                 </div>
                 <div class="border-t border-gray-100 pt-3">
                     <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">Thrust</p>
@@ -387,17 +396,39 @@
                 </div>
                 <div class="border-t border-gray-100 pt-3">
                     <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">Date Archived</p>
-                    <p class="text-sm font-semibold text-gray-800">{{ $research->created_at->format('F d, Y') }}</p>
+                    <p class="text-sm font-semibold text-gray-800">{{ ($research->published_at ?? $research->created_at)?->format('M d, Y h:i A') }}</p>
                 </div>
             </div>
 
-            {{-- Keywords Card --}}
-            {{-- <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            @if($showWorkflowTimeline ?? false)
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
                 <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-3">Submission Timeline</p>
                 <div class="space-y-3">
-                    @forelse(($statusTimeline ?? collect()) as $event)
+                    @php
+                        $workflowStages = [
+                            ['Submitted', $research->submitted_at ?? $research->created_at, $research->submitter ?? $research->user],
+                            ['College Review', $research->college_reviewed_at, $research->collegeReviewer],
+                            ['Campus Review Board', $research->campus_review_board_reviewed_at, $research->campusReviewBoardReviewer],
+                            ['RDE Review', $research->rde_reviewed_at, $research->rdeReviewer],
+                            ['Accepted', $research->accepted_at ?? $research->approved_at, $research->acceptor ?? $research->approver],
+                            ['Published', $research->published_at, $research->publisher],
+                        ];
+                    @endphp
+                    @foreach($workflowStages as [$stageLabel, $stageTimestamp, $stageActor])
                     <div class="border-l-2 border-orange-200 pl-3">
-                        <p class="text-xs font-semibold text-orange-700">{{ ucfirst(str_replace('_', ' ', $event->action)) }}</p>
+                        <p class="text-xs font-semibold text-orange-700">{{ $stageLabel }}</p>
+                        <p class="text-[11px] text-gray-500 mt-1">
+                            {{ $stageTimestamp?->format('M d, Y h:i A') ?? 'Not recorded' }}
+                            @if($stageActor) · {{ $stageActor->name }}@endif
+                        </p>
+                    </div>
+                    @endforeach
+                </div>
+                <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold mt-5 mb-3">Review Activity</p>
+                <div class="space-y-3">
+                    @forelse(($statusTimeline ?? collect()) as $event)
+                    <div class="border-l-2 border-slate-200 pl-3">
+                        <p class="text-xs font-semibold text-slate-700">{{ ucfirst(str_replace('_', ' ', $event->action)) }}</p>
                         <p class="text-xs text-gray-600 mt-1">
                             {{ $event->from_status ? ucfirst(str_replace('_', ' ', $event->from_status)) : 'Initial' }}
                             <i class="fas fa-arrow-right mx-1 text-gray-400"></i>
@@ -409,10 +440,11 @@
                         <p class="text-[11px] text-gray-400 mt-1">{{ $event->actor?->name ?? 'System' }} · {{ $event->created_at?->format('M d, Y h:i A') }}</p>
                     </div>
                     @empty
-                    <p class="text-xs text-gray-500">No timeline events yet.</p>
+                    <p class="text-xs text-gray-500">No review actions have been recorded.</p>
                     @endforelse
                 </div>
-            </div> --}}
+            </div>
+            @endif
 
             @if($research->keywords)
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">

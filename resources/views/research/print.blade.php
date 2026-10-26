@@ -72,7 +72,7 @@
                     <th style="width:6%">No.</th>
                     <th>Title of Research</th>
                     <th>Researchers / Authors</th>
-                    <th>Category</th>
+                    <th>Academic Level / Category</th>
                     @if($showYearCol)<th style="width:9%">Year</th>@endif
                     @if($showCollegeCol)<th style="width:12%">College</th>@endif
                     <th>Year</th>
@@ -84,7 +84,7 @@
                     <td class="c">{{ $loop->iteration }}</td>
                     <td>{{ $r->title }}</td>
                     <td>{{ $r->authors }}</td>
-                    <td>{{ $r->category->name ?? 'N/A' }}</td>
+                    <td>{{ ['BS' => 'BS', 'GS' => 'GS'][$r->academic_level] ?? 'Needs review' }} · {{ $r->category->name ?? 'N/A' }}</td>
                     @if($showYearCol)<td class="c">{{ $r->publication_year }}</td>@endif
                     @if($showCollegeCol)<td class="c">{{ $r->college->code ?? 'N/A' }}</td>@endif
                     <td class="c">{{ $r->publication_year }}</td>

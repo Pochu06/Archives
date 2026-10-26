@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class ResearchDraft extends Model
 {
@@ -13,7 +13,7 @@ class ResearchDraft extends Model
         'user_id', 'title', 'abstract', 'introduction', 'methodology',
         'results', 'discussion', 'references', 'conclusion',
         'recommendations', 'keywords', 'authors',
-        'thrust', 'thrusts', 'college_id', 'category_id', 'publication_year', 'table_design', 'last_saved_at',
+        'thrust', 'thrusts', 'college_id', 'category_id', 'academic_level', 'academic_program', 'publication_year', 'table_design', 'last_saved_at',
     ];
 
     protected $casts = [

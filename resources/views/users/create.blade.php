@@ -27,12 +27,15 @@
                         @if(session('user_role') === 'super_admin')
                         <option value="super_admin" {{ old('role') === 'super_admin' ? 'selected' : '' }}>Super Admin</option>
                         <option value="admin" {{ old('role') === 'admin' ? 'selected' : '' }}>Admin</option>
+                        <option value="campus_review_board" {{ old('role') === 'campus_review_board' ? 'selected' : '' }}>Campus Review Board</option>
+                        <option value="adviser" {{ old('role') === 'adviser' ? 'selected' : '' }}>Adviser</option>
+                        <option value="faculty" {{ old('role') === 'faculty' ? 'selected' : '' }}>Faculty</option>
                         @endif
                         <option value="student" {{ old('role') === 'student' ? 'selected' : '' }}>Student</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-semibold mb-2">College <span class="text-red-500">*</span></label>
+                    <label class="block text-gray-700 font-semibold mb-2">College</label>
                     <select name="college_id" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-500">
                         <option value="">Select College</option>
                         <option value="" {{ old('college_id') === '' ? 'selected' : '' }}>Not Applicable</option>

@@ -177,7 +177,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => StrongPassword::rules(),
-            'role' => 'required|in:super_admin,admin,student',
+            'role' => 'required|in:super_admin,admin,campus_review_board,adviser,faculty,student',
             'college_id' => 'nullable|exists:colleges,id',
             'student_id' => 'nullable|string|max:50',
         ];
@@ -187,16 +187,22 @@ class UserController extends Controller
         }
 
         $validated = $request->validate($rules);
+        if (in_array($validated['role'], ['adviser', 'faculty'], true) && empty($validated['college_id'])) {
+            return back()->withErrors(['college_id' => 'Select a college for adviser and faculty accounts.'])->withInput();
+        }
 
-        User::create([
+        $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'role' => $validated['role'],
-            'college_id' => $validated['college_id'],
+            'college_id' => $validated['role'] === 'campus_review_board' ? null : $validated['college_id'],
             'student_id' => $validated['student_id'] ?? null,
             'status' => 'active',
         ]);
+        if (in_array($validated['role'], ['adviser', 'faculty'], true)) {
+            $user->sendEmailVerificationNotification();
+        }
 
         return redirect()->route('users.index')->with('success', 'User created successfully!');
     }
@@ -207,6 +213,10 @@ class UserController extends Controller
             return $r;
         }
         $user = User::findOrFail($id);
+        if (session('user_role') === 'admin'
+            && ((int) $user->college_id !== (int) session('user_college_id') || $user->role !== 'student')) {
+            return redirect()->route('users.index')->with('error', 'College admins can only manage student accounts in their college.');
+        }
         $colleges = College::where('active', true)->get();
 
         return view('users.edit', compact('user', 'colleges'));
@@ -219,15 +229,26 @@ class UserController extends Controller
         }
         $user = User::findOrFail($id);
 
+        if (session('user_role') === 'admin'
+            && ((int) $user->college_id !== (int) session('user_college_id') || $user->role !== 'student')) {
+            return redirect()->route('users.index')->with('error', 'College admins can only manage student accounts in their college.');
+        }
+
+        $roleRule = session('user_role') === 'super_admin'
+            ? 'required|in:super_admin,admin,campus_review_board,adviser,faculty,student'
+            : 'required|in:student';
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,'.$id,
-            'role' => 'required|in:super_admin,admin,student',
+            'role' => $roleRule,
             'college_id' => 'nullable|exists:colleges,id',
             'student_id' => 'nullable|string|max:50',
             'status' => 'required|in:active,inactive',
             'password' => StrongPassword::optionalRules(),
         ]);
+        if (in_array($validated['role'], ['adviser', 'faculty'], true) && empty($validated['college_id'])) {
+            return back()->withErrors(['college_id' => 'Select a college for adviser and faculty accounts.'])->withInput();
+        }
 
         if ($user->status === 'pending' && $validated['status'] === 'active') {
             return redirect()->route('users.pending')
@@ -238,7 +259,7 @@ class UserController extends Controller
             'name' => $validated['name'],
             'email' => $validated['email'],
             'role' => $validated['role'],
-            'college_id' => $validated['college_id'],
+            'college_id' => $validated['role'] === 'campus_review_board' ? null : $validated['college_id'],
             'student_id' => $validated['student_id'] ?? null,
             'status' => $validated['status'],
         ];
@@ -258,6 +279,10 @@ class UserController extends Controller
             return $r;
         }
         $user = User::findOrFail($id);
+        if (session('user_role') === 'admin'
+            && ((int) $user->college_id !== (int) session('user_college_id') || $user->role !== 'student')) {
+            return redirect()->route('users.index')->with('error', 'College admins can only manage student accounts in their college.');
+        }
         if ($user->id === session('user_id')) {
             return redirect()->route('users.index')->with('error', 'You cannot delete your own account.');
         }

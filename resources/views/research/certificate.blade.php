@@ -218,6 +218,8 @@
             <p class="meta">
                 College: {{ $research->college->name ?? 'N/A' }}
                 &nbsp;|&nbsp;
+                Academic level: {{ ['BS' => 'BS', 'GS' => 'GS'][$research->academic_level] ?? 'Needs review' }}
+                &nbsp;|&nbsp;
                 Category: {{ $research->category->name ?? 'N/A' }}
                 &nbsp;|&nbsp;
                 Publication Year: {{ $research->publication_year }}

@@ -107,6 +107,20 @@
             color: #4b5563;
             margin: 10px 0 16px;
         }
+        .workflow-history {
+            margin: 14px 0 20px;
+            font-size: 9pt;
+            color: #374151;
+        }
+        .workflow-history-title {
+            font-weight: bold;
+            margin: 9px 0 5px;
+        }
+        .workflow-history-row {
+            border-left: 2px solid #fed7aa;
+            padding: 2px 0 3px 8px;
+            margin-bottom: 3px;
+        }
         .keywords {
             font-size: 12pt;
             margin-top: 8px;
@@ -237,8 +251,16 @@
 <body>
 
     @php
-        $submittedAt = $research->created_at?->format('F d, Y h:i A');
-        $approvedAt = $research->approved_at?->format('F d, Y h:i A');
+        $submittedAt = ($research->submitted_at ?? $research->created_at)?->format('M d, Y h:i A');
+        $approvedAt = $research->approved_at?->format('M d, Y h:i A');
+        $workflowStages = [
+            ['Submitted', $research->submitted_at ?? $research->created_at, $research->submitter ?? $research->user],
+            ['College Review', $research->college_reviewed_at, $research->collegeReviewer],
+            ['Campus Review Board', $research->campus_review_board_reviewed_at, $research->campusReviewBoardReviewer],
+            ['RDE Review', $research->rde_reviewed_at, $research->rdeReviewer],
+            ['Accepted', $research->accepted_at ?? $research->approved_at, $research->acceptor ?? $research->approver],
+            ['Published', $research->published_at, $research->publisher],
+        ];
     @endphp
 
     {{-- ══ Fixed Header (repeats on all pages) ══ --}}
@@ -266,10 +288,49 @@
         @endforeach
     </div>
 
+    @if($research->academic_program)
+    <div class="workflow-dates">Academic Program: {{ $research->academic_program }}</div>
+    @endif
+    <div class="workflow-dates">
+        Academic Level: {{ ['BS' => "BS (Bachelor's Degree)", 'GS' => 'GS (Graduate Studies)'][$research->academic_level] ?? 'Needs review' }}
+        &nbsp;|&nbsp;
+        Research Category: {{ $research->category?->name ?? 'Uncategorized' }}
+    </div>
+
     <div class="workflow-dates">
         Submitted: {{ $submittedAt ?? 'N/A' }}
         &nbsp;|&nbsp;
-        Approved: {{ $approvedAt ?? 'Not yet approved' }}
+        Accepted: {{ $research->accepted_at?->format('M d, Y h:i A') ?? $approvedAt ?? 'Not yet accepted' }}
+        &nbsp;|&nbsp;
+        Published: {{ $research->published_at?->format('M d, Y h:i A') ?? 'Not yet published' }}
+    </div>
+    @if($research->journalIssue?->status === \App\Models\JournalIssue::STATUS_FINALIZED)
+    <div class="workflow-dates">
+        {{ $research->journalIssue->journal_title }} · Volume {{ $research->journalIssue->volume_number }}, Issue {{ $research->journalIssue->issue_number }} ({{ $research->journalIssue->publication_year }})
+        @if($research->journalIssue->publication_date) · Journal publication date: {{ $research->journalIssue->publication_date->format('M d, Y') }}@endif
+    </div>
+    @endif
+
+    <div class="workflow-history">
+        <div class="workflow-history-title">Research Process Timeline</div>
+        @foreach($workflowStages as [$stageLabel, $stageTimestamp, $stageActor])
+        <div class="workflow-history-row">
+            {{ $stageLabel }}: {{ $stageTimestamp?->format('M d, Y h:i A') ?? 'Not recorded' }}
+            @if($stageActor) — {{ $stageActor->name }}@endif
+        </div>
+        @endforeach
+        <div class="workflow-history-title">Review Activity</div>
+        @forelse($statusTimeline ?? collect() as $event)
+        <div class="workflow-history-row">
+            {{ ucfirst(str_replace('_', ' ', $event->action)) }}:
+            {{ $event->from_status ? ucfirst(str_replace('_', ' ', $event->from_status)).' → ' : '' }}
+            {{ $event->to_status ? ucfirst(str_replace('_', ' ', $event->to_status)) : '' }}
+            — {{ $event->actor?->name ?? 'System' }} · {{ $event->created_at?->format('M d, Y h:i A') ?? 'N/A' }}
+            @if($event->notes) — {{ $event->notes }}@endif
+        </div>
+        @empty
+        <div class="workflow-history-row">No review actions have been recorded.</div>
+        @endforelse
     </div>
 
     {{-- ══ Abstract Box ══ --}}

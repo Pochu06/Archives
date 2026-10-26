@@ -2,23 +2,31 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Research;
-use App\Models\College;
 use App\Models\Category;
+use App\Models\College;
+use App\Models\DownloadRequest;
+use App\Models\Research;
+use App\Models\ResearchDraft;
 use App\Models\SavedSearch;
 use App\Models\User;
+use App\Notifications\InAppAlertNotification;
+use App\Services\BulkDownloadLimitExceeded;
+use App\Services\BulkDownloadService;
 use App\Services\FeatureToggleService;
 use App\Services\RelatedResearchService;
+use App\Services\ResearchCategoryClassification;
 use App\Services\ResearchSummaryService;
 use App\Services\ResearchThrustService;
 use App\Services\TopicSuggestionService;
-use App\Models\ResearchDraft;
-use Illuminate\Http\Request;
-use App\Models\DownloadRequest;
-use Illuminate\Validation\Rule;
+use App\Support\ResearchToken;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class ResearchController extends Controller
 {
@@ -33,10 +41,15 @@ class ResearchController extends Controller
     {
         return [
             Research::STATUS_PENDING_COLLEGE => 'Pending College Approval',
+            Research::STATUS_PENDING_CAMPUS_REVIEW => 'Pending Campus Review Board',
             Research::STATUS_PENDING_RDE => 'Pending RDE Approval',
             Research::STATUS_REVISION_COLLEGE => 'For College Revision',
+            Research::STATUS_REVISION_CAMPUS_REVIEW => 'For Campus Review Board Revision',
             Research::STATUS_REVISION_RDE => 'For RDE Revision',
-            Research::STATUS_APPROVED => 'Approved'
+            Research::STATUS_APPROVED => 'Approved',
+            Research::STATUS_REJECTED_COLLEGE => 'Rejected by College',
+            Research::STATUS_REJECTED_CAMPUS_REVIEW => 'Rejected by Campus Review Board',
+            Research::STATUS_REJECTED_RDE => 'Rejected by RDE',
         ];
     }
 
@@ -46,6 +59,7 @@ class ResearchController extends Controller
             'search' => trim((string) $request->input('search', '')),
             'college_id' => $request->input('college_id'),
             'category_id' => $request->input('category_id'),
+            'academic_level' => $request->input('academic_level'),
             'year' => $request->input('year'),
             'year_to' => $request->input('year_to'),
             'status' => $request->input('status'),
@@ -93,37 +107,36 @@ class ResearchController extends Controller
     private function canDownloadResearch(Research $research): bool
     {
         $userId = session('user_id');
-        $role = session('user_role');
-        $collegeId = session('user_college_id');
 
-        if (! $userId) {
-            return false;
-        }
-
-        if ((int) $research->user_id === (int) $userId) {
-            return true;
-        }
-
-        if ($role === 'admin'
-            && $collegeId
-            && (int) $research->college_id === (int) $collegeId
-            && $research->status === Research::STATUS_PENDING_COLLEGE) {
-            return true;
-        }
-
-        if ($role === 'super_admin' || ($role === 'admin' && ! $collegeId)) {
-            return true;
-        }
-
-        return DownloadRequest::where('user_id', $userId)
-            ->where('research_id', $research->id)
-            ->where('status', 'approved')
-            ->exists();
+        return $userId && app(BulkDownloadService::class)->canDownload(
+            $research,
+            (int) $userId,
+            (string) session('user_role'),
+            session('user_college_id') ? (int) session('user_college_id') : null
+        );
     }
 
     private function buildResearchPdf(Research $research)
     {
-        $pdf = Pdf::loadView('research.pdf', compact('research'));
+        $research->loadMissing([
+            'user:id,name',
+            'college:id,name',
+            'category:id,name',
+            'submitter:id,name',
+            'collegeReviewer:id,name',
+            'campusReviewBoardReviewer:id,name',
+            'rdeReviewer:id,name',
+            'acceptor:id,name',
+            'publisher:id,name',
+            'journalIssue',
+        ]);
+        $statusTimeline = $research->statusEvents()
+            ->with('actor:id,name')
+            ->reorder()
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
+        $pdf = Pdf::loadView('research.pdf', compact('research', 'statusTimeline'));
         $pdf->setPaper('letter', 'portrait');
 
         return $pdf;
@@ -213,6 +226,7 @@ class ResearchController extends Controller
 
     private function buildShowViewData(Research $research): array
     {
+        $research->loadMissing('journalIssue');
         $userId = session('user_id');
         $role = session('user_role');
         $collegeId = session('user_college_id');
@@ -234,9 +248,10 @@ class ResearchController extends Controller
 
     private function authCheck()
     {
-        if (!session('user_id')) {
+        if (! session('user_id')) {
             return redirect()->route('login');
         }
+
         return null;
     }
 
@@ -250,6 +265,44 @@ class ResearchController extends Controller
             'notes' => $notes,
             'meta' => $meta === [] ? null : $meta,
         ]);
+    }
+
+    private function notifyNextReviewStage(Research $research): void
+    {
+        $roleAndCollege = match ($research->status) {
+            Research::STATUS_PENDING_COLLEGE => [['admin'], $research->college_id, 'submissions.college', 'College review is required.'],
+            Research::STATUS_PENDING_CAMPUS_REVIEW => [['campus_review_board'], null, 'submissions.campus-review-board', 'Campus Review Board review is required.'],
+            Research::STATUS_PENDING_RDE => [['admin', 'super_admin'], null, 'submissions.rde', 'RDE review is required.'],
+            default => null,
+        };
+
+        if ($roleAndCollege === null) {
+            return;
+        }
+
+        [$roles, $collegeId, $routeName, $message] = $roleAndCollege;
+        $reviewers = User::query()->whereIn('role', $roles)->where('status', 'active');
+        if ($collegeId !== null) {
+            $reviewers->where('college_id', $collegeId);
+        } elseif ($research->status === Research::STATUS_PENDING_RDE) {
+            $reviewers->where(function ($query) {
+                $query->where('role', 'super_admin')
+                    ->orWhere(function ($query) {
+                        $query->where('role', 'admin')->whereNull('college_id');
+                    });
+            });
+        }
+
+        $reviewers->each(fn (User $reviewer) => $reviewer->notify(new InAppAlertNotification([
+            'type' => 'research_review',
+            'title' => 'Research awaiting review',
+            'message' => '"'.$research->title.'" is ready. '.$message,
+            'action_url' => route($routeName),
+            'action_label' => 'Open review queue',
+            'icon' => 'fa-clipboard-check',
+            'level' => 'info',
+            'meta' => ['research_id' => $research->id],
+        ])));
     }
 
     private function similarityScore(?string $left, ?string $right): float
@@ -268,7 +321,9 @@ class ResearchController extends Controller
 
     public function index(Request $request)
     {
-        if ($r = $this->authCheck()) return $r;
+        if ($r = $this->authCheck()) {
+            return $r;
+        }
 
         if ($request->boolean('print') && ! in_array(session('user_role'), ['admin', 'super_admin'], true)) {
             abort(403);
@@ -288,11 +343,11 @@ class ResearchController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%$search%")
-                  ->orWhere('abstract', 'like', "%$search%")
-                  ->orWhere('keywords', 'like', "%$search%")
-                  ->orWhere('authors', 'like', "%$search%");
+                    ->orWhere('abstract', 'like', "%$search%")
+                    ->orWhere('keywords', 'like', "%$search%")
+                    ->orWhere('authors', 'like', "%$search%");
             });
         }
 
@@ -302,6 +357,9 @@ class ResearchController extends Controller
 
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
+        }
+        if (in_array($request->input('academic_level'), ['BS', 'GS'], true)) {
+            $query->where('academic_level', $request->input('academic_level'));
         }
 
         if ($request->filled('year') && $request->filled('year_to')) {
@@ -331,6 +389,7 @@ class ResearchController extends Controller
 
         $research = $query->paginate(12);
         $categories = Category::all();
+        $academicLevels = app(ResearchCategoryClassification::class)->levels();
         $statuses = $this->researchStatusOptions();
         $savedSearches = SavedSearch::where('user_id', session('user_id'))
             ->where('context', self::SEARCH_CONTEXT_RESEARCH_INDEX)
@@ -343,6 +402,7 @@ class ResearchController extends Controller
             'research',
             'colleges',
             'categories',
+            'academicLevels',
             'statuses',
             'savedSearches',
             'smartPresets',
@@ -352,7 +412,9 @@ class ResearchController extends Controller
 
     public function saveSearch(Request $request)
     {
-        if ($r = $this->authCheck()) return $r;
+        if ($r = $this->authCheck()) {
+            return $r;
+        }
 
         $statuses = array_keys($this->researchStatusOptions());
         $validated = $request->validate([
@@ -360,8 +422,9 @@ class ResearchController extends Controller
             'search' => 'nullable|string|max:255',
             'college_id' => 'nullable|exists:colleges,id',
             'category_id' => 'nullable|exists:categories,id',
-            'year' => 'nullable|integer|min:2000|max:' . date('Y'),
-            'year_to' => 'nullable|integer|min:2000|max:' . date('Y'),
+            'academic_level' => ['nullable', Rule::in(['BS', 'GS'])],
+            'year' => 'nullable|integer|min:2000|max:'.date('Y'),
+            'year_to' => 'nullable|integer|min:2000|max:'.date('Y'),
             'status' => ['nullable', Rule::in($statuses)],
         ]);
 
@@ -369,6 +432,7 @@ class ResearchController extends Controller
             'search' => trim((string) ($validated['search'] ?? '')),
             'college_id' => $validated['college_id'] ?? null,
             'category_id' => $validated['category_id'] ?? null,
+            'academic_level' => $validated['academic_level'] ?? null,
             'year' => $validated['year'] ?? null,
             'year_to' => $validated['year_to'] ?? null,
             'status' => $validated['status'] ?? null,
@@ -394,7 +458,9 @@ class ResearchController extends Controller
 
     public function applySavedSearch($id)
     {
-        if ($r = $this->authCheck()) return $r;
+        if ($r = $this->authCheck()) {
+            return $r;
+        }
 
         $savedSearch = SavedSearch::where('id', $id)
             ->where('user_id', session('user_id'))
@@ -406,7 +472,9 @@ class ResearchController extends Controller
 
     public function destroySavedSearch($id)
     {
-        if ($r = $this->authCheck()) return $r;
+        if ($r = $this->authCheck()) {
+            return $r;
+        }
 
         $savedSearch = SavedSearch::where('id', $id)
             ->where('user_id', session('user_id'))
@@ -468,6 +536,9 @@ class ResearchController extends Controller
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
         }
+        if (in_array($request->input('academic_level'), ['BS', 'GS'], true)) {
+            $query->where('academic_level', $request->input('academic_level'));
+        }
 
         if ($request->filled('year')) {
             $query->where('publication_year', $request->year);
@@ -480,8 +551,9 @@ class ResearchController extends Controller
         $research = $query->paginate(12)->withQueryString();
         $colleges = College::where('active', true)->get();
         $categories = Category::all();
+        $academicLevels = app(ResearchCategoryClassification::class)->levels();
 
-        return view('research.public', compact('research', 'colleges', 'categories'));
+        return view('research.public', compact('research', 'colleges', 'categories', 'academicLevels'));
     }
 
     public function topicSuggestions(Request $request, TopicSuggestionService $topicSuggestionService)
@@ -576,30 +648,53 @@ class ResearchController extends Controller
 
     public function create()
     {
-        if ($r = $this->authCheck()) return $r;
+        if ($r = $this->authCheck()) {
+            return $r;
+        }
         $colleges = College::where('active', true)->get();
-        $categories = Category::all();
+        $classification = app(ResearchCategoryClassification::class);
+        $categories = $classification->supportedCategories();
+        $academicLevels = $classification->levels();
         $draft = ResearchDraft::where('user_id', session('user_id'))->first();
         $thrustOptions = ResearchThrustService::options();
         $resumableUploadId = (string) Str::uuid();
 
-        return view('research.create', compact('colleges', 'categories', 'draft', 'thrustOptions', 'resumableUploadId'));
+        return view('research.create', compact('colleges', 'categories', 'academicLevels', 'draft', 'thrustOptions', 'resumableUploadId'));
     }
 
     public function saveDraft(Request $request)
     {
-        if (!session('user_id')) {
+        if (! session('user_id')) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
         }
 
-        $thrustService = new ResearchThrustService();
+        $thrustService = new ResearchThrustService;
         $userId = session('user_id');
+        $classification = app(ResearchCategoryClassification::class);
+        $classificationFields = $request->validate([
+            'academic_level' => ['nullable', 'string', Rule::in(array_keys($classification->levels()))],
+            'category_id' => ['nullable', 'integer', 'exists:categories,id'],
+        ]);
         $data = $request->only([
             'title', 'abstract', 'introduction', 'methodology',
             'results', 'references', 'conclusion',
             'recommendations', 'keywords', 'authors',
-            'thrust', 'thrusts', 'college_id', 'category_id', 'publication_year', 'table_design', 'file_path', 'file_name',
+            'thrust', 'thrusts', 'college_id', 'category_id', 'academic_level', 'academic_program', 'publication_year', 'table_design', 'file_path', 'file_name',
         ]);
+        $data['academic_level'] = $classificationFields['academic_level'] ?? null;
+        $data['category_id'] = $classificationFields['category_id'] ?? null;
+        if ($data['category_id'] !== null) {
+            if (! $classification->allowsAnyLevel((int) $data['category_id'])) {
+                throw ValidationException::withMessages([
+                    'category_id' => 'Select Thesis, Capstone Project, or Dissertation.',
+                ]);
+            }
+            if ($data['academic_level'] !== null && ! $classification->allows($data['academic_level'], (int) $data['category_id'])) {
+                throw ValidationException::withMessages([
+                    'category_id' => 'The selected research category does not match the academic level.',
+                ]);
+            }
+        }
         $data['table_design'] = in_array($data['table_design'] ?? null, ['classic', 'striped', 'minimal'], true)
             ? $data['table_design']
             : 'classic';
@@ -620,12 +715,12 @@ class ResearchController extends Controller
 
     public function loadDraft()
     {
-        if (!session('user_id')) {
+        if (! session('user_id')) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
         }
 
         $draft = ResearchDraft::where('user_id', session('user_id'))->first();
-        if (!$draft) {
+        if (! $draft) {
             return response()->json(['success' => false, 'message' => 'No draft found'], 404);
         }
 
@@ -637,25 +732,31 @@ class ResearchController extends Controller
 
     public function deleteDraft()
     {
-        if (!session('user_id')) {
+        if (! session('user_id')) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
         }
 
         ResearchDraft::where('user_id', session('user_id'))->delete();
+
         return response()->json(['success' => true, 'message' => 'Draft deleted']);
     }
 
     public function tutorial()
     {
-        if ($r = $this->authCheck()) return $r;
+        if ($r = $this->authCheck()) {
+            return $r;
+        }
+
         return view('research.tutorial');
     }
 
     public function store(Request $request)
     {
-        if ($r = $this->authCheck()) return $r;
+        if ($r = $this->authCheck()) {
+            return $r;
+        }
 
-        $thrustService = new ResearchThrustService();
+        $thrustService = new ResearchThrustService;
 
         $request->merge([
             'title' => $this->normalizedTitle($request->input('title')),
@@ -676,13 +777,20 @@ class ResearchController extends Controller
             'thrusts.*' => ['string', Rule::in(ResearchThrustService::options())],
             'college_id' => 'required|exists:colleges,id',
             'category_id' => 'required|exists:categories,id',
-            'publication_year' => 'required|integer|min:2000|max:' . date('Y'),
+            'academic_level' => ['required', Rule::in(array_keys(app(ResearchCategoryClassification::class)->levels()))],
+            'academic_program' => 'nullable|string|max:255',
+            'publication_year' => 'required|integer|min:2000|max:'.date('Y'),
             'table_design' => 'nullable|in:classic,striped,minimal',
             'file_path' => 'nullable|string|max:255',
             'file_name' => 'nullable|string|max:255',
         ], [
             'title.unique' => 'A research paper with this title has already been submitted.',
         ]);
+        if (! app(ResearchCategoryClassification::class)->allows($validated['academic_level'], (int) $validated['category_id'])) {
+            throw ValidationException::withMessages([
+                'category_id' => 'The selected research category does not match the academic level.',
+            ]);
+        }
 
         $validated['discussion'] = null;
         $validated['table_design'] = $validated['table_design'] ?? 'classic';
@@ -697,22 +805,24 @@ class ResearchController extends Controller
 
         $validated['user_id'] = session('user_id');
 
-        if (in_array(session('user_role'), ['super_admin', 'admin'])) {
-            $validated['status'] = Research::STATUS_APPROVED;
-            $validated['approved_by'] = session('user_id');
-            $validated['approved_at'] = now();
+        if (session('user_role') === 'super_admin'
+            || (session('user_role') === 'admin' && ! session('user_college_id'))) {
+            $validated['status'] = Research::STATUS_PENDING_CAMPUS_REVIEW;
         } else {
             $validated['status'] = Research::STATUS_PENDING_COLLEGE;
         }
 
         $createdResearch = Research::create($validated);
+        $submittedAt = $createdResearch->created_at ?? now();
+        $createdResearch->recordLifecycleStage('submitted', (int) session('user_id'), $submittedAt);
         $this->logStatusEvent($createdResearch, 'submission_created', null, $createdResearch->status);
+        $this->notifyNextReviewStage($createdResearch);
 
-        $message = $validated['status'] === Research::STATUS_APPROVED
-            ? 'Research paper archived successfully!'
+        $message = $validated['status'] === Research::STATUS_PENDING_CAMPUS_REVIEW
+            ? 'Research paper submitted for Campus Review Board review.'
             : 'Research paper submitted for college approval.';
 
-        $redirectRoute = session('user_role') === 'student' ? 'submissions.index' : 'research.index';
+        $redirectRoute = in_array(session('user_role'), ['student', 'faculty'], true) ? 'submissions.index' : 'research.index';
 
         return redirect()->route($redirectRoute)->with('success', $message);
     }
@@ -720,16 +830,19 @@ class ResearchController extends Controller
     public function show($id, ResearchSummaryService $researchSummaryService, RelatedResearchService $relatedResearchService)
     {
         $research = Research::with(['user', 'college', 'category'])->findOrFail($id);
+        $isCampusReviewBoardMember = session('user_role') === 'campus_review_board';
 
-        if (!session('user_id')) {
+        if (! session('user_id')) {
             if ($research->status !== Research::STATUS_APPROVED) {
                 return redirect()->route('login');
             }
 
-            return redirect()->route('research.public-show', \App\Support\ResearchToken::encode($research->id));
+            return redirect()->route('research.public-show', ResearchToken::encode($research->id));
         }
 
-        if (!in_array(session('user_role'), ['super_admin', 'admin'])
+        if (! in_array(session('user_role'), ['super_admin', 'admin'])
+            && ! $isCampusReviewBoardMember
+            && ! (session('user_role') === 'adviser' && (int) $research->adviser_id === (int) session('user_id'))
             && $research->status !== Research::STATUS_APPROVED
             && $research->user_id !== session('user_id')) {
             return redirect()->route('research.index')->with('error', 'You are not allowed to view this submission yet.');
@@ -744,14 +857,28 @@ class ResearchController extends Controller
 
         extract($this->buildShowViewData($research));
         extract($this->buildAiInsightViewData($research, $researchSummaryService, $relatedResearchService));
-        $statusTimeline = $research->statusEvents()->with('actor:id,name')->orderBy('created_at', 'desc')->limit(20)->get();
+        $research->load([
+            'submitter:id,name',
+            'collegeReviewer:id,name',
+            'campusReviewBoardReviewer:id,name',
+            'rdeReviewer:id,name',
+            'acceptor:id,name',
+            'publisher:id,name',
+        ]);
+        $statusTimeline = $research->statusEvents()
+            ->with('actor:id,name')
+            ->reorder()
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
+        $showWorkflowTimeline = true;
 
-        return view('research.show', compact('research', 'downloadRequest', 'canDownload', 'aiSummary', 'relatedResearch', 'statusTimeline'));
+        return view('research.show', compact('research', 'downloadRequest', 'canDownload', 'aiSummary', 'relatedResearch', 'statusTimeline', 'showWorkflowTimeline'));
     }
 
     public function publicShow($id, ResearchSummaryService $researchSummaryService, RelatedResearchService $relatedResearchService)
     {
-        $researchId = \App\Support\ResearchToken::decode((string) $id);
+        $researchId = ResearchToken::decode((string) $id);
         abort_if($researchId === null, 404);
 
         $research = Research::with(['user', 'college', 'category'])->approved()->findOrFail($researchId);
@@ -761,48 +888,66 @@ class ResearchController extends Controller
 
         extract($this->buildShowViewData($research));
         extract($this->buildAiInsightViewData($research, $researchSummaryService, $relatedResearchService));
-        $statusTimeline = $research->statusEvents()->with('actor:id,name')->orderBy('created_at', 'desc')->limit(20)->get();
+        $statusTimeline = collect();
+        $showWorkflowTimeline = false;
 
-        return view('research.show', compact('research', 'downloadRequest', 'canDownload', 'aiSummary', 'relatedResearch', 'statusTimeline'));
+        return view('research.show', compact('research', 'downloadRequest', 'canDownload', 'aiSummary', 'relatedResearch', 'statusTimeline', 'showWorkflowTimeline'));
     }
 
     public function edit($id)
     {
-        if ($r = $this->authCheck()) return $r;
+        if ($r = $this->authCheck()) {
+            return $r;
+        }
+        if (session('user_role') === 'campus_review_board') {
+            return redirect()->route('dashboard')->with('error', 'Campus Review Board members can review papers but cannot edit submissions.');
+        }
         $research = Research::findOrFail($id);
         $role = session('user_role');
         $userId = session('user_id');
 
-        if (!in_array($role, ['super_admin', 'admin']) && $research->user_id != $userId) {
+        if (! in_array($role, ['super_admin', 'admin']) && $research->user_id != $userId) {
             return redirect()->route('research.index')->with('error', 'Unauthorized action.');
         }
 
-        if ($role === 'student' && $research->status === Research::STATUS_APPROVED) {
-            return redirect()->route('research.show', \App\Support\ResearchToken::encode($research->id))->with('error', 'Approved research can no longer be edited by students.');
+        if (in_array($role, ['student', 'faculty'], true) && $research->status === Research::STATUS_APPROVED) {
+            return redirect()->route('research.show', ResearchToken::encode($research->id))->with('error', 'Approved research can no longer be edited by submitters.');
         }
 
         $colleges = College::where('active', true)->get();
-        $categories = Category::all();
+        $classification = app(ResearchCategoryClassification::class);
+        $categories = $classification->supportedCategories();
+        $academicLevels = $classification->levels();
+        $classificationNeedsReview = ! $classification->allows(
+            $research->academic_level,
+            $research->category_id ? (int) $research->category_id : null
+        );
         $thrustOptions = ResearchThrustService::options();
         $resumableUploadId = (string) Str::uuid();
-        return view('research.edit', compact('research', 'colleges', 'categories', 'thrustOptions', 'resumableUploadId'));
+
+        return view('research.edit', compact('research', 'colleges', 'categories', 'academicLevels', 'classificationNeedsReview', 'thrustOptions', 'resumableUploadId'));
     }
 
     public function update(Request $request, $id)
     {
-        if ($r = $this->authCheck()) return $r;
+        if ($r = $this->authCheck()) {
+            return $r;
+        }
+        if (session('user_role') === 'campus_review_board') {
+            return redirect()->route('dashboard')->with('error', 'Campus Review Board members can review papers but cannot edit submissions.');
+        }
         $research = Research::findOrFail($id);
         $previousStatus = $research->status;
         $role = session('user_role');
         $userId = session('user_id');
-        $thrustService = new ResearchThrustService();
+        $thrustService = new ResearchThrustService;
 
-        if (!in_array($role, ['super_admin', 'admin']) && $research->user_id != $userId) {
+        if (! in_array($role, ['super_admin', 'admin']) && $research->user_id != $userId) {
             return redirect()->route('research.index')->with('error', 'Unauthorized action.');
         }
 
-        if ($role === 'student' && $research->status === Research::STATUS_APPROVED) {
-            return redirect()->route('research.show', \App\Support\ResearchToken::encode($research->id))->with('error', 'Approved research can no longer be edited by students.');
+        if (in_array($role, ['student', 'faculty'], true) && $research->status === Research::STATUS_APPROVED) {
+            return redirect()->route('research.show', ResearchToken::encode($research->id))->with('error', 'Approved research can no longer be edited by submitters.');
         }
 
         $request->merge([
@@ -824,20 +969,27 @@ class ResearchController extends Controller
             'thrusts.*' => ['string', Rule::in(ResearchThrustService::options())],
             'college_id' => 'required|exists:colleges,id',
             'category_id' => 'required|exists:categories,id',
-            'publication_year' => 'required|integer|min:2000|max:' . date('Y'),
+            'academic_level' => ['required', Rule::in(array_keys(app(ResearchCategoryClassification::class)->levels()))],
+            'academic_program' => 'nullable|string|max:255',
+            'publication_year' => 'required|integer|min:2000|max:'.date('Y'),
             'table_design' => 'nullable|in:classic,striped,minimal',
             'file_path' => 'nullable|string|max:255',
             'file_name' => 'nullable|string|max:255',
         ], [
             'title.unique' => 'A research paper with this title already exists.',
         ]);
+        if (! app(ResearchCategoryClassification::class)->allows($validated['academic_level'], (int) $validated['category_id'])) {
+            throw ValidationException::withMessages([
+                'category_id' => 'The selected research category does not match the academic level.',
+            ]);
+        }
 
         $validated['discussion'] = null;
         $validated['table_design'] = $validated['table_design'] ?? 'classic';
-        if (!array_key_exists('file_path', $validated) || $validated['file_path'] === null) {
+        if (! array_key_exists('file_path', $validated) || $validated['file_path'] === null) {
             $validated['file_path'] = $research->file_path;
         }
-        if (!array_key_exists('file_name', $validated) || $validated['file_name'] === null) {
+        if (! array_key_exists('file_name', $validated) || $validated['file_name'] === null) {
             $validated['file_name'] = $research->file_name;
         }
         $validated['thrusts'] = $this->normalizeThrustSelections($request->input('thrusts', []));
@@ -847,27 +999,43 @@ class ResearchController extends Controller
         }
         $validated['thrust'] = $this->resolvePrimaryThrust($validated['thrusts'], $suggestion);
 
-        if ($role === 'student') {
+        if (in_array($role, ['student', 'faculty'], true)) {
             if ($research->status === Research::STATUS_REVISION_COLLEGE) {
                 $validated['status'] = Research::STATUS_PENDING_COLLEGE;
                 $validated['revision_notes'] = null;
                 $validated['revision_fields'] = null;
                 $validated['revision_field_notes'] = null;
                 $validated['rejection_reason'] = null;
-                $validated['approved_by'] = null;
-                $validated['approved_at'] = null;
             } elseif ($research->status === Research::STATUS_REVISION_RDE) {
                 $validated['status'] = Research::STATUS_PENDING_RDE;
                 $validated['revision_notes'] = null;
                 $validated['revision_fields'] = null;
                 $validated['revision_field_notes'] = null;
                 $validated['rejection_reason'] = null;
-                $validated['approved_by'] = null;
-                $validated['approved_at'] = null;
+            } elseif ($research->status === Research::STATUS_REVISION_CAMPUS_REVIEW) {
+                $validated['status'] = Research::STATUS_PENDING_CAMPUS_REVIEW;
+                $validated['revision_notes'] = null;
+                $validated['revision_fields'] = null;
+                $validated['revision_field_notes'] = null;
+                $validated['rejection_reason'] = null;
             }
         }
 
         $research->update($validated);
+
+        if ($research->wasChanged(['academic_level', 'category_id'])) {
+            $this->logStatusEvent(
+                $research,
+                'category_classification_updated',
+                $previousStatus,
+                $research->status,
+                'Research academic level or category was updated.',
+                [
+                    'academic_level' => $research->academic_level,
+                    'category_id' => $research->category_id,
+                ]
+            );
+        }
 
         if ($previousStatus !== $research->status) {
             $this->logStatusEvent(
@@ -876,6 +1044,7 @@ class ResearchController extends Controller
                 $previousStatus,
                 $research->status
             );
+            $this->notifyNextReviewStage($research);
         }
 
         $message = 'Research paper updated successfully!';
@@ -884,14 +1053,16 @@ class ResearchController extends Controller
             $message = 'Research paper updated and resubmitted for college approval.';
         } elseif (($validated['status'] ?? null) === Research::STATUS_PENDING_RDE) {
             $message = 'Research paper updated and resubmitted for RDE approval.';
+        } elseif (($validated['status'] ?? null) === Research::STATUS_PENDING_CAMPUS_REVIEW) {
+            $message = 'Research paper updated and resubmitted for Campus Review Board review.';
         }
 
-        return redirect()->route('research.show', \App\Support\ResearchToken::encode($id))->with('success', $message);
+        return redirect()->route('research.show', ResearchToken::encode($id))->with('success', $message);
     }
 
     public function thrustSuggestion(Request $request)
     {
-        if (!session('user_id')) {
+        if (! session('user_id')) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
         }
 
@@ -909,7 +1080,7 @@ class ResearchController extends Controller
             ]);
         }
 
-        $thrustService = new ResearchThrustService();
+        $thrustService = new ResearchThrustService;
 
         $validated = $request->validate([
             'title' => 'nullable|string|max:500',
@@ -931,11 +1102,13 @@ class ResearchController extends Controller
 
     public function destroy($id)
     {
-        if ($r = $this->authCheck()) return $r;
+        if ($r = $this->authCheck()) {
+            return $r;
+        }
         $research = Research::findOrFail($id);
         $role = session('user_role');
 
-        if (!in_array($role, ['super_admin', 'admin'])) {
+        if (! in_array($role, ['super_admin', 'admin'])) {
             if ($research->user_id != session('user_id')) {
                 return redirect()->route('research.index')->with('error', 'Unauthorized.');
             }
@@ -943,6 +1116,7 @@ class ResearchController extends Controller
 
         $this->logStatusEvent($research, 'submission_deleted', $research->status, null);
         $research->delete();
+
         return redirect()->route('research.index')->with('success', 'Research paper deleted successfully.');
     }
 
@@ -959,7 +1133,7 @@ class ResearchController extends Controller
         ]);
 
         $candidates = Research::with(['college'])
-            ->when(!empty($validated['ignore_id']), function ($query) use ($validated) {
+            ->when(! empty($validated['ignore_id']), function ($query) use ($validated) {
                 $query->where('id', '!=', $validated['ignore_id']);
             })
             ->latest()
@@ -983,7 +1157,7 @@ class ResearchController extends Controller
                 'score' => $combinedScore,
                 'title_score' => $titleScore,
                 'abstract_score' => $abstractScore,
-                'url' => route('research.show', \App\Support\ResearchToken::encode($candidate->id)),
+                'url' => route('research.show', ResearchToken::encode($candidate->id)),
             ];
         })
             ->filter(fn (array $item) => $item['score'] >= 55.0)
@@ -1000,7 +1174,7 @@ class ResearchController extends Controller
 
     public function uploadFileChunk(Request $request)
     {
-        if (!session('user_id')) {
+        if (! session('user_id')) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
         }
 
@@ -1034,7 +1208,7 @@ class ResearchController extends Controller
 
     public function uploadFileStatus(Request $request)
     {
-        if (!session('user_id')) {
+        if (! session('user_id')) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
         }
 
@@ -1067,7 +1241,7 @@ class ResearchController extends Controller
 
     public function completeFileUpload(Request $request)
     {
-        if (!session('user_id')) {
+        if (! session('user_id')) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
         }
 
@@ -1123,7 +1297,9 @@ class ResearchController extends Controller
 
     public function download($id)
     {
-        if ($r = $this->authCheck()) return $r;
+        if ($r = $this->authCheck()) {
+            return $r;
+        }
         $research = Research::with(['user', 'college', 'category'])->findOrFail($id);
 
         if (! $this->canDownloadResearch($research)) {
@@ -1132,28 +1308,144 @@ class ResearchController extends Controller
 
         $research->increment('download_count');
 
-        $filename = $research->title . '.pdf';
+        $filename = $this->researchPdfFilename($research);
 
         return $this->buildResearchPdf($research)->download($filename);
     }
 
+    public function bulkDownload(Request $request, BulkDownloadService $bulkDownloadService)
+    {
+        if ($r = $this->authCheck()) {
+            return $r;
+        }
+
+        $role = (string) session('user_role');
+        abort_unless(in_array($role, ['student', 'faculty', 'adviser', 'admin', 'campus_review_board', 'super_admin'], true), 403);
+        $limits = $bulkDownloadService->limits();
+        try {
+            $validated = $request->validate([
+                'research_ids' => ['required', 'array', 'min:1', 'max:'.$limits['max_files']],
+                'research_ids.*' => ['required', 'integer', 'distinct'],
+            ], [
+                'research_ids.required' => 'Select at least one research paper to download.',
+                'research_ids.min' => 'Select at least one research paper to download.',
+                'research_ids.max' => 'You can include up to '.$limits['max_files'].' papers in one ZIP archive.',
+                'research_ids.*.distinct' => 'A research paper can only be included once.',
+            ]);
+        } catch (ValidationException $exception) {
+            $requestedCount = is_array($request->input('research_ids')) ? count($request->input('research_ids')) : 0;
+            $bulkDownloadService->recordActivity(
+                $request,
+                'blocked',
+                $requestedCount,
+                0,
+                $requestedCount,
+                'Bulk-download request validation failed.'
+            );
+
+            throw $exception;
+        }
+        $requestedCount = count($validated['research_ids']);
+        $researchPapers = Research::with(['user', 'college', 'category'])
+            ->whereIn('id', $validated['research_ids'])
+            ->get();
+        $userId = (int) session('user_id');
+        $collegeId = session('user_college_id') ? (int) session('user_college_id') : null;
+        $eligiblePapers = $bulkDownloadService->filterDownloadable($researchPapers, $userId, $role, $collegeId);
+        $excludedCount = $requestedCount - $eligiblePapers->count();
+
+        if ($eligiblePapers->isEmpty()) {
+            $bulkDownloadService->recordActivity(
+                $request,
+                'blocked',
+                $requestedCount,
+                0,
+                $excludedCount,
+                'No selected papers are downloadable by this account.'
+            );
+
+            return redirect()->back()->with('error', 'No eligible papers were selected. Check that you own the papers or have an approved download request.');
+        }
+
+        try {
+            $archivePath = $bulkDownloadService->createArchive(
+                $eligiblePapers,
+                $limits['max_size_mb'],
+                fn (Research $research) => $this->buildResearchPdf($research)->output(),
+                $excludedCount
+            );
+        } catch (BulkDownloadLimitExceeded $exception) {
+            $bulkDownloadService->recordActivity(
+                $request,
+                'blocked',
+                $requestedCount,
+                0,
+                $excludedCount,
+                $exception->getMessage()
+            );
+
+            return redirect()->back()->with('error', $exception->getMessage());
+        } catch (Throwable $exception) {
+            Log::error('Bulk research download failed.', [
+                'user_id' => $userId,
+                'requested_count' => $requestedCount,
+                'included_count' => $eligiblePapers->count(),
+                'exception' => $exception,
+            ]);
+            $bulkDownloadService->recordActivity(
+                $request,
+                'failed',
+                $requestedCount,
+                0,
+                $excludedCount,
+                'Archive generation failed.'
+            );
+
+            throw $exception;
+        }
+
+        $eligiblePapers->each->increment('download_count');
+        $bulkDownloadService->recordActivity(
+            $request,
+            'completed',
+            $requestedCount,
+            $eligiblePapers->count(),
+            $excludedCount
+        );
+
+        return response()->download(
+            $archivePath,
+            'research-papers-'.now()->format('Ymd-His').'.zip',
+            ['Content-Type' => 'application/zip']
+        )->deleteFileAfterSend(true);
+    }
+
+    private function researchPdfFilename(Research $research): string
+    {
+        return (Str::limit(Str::slug($research->title) ?: 'research-paper', 120, '') ?: 'research-paper').'.pdf';
+    }
+
     public function preview($id)
     {
-        if ($r = $this->authCheck()) return $r;
+        if ($r = $this->authCheck()) {
+            return $r;
+        }
         $research = Research::with(['user', 'college', 'category'])->findOrFail($id);
 
         if (! $this->canDownloadResearch($research)) {
             return redirect()->back()->with('error', 'You need an approved download request to preview this PDF.');
         }
 
-        $filename = $research->title . '.pdf';
+        $filename = $this->researchPdfFilename($research);
 
         return $this->buildResearchPdf($research)->stream($filename);
     }
 
     public function certificate(Request $request, $id)
     {
-        if ($r = $this->authCheck()) return $r;
+        if ($r = $this->authCheck()) {
+            return $r;
+        }
 
         $research = Research::with(['user', 'college', 'category', 'approver'])->findOrFail($id);
 
@@ -1184,7 +1476,7 @@ class ResearchController extends Controller
 
     public function uploadImage(Request $request)
     {
-        if (!session('user_id')) {
+        if (! session('user_id')) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
@@ -1193,20 +1485,20 @@ class ResearchController extends Controller
         ]);
 
         $file = $request->file('image');
-        $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '', $file->getClientOriginalName());
+        $filename = time().'_'.preg_replace('/[^a-zA-Z0-9._-]/', '', $file->getClientOriginalName());
         $path = $file->storeAs('research_images', $filename, 'public');
 
         return response()->json([
             'filename' => $filename,
             'path' => $path,
             'url' => Storage::url($path),
-            'syntax' => '[figure: ' . $filename . ' | Figure X. Description here]',
+            'syntax' => '[figure: '.$filename.' | Figure X. Description here]',
         ]);
     }
 
     public function deleteImage(Request $request)
     {
-        if (!session('user_id')) {
+        if (! session('user_id')) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
@@ -1216,8 +1508,9 @@ class ResearchController extends Controller
 
         $filename = basename($request->filename);
 
-        if (Storage::disk('public')->exists('research_images/' . $filename)) {
-            Storage::disk('public')->delete('research_images/' . $filename);
+        if (Storage::disk('public')->exists('research_images/'.$filename)) {
+            Storage::disk('public')->delete('research_images/'.$filename);
+
             return response()->json(['success' => true]);
         }
 

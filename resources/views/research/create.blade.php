@@ -1,7 +1,7 @@
 ﻿@extends('layouts.app')
-@section('title', session('user_role') === 'student' ? 'Submit Research Paper' : 'Archive Research Paper')
-@section('page-title', session('user_role') === 'student' ? 'Submit Research Paper' : 'Archive Research Paper')
-@section('page-subtitle', session('user_role') === 'student' ? 'Submit your final IMRAD paper for college and RDE approval' : 'Add a final IMRAD research paper to the archive')
+@section('title', in_array(session('user_role'), ['student', 'faculty']) ? 'Submit Research Paper' : 'Archive Research Paper')
+@section('page-title', in_array(session('user_role'), ['student', 'faculty']) ? 'Submit Research Paper' : 'Archive Research Paper')
+@section('page-subtitle', in_array(session('user_role'), ['student', 'faculty']) ? 'Submit your final IMRAD paper for college and RDE approval' : 'Add a final IMRAD research paper to the archive')
 
 @section('styles')
 <style>
@@ -77,8 +77,8 @@
         <div class="bg-gradient-to-r from-orange-600 to-orange-800 p-6 text-white">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
-                    <h2 class="text-xl font-bold"><i class="fas fa-file-upload mr-2"></i>{{ session('user_role') === 'student' ? 'Submit Final Research Paper' : 'Archive Final Research Paper' }}</h2>
-                    <p class="text-orange-100 text-sm mt-1">{{ session('user_role') === 'student' ? 'Fill in the IMRAD sections and submit it for college approval, then RDE approval.' : 'Fill in the IMRAD sections. A PDF will be generated automatically.' }}</p>
+                    <h2 class="text-xl font-bold"><i class="fas fa-file-upload mr-2"></i>{{ in_array(session('user_role'), ['student', 'faculty']) ? 'Submit Final Research Paper' : 'Archive Final Research Paper' }}</h2>
+                    <p class="text-orange-100 text-sm mt-1">{{ in_array(session('user_role'), ['student', 'faculty']) ? 'Fill in the IMRAD sections and submit it for college approval, then RDE approval.' : 'Fill in the IMRAD sections. A PDF will be generated automatically.' }}</p>
                 </div>
                 <a href="{{ route('research.tutorial') }}" class="inline-flex items-center justify-center sm:justify-start bg-white text-orange-700 text-sm font-bold px-4 py-2 rounded-lg hover:bg-orange-50 transition">
                     <i class="fas fa-book-open mr-2"></i> Formatting Tutorial
@@ -250,14 +250,30 @@
                     @error('college_id')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Category <span class="text-red-500">*</span></label>
-                    <select name="category_id" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 @error('category_id') border-red-400 @enderror">
-                        <option value="">Select Category</option>
-                        @foreach($categories as $cat)
-                        <option value="{{ $cat->id }}" {{ old('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                    <label for="academicLevel" class="block text-gray-700 font-semibold mb-2">Academic Level <span class="text-red-500">*</span></label>
+                    <select id="academicLevel" name="academic_level" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 @error('academic_level') border-red-400 @enderror">
+                        <option value="">Select Academic Level</option>
+                        @foreach($academicLevels as $level => $label)
+                        <option value="{{ $level }}" {{ old('academic_level', $draft->academic_level ?? '') === $level ? 'selected' : '' }}>{{ $label }}</option>
                         @endforeach
                     </select>
+                    @error('academic_level')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label for="researchCategory" class="block text-gray-700 font-semibold mb-2">Research Category <span class="text-red-500">*</span></label>
+                    <select id="researchCategory" name="category_id" required disabled class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 disabled:bg-gray-100 @error('category_id') border-red-400 @enderror">
+                        <option value="">Select Category</option>
+                        @foreach($categories as $cat)
+                        <option value="{{ $cat->id }}" data-category-name="{{ strtolower($cat->name) }}" {{ (string) old('category_id', $draft->category_id ?? '') === (string) $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                        @endforeach
+                    </select>
+                    <p id="categoryLevelHint" class="mt-1 text-xs text-gray-500" aria-live="polite">Choose an academic level to see its valid research categories.</p>
                     @error('category_id')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Academic Program</label>
+                    <input type="text" name="academic_program" value="{{ old('academic_program', $draft->academic_program ?? '') }}" maxlength="255" placeholder="e.g., BS Information Technology" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-500">
+                    @error('academic_program')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">Publication Year <span class="text-red-500">*</span></label>
@@ -300,7 +316,7 @@
                     <i class="fas fa-save"></i> <span>Save Draft</span>
                 </button>
                 <button type="submit" class="bg-gradient-to-r from-orange-600 to-orange-700 text-white px-8 py-3 rounded-xl font-bold hover:from-orange-700 hover:to-orange-800 transition shadow">
-                    <i class="fas fa-paper-plane mr-1"></i> {{ session('user_role') === 'student' ? 'Submit for Approval' : 'Archive Paper' }}
+                    <i class="fas fa-paper-plane mr-1"></i> {{ in_array(session('user_role'), ['student', 'faculty']) ? 'Submit for Approval' : 'Archive Paper' }}
                 </button>
             </div>
         </form>
@@ -1093,5 +1109,41 @@ window.addEventListener('beforeunload', (e) => {
         e.returnValue = 'You have unsaved changes. Your draft will be auto-saved.';
     }
 });
+</script>
+<script>
+(() => {
+    const level = document.getElementById('academicLevel');
+    const category = document.getElementById('researchCategory');
+    const hint = document.getElementById('categoryLevelHint');
+    if (!level || !category || !hint) return;
+
+    const allowed = {
+        BS: ['thesis', 'capstone project'],
+        GS: ['thesis', 'dissertation']
+    };
+    const refreshCategories = () => {
+        const levelCategories = allowed[level.value] || [];
+        const previousValue = category.value;
+        Array.from(category.options).forEach((option) => {
+            if (!option.value) return;
+            option.hidden = !levelCategories.includes(option.dataset.categoryName);
+            option.disabled = option.hidden;
+        });
+        category.disabled = levelCategories.length === 0;
+        if (!levelCategories.some((name) => category.selectedOptions[0]?.dataset.categoryName === name)) {
+            category.value = '';
+        }
+        hint.textContent = level.value === 'BS'
+            ? 'BS research may be classified as Thesis or Capstone Project.'
+            : level.value === 'GS'
+                ? 'GS research may be classified as Thesis or Dissertation.'
+                : 'Choose an academic level to see its valid research categories.';
+        if (previousValue && category.value === '') category.setCustomValidity('Choose a category that matches the selected academic level.');
+        else category.setCustomValidity('');
+    };
+    level.addEventListener('change', refreshCategories);
+    category.addEventListener('change', () => category.setCustomValidity(''));
+    refreshCategories();
+})();
 </script>
 @endsection

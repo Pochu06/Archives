@@ -82,7 +82,7 @@ class StudentPendingResearchVisibilityTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_student_archive_and_dashboard_hide_pending_papers(): void
+    public function test_student_archive_hides_pending_papers_while_dashboard_shows_submission_history(): void
     {
         $college = College::create([
             'name' => 'Test College',
@@ -205,11 +205,12 @@ class StudentPendingResearchVisibilityTest extends TestCase
             ->assertSee('Newer College Paper')
             ->assertSee('Older College Paper')
             ->assertSee('Approved Student Paper')
-            ->assertDontSee('Pending Student Paper')
+            ->assertSee('Pending Student Paper')
             ->assertSee('>4</p>', false);
         $dashboardHtml = $dashboardResponse->getContent();
         $this->assertStringContainsString('Browse Archive', $dashboardHtml);
         $browseSection = substr($dashboardHtml, strpos($dashboardHtml, 'Browse Archive'));
+        $this->assertStringNotContainsString('Pending Student Paper', $browseSection);
         $this->assertTitlesAppearInOrder($browseSection, [
             'Newer College Paper',
             'Older College Paper',

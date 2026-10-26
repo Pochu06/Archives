@@ -26,6 +26,9 @@
                         @if(session('user_role') === 'super_admin')
                         <option value="super_admin" {{ old('role', $user->role) === 'super_admin' ? 'selected' : '' }}>Super Admin</option>
                         <option value="admin" {{ old('role', $user->role) === 'admin' ? 'selected' : '' }}>Admin</option>
+                        <option value="campus_review_board" {{ old('role', $user->role) === 'campus_review_board' ? 'selected' : '' }}>Campus Review Board</option>
+                        <option value="adviser" {{ old('role', $user->role) === 'adviser' ? 'selected' : '' }}>Adviser</option>
+                        <option value="faculty" {{ old('role', $user->role) === 'faculty' ? 'selected' : '' }}>Faculty</option>
                         @endif
                         <option value="student" {{ old('role', $user->role) === 'student' ? 'selected' : '' }}>Student</option>
                     </select>

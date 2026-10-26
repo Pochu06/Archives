@@ -55,6 +55,7 @@ class NotificationCenterService
             'notificationUnreadCount' => ($user ? $user->unreadNotifications()->count() : 0) + ($draftNotification && ! $draftNotification['is_read'] ? 1 : 0),
             'collegeApprovalCount' => $this->getCollegeApprovalCount(),
             'rdeApprovalCount' => $this->getRdeApprovalCount(),
+            'campusReviewBoardCount' => $this->getCampusReviewBoardCount(),
         ];
     }
 
@@ -194,5 +195,14 @@ class NotificationCenterService
         }
 
         return Research::where('status', Research::STATUS_PENDING_RDE)->count();
+    }
+
+    private function getCampusReviewBoardCount(): int
+    {
+        if (session('user_role') !== 'campus_review_board' || ! Schema::hasTable('research')) {
+            return 0;
+        }
+
+        return Research::where('status', Research::STATUS_PENDING_CAMPUS_REVIEW)->count();
     }
 }

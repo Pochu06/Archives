@@ -15,6 +15,9 @@
                 <option value="">All Roles</option>
                 <option value="super_admin" {{ request('role_filter') === 'super_admin' ? 'selected' : '' }}>Super Admin</option>
                 <option value="admin" {{ request('role_filter') === 'admin' ? 'selected' : '' }}>Admin</option>
+                <option value="campus_review_board" {{ request('role_filter') === 'campus_review_board' ? 'selected' : '' }}>Campus Review Board</option>
+                <option value="adviser" {{ request('role_filter') === 'adviser' ? 'selected' : '' }}>Adviser</option>
+                <option value="faculty" {{ request('role_filter') === 'faculty' ? 'selected' : '' }}>Faculty</option>
                 <option value="student" {{ request('role_filter') === 'student' ? 'selected' : '' }}>Student</option>
             </select>
             @if(session('user_role') === 'super_admin')

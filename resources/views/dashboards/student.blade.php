@@ -4,6 +4,7 @@
 @section('page-subtitle', 'Welcome back, ' . session('user_name'))
 @section('content')
 <div class="space-y-6">
+    @include('dashboards.partials.analytics', ['analytics' => $analytics])
     <div class="grid grid-cols-1 md:grid-cols-1 gap-4">
         <div class="student-archive-stat bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl p-5 text-white shadow-lg">
             <i class="fas fa-archive text-2xl mb-3 opacity-80"></i>
@@ -51,7 +52,7 @@
     <div class="bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-2xl p-6 flex items-center justify-between">
         <div>
             <h3 class="font-bold text-orange-800 text-lg">Ready to submit your research?</h3>
-            <p class="text-orange-700 text-sm">Submit your final IMRAD paper for college approval and RDE review.</p>
+            <p class="text-orange-700 text-sm">Submit your research for college, Campus Review Board, and RDE review.</p>
         </div>
         <a href="{{ route('research.create') }}" class="bg-gradient-to-r from-orange-600 to-orange-700 text-white px-6 py-3 rounded-xl font-bold hover:from-orange-700 hover:to-orange-800 transition shadow flex-shrink-0">
             <i class="fas fa-plus mr-2"></i> Submit Paper

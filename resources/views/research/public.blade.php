@@ -87,6 +87,13 @@
                     @endforeach
                 </select>
 
+                <select name="academic_level" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:border-orange-500">
+                    <option value="">All Academic Levels</option>
+                    @foreach($academicLevels as $level => $label)
+                    <option value="{{ $level }}" {{ request('academic_level') === $level ? 'selected' : '' }}>{{ $label }}</option>
+                    @endforeach
+                </select>
+
                     <select name="year" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:border-orange-500">
                         <option value="">All Years</option>
                         @for($filterYear = date('Y'); $filterYear >= 2020; $filterYear--)
@@ -109,9 +116,28 @@
         </form>
 
         @if($research->count())
+        @if(session('user_id'))
+        <form method="POST" action="{{ route('research.bulk-download') }}" id="publicBulkDownloadForm" class="mb-5 rounded-xl border border-blue-100 bg-blue-50 p-4">
+            @csrf
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <p class="text-sm text-blue-900">Select published papers to prepare a ZIP of their research reports.</p>
+                <div class="flex items-center gap-3">
+                    <span id="publicBulkDownloadStatus" class="text-xs text-gray-600" aria-live="polite"></span>
+                    <button type="submit" disabled class="public-bulk-download-button rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">
+                        <i class="fas fa-file-zipper mr-1"></i> Download selected
+                    </button>
+                </div>
+            </div>
+        @endif
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
             @foreach($research as $item)
             <article class="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col">
+                @if(session('user_id'))
+                <label class="mb-3 inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <input type="checkbox" name="research_ids[]" value="{{ $item->id }}" class="public-bulk-download-checkbox h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                    Include in ZIP
+                </label>
+                @endif
                 <div class="flex items-center justify-between gap-2 mb-3">
                     <span class="text-xs font-bold {{ $item->category->badge_classes ?? 'bg-gray-100 text-gray-700' }} px-2.5 py-1 rounded">{{ $item->category->name ?? 'Uncategorized' }}</span>
                     <span class="text-xs text-gray-500">{{ $item->publication_year }}</span>
@@ -143,6 +169,29 @@
             </article>
             @endforeach
         </div>
+        @if(session('user_id'))
+        </form>
+        <script>
+            (() => {
+                const form = document.getElementById('publicBulkDownloadForm');
+                const checkboxes = form.querySelectorAll('.public-bulk-download-checkbox');
+                const button = form.querySelector('.public-bulk-download-button');
+                const status = document.getElementById('publicBulkDownloadStatus');
+                const updateSelection = () => {
+                    const count = form.querySelectorAll('.public-bulk-download-checkbox:checked').length;
+                    button.disabled = count === 0;
+                    status.textContent = count ? `${count} paper${count === 1 ? '' : 's'} selected` : 'Select at least one paper.';
+                };
+                checkboxes.forEach((checkbox) => checkbox.addEventListener('change', updateSelection));
+                form.addEventListener('submit', () => {
+                    button.disabled = true;
+                    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Preparing ZIP...';
+                    status.textContent = 'This may take a moment for larger selections.';
+                });
+                updateSelection();
+            })();
+        </script>
+        @endif
 
         @if($research->hasPages())
         <div class="mt-8 bg-white border border-gray-200 rounded-2xl px-4 py-4 sm:px-6 sm:py-5">

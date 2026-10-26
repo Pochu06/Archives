@@ -220,12 +220,34 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Category</label>
-                    <select name="category_id" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-500">
-                        @foreach($categories as $cat)
-                        <option value="{{ $cat->id }}" {{ old('category_id', $research->category_id) == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                    <label for="academicLevel" class="block text-gray-700 font-semibold mb-2">Academic Level <span class="text-red-500">*</span></label>
+                    <select id="academicLevel" name="academic_level" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 @error('academic_level') border-red-400 @enderror">
+                        <option value="">Select Academic Level</option>
+                        @foreach($academicLevels as $level => $label)
+                        <option value="{{ $level }}" {{ old('academic_level', $research->academic_level) === $level ? 'selected' : '' }}>{{ $label }}</option>
                         @endforeach
                     </select>
+                    @error('academic_level')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label for="researchCategory" class="block text-gray-700 font-semibold mb-2">Research Category <span class="text-red-500">*</span></label>
+                    <select id="researchCategory" name="category_id" required disabled class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-500 disabled:bg-gray-100 @error('category_id') border-red-400 @enderror">
+                        <option value="">Select Category</option>
+                        @foreach($categories as $cat)
+                        <option value="{{ $cat->id }}" data-category-name="{{ strtolower($cat->name) }}" {{ (string) old('category_id', $research->category_id) === (string) $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                        @endforeach
+                    </select>
+                    <p id="categoryLevelHint" class="mt-1 text-xs text-gray-500" aria-live="polite">
+                        @if($classificationNeedsReview)
+                        This existing paper needs classification review. Select a level and a matching category before saving.
+                        @endif
+                    </p>
+                    @error('category_id')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Academic Program</label>
+                    <input type="text" name="academic_program" value="{{ old('academic_program', $research->academic_program) }}" maxlength="255" placeholder="e.g., BS Information Technology" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-500">
+                    @error('academic_program')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">CSU Thrusts <span class="text-red-500">*</span></label>
@@ -875,5 +897,44 @@ if (initialThrusts.length > 0) {
 runDuplicateCheck();
 
     setTableDesign(getTableDesign());
+</script>
+<script>
+(() => {
+    const level = document.getElementById('academicLevel');
+    const category = document.getElementById('researchCategory');
+    const hint = document.getElementById('categoryLevelHint');
+    const needsReview = @json($classificationNeedsReview);
+    if (!level || !category || !hint) return;
+
+    const allowed = {
+        BS: ['thesis', 'capstone project'],
+        GS: ['thesis', 'dissertation']
+    };
+    const refreshCategories = () => {
+        const levelCategories = allowed[level.value] || [];
+        const previousValue = category.value;
+        Array.from(category.options).forEach((option) => {
+            if (!option.value) return;
+            option.hidden = !levelCategories.includes(option.dataset.categoryName);
+            option.disabled = option.hidden;
+        });
+        category.disabled = levelCategories.length === 0;
+        if (!levelCategories.some((name) => category.selectedOptions[0]?.dataset.categoryName === name)) {
+            category.value = '';
+        }
+        hint.textContent = !category.value && needsReview
+            ? 'This existing paper needs classification review. Select a level and a matching category before saving.'
+            : level.value === 'BS'
+            ? 'BS research may be classified as Thesis or Capstone Project.'
+            : level.value === 'GS'
+                ? 'GS research may be classified as Thesis or Dissertation.'
+                : 'Select an academic level to see valid research categories.';
+        if (previousValue && category.value === '') category.setCustomValidity('Choose a category that matches the selected academic level.');
+        else category.setCustomValidity('');
+    };
+    level.addEventListener('change', refreshCategories);
+    category.addEventListener('change', () => category.setCustomValidity(''));
+    refreshCategories();
+})();
 </script>
 @endsection

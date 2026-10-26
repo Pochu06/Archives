@@ -4,16 +4,25 @@
 @section('page-subtitle', $pageSubtitle)
 @section('content')
 <div class="space-y-5">
+    @if(in_array(session('user_role'), ['admin', 'super_admin'], true))
+    <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+        <p class="text-sm text-amber-900">Review legacy papers with missing or inconsistent academic-level and category metadata.</p>
+        <a href="{{ route('submissions.category-review') }}" class="rounded-xl bg-amber-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-800">Open classification review</a>
+    </div>
+    @endif
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
         <form method="GET" class="flex gap-4">
             <select name="status" class="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-orange-500">
                 <option value="">All Status</option>
                 <option value="pending_college" {{ request('status') === 'pending_college' ? 'selected' : '' }}>Pending College Approval</option>
+                <option value="pending_campus_review" {{ request('status') === 'pending_campus_review' ? 'selected' : '' }}>Pending Campus Review Board</option>
                 <option value="pending_rde" {{ request('status') === 'pending_rde' ? 'selected' : '' }}>Pending RDE Approval</option>
                 <option value="revision_college" {{ request('status') === 'revision_college' ? 'selected' : '' }}>For College Revision</option>
+                <option value="revision_campus_review" {{ request('status') === 'revision_campus_review' ? 'selected' : '' }}>For Campus Review Board Revision</option>
                 <option value="revision_rde" {{ request('status') === 'revision_rde' ? 'selected' : '' }}>For RDE Revision</option>
                 <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>Approved</option>
                 <option value="rejected_college" {{ request('status') === 'rejected_college' ? 'selected' : '' }}>Rejected by College</option>
+                <option value="rejected_campus_review" {{ request('status') === 'rejected_campus_review' ? 'selected' : '' }}>Rejected by Campus Review Board</option>
                 <option value="rejected_rde" {{ request('status') === 'rejected_rde' ? 'selected' : '' }}>Rejected by RDE</option>
             </select>
             <button type="submit" class="bg-orange-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-orange-700">Filter</button>
@@ -45,12 +54,20 @@
                     @endforeach
                 </select>
             </div>
+            <div class="lg:col-span-2 hidden" id="bulkAcademicLevelGroup">
+                <label class="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Academic Level</label>
+                <select id="bulkAcademicLevelInput" name="academic_level" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-orange-500">
+                    <option value="">Select level</option>
+                    <option value="BS">BS (Bachelor's Degree)</option>
+                    <option value="GS">GS (Graduate Studies)</option>
+                </select>
+            </div>
             <div class="lg:col-span-2 hidden" id="bulkCategoryGroup">
-                <label class="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Tag Category</label>
+                <label class="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Research Category</label>
                 <select id="bulkCategoryInput" name="category_id" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-orange-500">
                     <option value="">Select category</option>
                     @foreach($categories as $category)
-                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                    <option value="{{ $category->id }}" data-category-name="{{ strtolower($category->name) }}">{{ $category->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -70,7 +87,7 @@
                     </th>
                     <th class="px-5 py-3.5 text-left text-xs font-bold text-orange-800 uppercase">Title</th>
                     <th class="px-5 py-3.5 text-left text-xs font-bold text-orange-800 uppercase">Student</th>
-                    <th class="px-5 py-3.5 text-left text-xs font-bold text-orange-800 uppercase">Category</th>
+                    <th class="px-5 py-3.5 text-left text-xs font-bold text-orange-800 uppercase">Academic Level / Category</th>
                     <th class="px-5 py-3.5 text-left text-xs font-bold text-orange-800 uppercase">College</th>
                     <th class="px-5 py-3.5 text-left text-xs font-bold text-orange-800 uppercase">Year</th>
                     <th class="px-5 py-3.5 text-left text-xs font-bold text-orange-800 uppercase">Status</th>
@@ -85,9 +102,24 @@
                     </td>
                     <td class="px-5 py-4 max-w-md">
                         <a href="{{ route('research.show', \App\Support\ResearchToken::encode($r->id)) }}" class="font-semibold text-gray-800 hover:text-orange-600 text-sm line-clamp-2">{{ $r->title }}</a>
+                        @php($paperAdvisers = $advisers->where('college_id', $r->college_id))
+                        @if($paperAdvisers->isNotEmpty())
+                        <form action="{{ route('submissions.assign-adviser', $r->id) }}" method="POST" class="mt-2 flex max-w-sm gap-2">
+                            @csrf
+                            <select name="adviser_id" required class="min-w-0 flex-1 rounded-lg border border-gray-200 px-2 py-1 text-xs">
+                                <option value="">Assign adviser…</option>
+                                @foreach($paperAdvisers as $adviser)
+                                <option value="{{ $adviser->id }}" @selected($r->adviser_id === $adviser->id)>{{ $adviser->name }}</option>
+                                @endforeach
+                            </select>
+                            <button class="rounded-lg bg-cyan-700 px-2 py-1 text-xs font-semibold text-white">Save</button>
+                        </form>
+                        @elseif($r->adviser)
+                        <p class="mt-1 text-xs text-cyan-700">Adviser: {{ $r->adviser->name }}</p>
+                        @endif
                     </td>
                     <td class="px-5 py-4 text-sm text-gray-600">{{ $r->user->name ?? 'Unknown' }}</td>
-                    <td class="px-5 py-4 text-sm text-gray-600">{{ $r->category->name ?? 'N/A' }}</td>
+                    <td class="px-5 py-4 text-sm text-gray-600">{{ ['BS' => 'BS', 'GS' => 'GS'][$r->academic_level] ?? 'Needs review' }} · {{ $r->category->name ?? 'N/A' }}</td>
                     <td class="px-5 py-4">
                         <span class="text-xs bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full font-semibold">{{ $r->college->code ?? 'N/A' }}</span>
                     </td>
@@ -262,9 +294,11 @@ const bulkActionSelect = document.getElementById('bulkActionSelect');
 const bulkReasonGroup = document.getElementById('bulkReasonGroup');
 const bulkCollegeGroup = document.getElementById('bulkCollegeGroup');
 const bulkCategoryGroup = document.getElementById('bulkCategoryGroup');
+const bulkAcademicLevelGroup = document.getElementById('bulkAcademicLevelGroup');
 const bulkReasonInput = document.getElementById('bulkReasonInput');
 const bulkCollegeInput = document.getElementById('bulkCollegeInput');
 const bulkCategoryInput = document.getElementById('bulkCategoryInput');
+const bulkAcademicLevelInput = document.getElementById('bulkAcademicLevelInput');
 const bulkHiddenInputs = document.getElementById('bulkHiddenInputs');
 const selectAllRows = document.getElementById('selectAllRows');
 const rowCheckboxes = Array.from(document.querySelectorAll('.bulk-row-checkbox'));
@@ -276,13 +310,28 @@ function syncBulkActionFields() {
     bulkReasonGroup.classList.toggle('hidden', action !== 'reject');
     bulkCollegeGroup.classList.toggle('hidden', action !== 'assign_college');
     bulkCategoryGroup.classList.toggle('hidden', action !== 'tag_category');
+    bulkAcademicLevelGroup.classList.toggle('hidden', action !== 'tag_category');
 
     bulkReasonInput.required = action === 'reject';
     bulkCollegeInput.required = action === 'assign_college';
     bulkCategoryInput.required = action === 'tag_category';
+    bulkAcademicLevelInput.required = action === 'tag_category';
 }
 
 bulkActionSelect.addEventListener('change', syncBulkActionFields);
+bulkAcademicLevelInput.addEventListener('change', () => {
+    const allowed = { BS: ['thesis', 'capstone project'], GS: ['thesis', 'dissertation'] };
+    const names = allowed[bulkAcademicLevelInput.value] || [];
+    Array.from(bulkCategoryInput.options).forEach((option) => {
+        if (!option.value) return;
+        option.hidden = !names.includes(option.dataset.categoryName);
+        option.disabled = option.hidden;
+    });
+    if (!names.includes(bulkCategoryInput.selectedOptions[0]?.dataset.categoryName)) {
+        bulkCategoryInput.value = '';
+    }
+});
+bulkAcademicLevelInput.dispatchEvent(new Event('change'));
 syncBulkActionFields();
 
 selectAllRows?.addEventListener('change', function() {

@@ -62,3 +62,4 @@ Artisan::command('notifications:send-digest', function () {
 })->purpose('Send unread notification digests based on user preferences');
 
 Schedule::command('notifications:send-digest')->hourly();
+Schedule::command('archives:backup')->dailyAt('02:00')->withoutOverlapping();

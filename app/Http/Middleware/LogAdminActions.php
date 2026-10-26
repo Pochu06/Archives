@@ -37,6 +37,8 @@ class LogAdminActions
 
         return session('user_id')
             && in_array($role, ['admin', 'super_admin'], true)
+            && $request->route()?->getName() !== 'research.bulk-download'
+            && ! in_array($request->route()?->getName(), ['admin.backups.create', 'admin.backups.restore'], true)
             && ! $request->is('telescope*');
     }
 
